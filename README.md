@@ -1,1 +1,0 @@
-# Bitirme-ayaklar-
