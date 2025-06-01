@@ -3,10 +3,17 @@ const express = require('express')
 const http = require('http')
 const moment = require('moment');
 const socketio = require('socket.io');
+const fs = require('fs');
+const https = require('https');
 const PORT = process.env.PORT || 3000;
 
 const app = express();
-const server = http.createServer(app);
+
+const options = {
+    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+};
+const server = https.createServer(options, app);
 
 const io = socketio(server);
 
@@ -111,4 +118,4 @@ io.on('connect', socket => {
 })
 
 
-server.listen(PORT, () => console.log(`Server is up and running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`HTTPS Server is up and running on port ${PORT}`));
