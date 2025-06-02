@@ -5,7 +5,26 @@ const moment = require('moment');
 const socketio = require('socket.io');
 const fs = require('fs');
 const https = require('https');
+const mongoose = require('mongoose'); // Added mongoose
+
 const PORT = process.env.PORT || 3000;
+
+// MongoDB Connection URI (replace with your actual connection string)
+const MONGO_URI = 'mongodb+srv://kaanyetimoglu5:1kDGYqKg5qYFc1Np@cluster0.r6fzhun.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // Updated MongoDB URI
+
+mongoose.connect(MONGO_URI) // Removed deprecated options
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.log(err));
+
+// Define a schema for session data
+const sessionSchema = new mongoose.Schema({ // Added Session Schema
+    roomId: String,
+    drawings: Array, // To store drawing actions
+    notes: String, // To store text notes (can be expanded)
+    canvasState: String // To store the current state of the canvas
+});
+
+const Session = mongoose.model('Session', sessionSchema); // Added Session Model
 
 const app = express();
 
@@ -28,7 +47,7 @@ let roomBoard = {};
 
 io.on('connect', socket => {
 
-    socket.on("join room", (roomid, username) => {
+    socket.on("join room", async (roomid, username) => { // Added async
 
         socket.join(roomid);
         socketroom[socket.id] = roomid;
@@ -46,6 +65,19 @@ io.on('connect', socket => {
         else {
             rooms[roomid] = [socket.id];
             io.to(socket.id).emit('join room', null, null, null, null);
+            // Create a new session if it doesn't exist
+            try { // Added try-catch for session creation
+                let session = await Session.findOne({ roomId: roomid });
+                if (!session) {
+                    session = new Session({ roomId: roomid, drawings: [], notes: '', canvasState: '' });
+                    await session.save();
+                    console.log(`Session created for room ${roomid}`);
+                } else {
+                    console.log(`Session found for room ${roomid}`);
+                }
+            } catch (err) {
+                console.error('Error creating or finding session:', err);
+            }
         }
 
         io.to(roomid).emit('user count', rooms[roomid].length);
@@ -83,21 +115,60 @@ io.on('connect', socket => {
         ));
     })
 
-    socket.on('getCanvas', () => {
+    socket.on('getCanvas', async () => { // Added async
         if (roomBoard[socketroom[socket.id]])
             socket.emit('getCanvas', roomBoard[socketroom[socket.id]]);
+        else { // Added else block to fetch from DB
+            try {
+                const session = await Session.findOne({ roomId: socketroom[socket.id] });
+                if (session && session.canvasState) {
+                    roomBoard[socketroom[socket.id]] = session.canvasState;
+                    socket.emit('getCanvas', session.canvasState);
+                }
+            } catch (err) {
+                console.error('Error fetching canvas state from DB:', err);
+            }
+        }
     });
 
-    socket.on('draw', (newx, newy, prevx, prevy, color, size) => {
+    socket.on('draw', async (newx, newy, prevx, prevy, color, size) => { // Added async
         socket.to(socketroom[socket.id]).emit('draw', newx, newy, prevx, prevy, color, size);
+        // Save drawing action to DB
+        try { // Added try-catch for saving drawing
+            await Session.updateOne(
+                { roomId: socketroom[socket.id] },
+                { $push: { drawings: { newx, newy, prevx, prevy, color, size, timestamp: new Date() } } }
+            );
+        } catch (err) {
+            console.error('Error saving drawing to DB:', err);
+        }
     })
 
-    socket.on('clearBoard', () => {
+    socket.on('clearBoard', async () => { // Added async
         socket.to(socketroom[socket.id]).emit('clearBoard');
+        // Clear drawings and canvas state in DB
+        try { // Added try-catch for clearing board
+            await Session.updateOne(
+                { roomId: socketroom[socket.id] },
+                { $set: { drawings: [], canvasState: '' } }
+            );
+            roomBoard[socketroom[socket.id]] = ''; // Clear in-memory cache as well
+        } catch (err) {
+            console.error('Error clearing board in DB:', err);
+        }
     });
 
-    socket.on('store canvas', url => {
+    socket.on('store canvas', async url => { // Added async
         roomBoard[socketroom[socket.id]] = url;
+        // Save canvas state to DB
+        try { // Added try-catch for storing canvas
+            await Session.updateOne(
+                { roomId: socketroom[socket.id] },
+                { $set: { canvasState: url } }
+            );
+        } catch (err) {
+            console.error('Error storing canvas state to DB:', err);
+        }
     })
 
     socket.on('disconnect', () => {
