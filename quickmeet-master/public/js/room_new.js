@@ -24,15 +24,6 @@ let userId = localStorage.getItem('userId');
 let usernameFromStorage = localStorage.getItem('username');
 let username = usernameFromStorage;
 
-// PeerJS değişkenleri
-let peer;
-let localStream;
-let remoteStreams = {};
-let currentUser = null;
-
-// WebRTC media constraints
-const mediaConstraints = { video: true, audio: true };
-
 // Eğer kullanıcı girişi yoksa ana sayfaya yönlendir
 if (!userId || !username) {
     // Session kontrol et
@@ -357,108 +348,6 @@ socket.on('draw', (newX, newY, prevX, prevY, color, size) => {
 
 //whiteboard js end
 
-// PeerJS yapılandırması - HTTPS sunucusuyla uyumlu
-
-// PeerJS başlatma fonksiyonu
-function initializePeer() {
-    if (!userId) {
-        console.error("Cannot initialize Peer: userId not available.");
-        return;
-    }
-    if (typeof Peer === 'undefined') {
-        console.error('PeerJS library is not loaded!');
-        return;
-    }
-
-    console.log('Initializing Peer for user:', userId);
-    try {
-        peer = new Peer(userId, {
-            host: location.hostname,
-            port: location.port || 3000,
-            path: '/peerjs/myapp',
-            secure: true,
-            debug: 3
-        });
-
-        peer.on('open', (id) => {
-            console.log('My peer ID is: ' + id);
-        });
-
-        peer.on('call', (call) => {
-            console.log('Incoming call from', call.peer);
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-                .then((stream) => {
-                    if (!localStream) {
-                        myvideo.srcObject = stream;
-                        myvideo.muted = true;
-                        localStream = stream;
-                    }
-                    call.answer(localStream);
-                    call.on('stream', (remoteStream) => {
-                        console.log('Received remote stream from', call.peer);
-                        addRemoteVideo(remoteStream, call.peer);
-                    });
-                    call.on('close', () => {
-                        console.log('Call with', call.peer, 'closed');
-                        removeRemoteVideo(call.peer);
-                    });
-                })
-                .catch((err) => {
-                    console.error('Failed to get local stream for answering call:', err);
-                });
-        });
-
-        peer.on('error', (err) => {
-            console.error('PeerJS error:', err);
-        });
-
-        peer.on('disconnected', () => {
-            console.log('PeerJS disconnected. Attempting to reconnect...');
-        });
-
-        peer.on('close', () => {
-            console.log('PeerJS connection closed.');
-        });
-
-    } catch (error) {
-        console.error("Error initializing PeerJS:", error);
-    }
-}
-
-// Remote video ekleme fonksiyonu
-function addRemoteVideo(stream, peerId) {
-    if (document.getElementById(`peer-${peerId}`)) return;
-    
-    const vidCont = document.createElement('div');
-    const video = document.createElement('video');
-    const name = document.createElement('div');
-    
-    vidCont.id = `peer-${peerId}`;
-    vidCont.className = "video-box";
-    
-    video.srcObject = stream;
-    video.autoplay = true;
-    video.muted = true;
-    video.className = "video-frame";
-    
-    name.className = "nametag";
-    name.innerHTML = `User ${peerId}`;
-    
-    vidCont.appendChild(video);
-    vidCont.appendChild(name);
-    videoContainer.appendChild(vidCont);
-}
-
-// Remote video kaldırma fonksiyonu
-function removeRemoteVideo(peerId) {
-    const videoElement = document.getElementById(`peer-${peerId}`);
-    if (videoElement) {
-        videoElement.remove();
-    }
-}
-
-var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-
 // Room code display
 document.querySelector('.roomcode').innerHTML = `${roomId || projectId}`;
 
@@ -524,6 +413,7 @@ socket.on('user count', count => {
 // WebRTC variables
 let peerConnection;
 const configuration = { iceServers: [{ urls: "stun:stun.stunprotocol.org" }] }
+const mediaConstraints = { video: true, audio: true };
 let connections = {};
 let cName = {};
 let audioTrackSent = {};
@@ -867,7 +757,7 @@ sendButton.addEventListener('click', () => {
     const msg = messageField.value;
     messageField.value = '';
     if (projectId) {
-        socket.emit('project message', projectId, username, userId, msg);
+        socket.emit('project message', projectId, msg, username);
     } else {
         socket.emit('message', msg, username, roomId);
     }
@@ -975,52 +865,16 @@ cutCall.addEventListener('click', () => {
     location.href = '/';
 })
 
-// Çıkış butonu event listener'ı
-const logoutBtn = document.getElementById('logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                // Proje bağlantısını kes
-                if (projectId && username) {
-                    socket.emit('leave project', projectId, username);
-                }
-                
-                // localStorage temizle
-                localStorage.removeItem('userId');
-                localStorage.removeItem('username');
-                
-                // Ana sayfaya yönlendir
-                location.href = '/';
-            } else {
-                console.error('Çıkış yapılamadı');
-            }
-        } catch (error) {
-            console.error('Çıkış sırasında hata:', error);
-            // Hata durumunda da ana sayfaya yönlendir
-            location.href = '/';
-        }
-    });
-}
-
 // Proje mesajları için özel handler
-socket.on('project message', (data) => {
+socket.on('project message', (projectId, msg, sendername, time) => {
     chatRoom.scrollTop = chatRoom.scrollHeight;
-    const time = new Date(data.createdAt).toLocaleTimeString();
     chatRoom.innerHTML += `<div class="message">
     <div class="info">
-        <div class="username">${data.user.username}</div>
+        <div class="username">${sendername}</div>
         <div class="time">${time}</div>
     </div>
     <div class="content">
-        ${data.message}
+        ${msg}
     </div>
 </div>`
 });

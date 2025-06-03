@@ -1,59 +1,78 @@
 <!DOCTYPE html>
-
+<html lang="tr">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>QuickMeet - Video Call & Chat</title>
-    <meta name="description" content="">
+    <title>Kaşıkmate - Video Konferans Platform</title>
+    <meta name="description" content="Kaşıkmate Video Konferans ve İşbirliği Platformu">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
-
 </head>
 
-<body>
-    <navbar>
-        <div class="logo">QuickMeet</div>
-    </navbar>
-    <!-- <div class="landing"> -->
-        <!-- <div class="head-cont unselectable">
-            Welcome to QuickMeet!
-        </div> -->
-
-        <div class="main">
-            <div class="create-join">
-                <div class="text"><div class="head">Create Video Meetings in one-click.</div>
-                <div class="subtext">No sign ups required. Open Source platform.</div>
-                </div>
-                <button id="createroom" class="createroom-butt unselectable">Create Room</button><br>
-                <input type="text" name="room" spellcheck="false" placeholder="Enter Room Code" id="roomcode" class="roomcode"><br>
-                <div class="joinroom unselectable" id="joinroom">Join Room</div>
+<body class="landing-page">
+    <div class="landing-container">
+        <div class="landing-header">
+            <div class="logo-large">Kaşıkmate</div>
+            <h1>Video Konferans ve İşbirliği Platformu</h1>
+            <p>Ekibinizle video görüşme yapın, proje yönetimi gerçekleştirin ve işbirliği içinde çalışın.</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-video"></i>
+                <h3>HD Video Konferans</h3>
+                <p>Yüksek kaliteli video ve ses ile toplantılarınızı gerçekleştirin</p>
             </div>
-            <div class="video-cont">
-                <video class="video-self" autoplay muted playsinline></video>
-                <div class="settings">
-                    <div class="device" id="mic"><i class="fas fa-microphone"></i></div>
-                    <div class="device" id="webcam"><i class="fas fa-video"></i></div>
-                </div>
+            <div class="feature">
+                <i class="fas fa-comments"></i>
+                <h3>Anlık Mesajlaşma</h3>
+                <p>Canlı chat özelliği ile ekibinizle anında iletişim kurun</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-share-alt"></i>
+                <h3>Ekran Paylaşımı</h3>
+                <p>Ekranınızı paylaşarak sunumlar yapın ve işbirliği geliştirin</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-paint-brush"></i>
+                <h3>İşbirlikçi Whiteboard</h3>
+                <p>Gerçek zamanlı beyaz tahta ile fikirlerinizi görselleştirin</p>
             </div>
         </div>
-
-        <!-- <div class="main-cont">
-
-            <form class="roomform" action="room.html" method="GET">
-                <div class="formcont">
-                    <input type="text" name="name" placeholder="Enter your name" id="username" class="inputtext"><br>
-                    
-                    <button type="submit" class="butt unselectable" id="joinroom">Join Room</button>
-                    
-                </div>
-            </form>
-
-        </div> -->
-
-    <!-- </div> -->
-
-    <script src="js/landing.js"></script>
+        
+        <div class="cta-section">
+            <h2>Hemen Başlayın</h2>
+            <p>Hesabınız var mı? Giriş yapın veya yeni bir hesap oluşturun.</p>
+            <div class="cta-buttons">
+                <a href="login.html" class="primary-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Giriş Yap
+                </a>
+                <a href="login.html" class="secondary-btn">
+                    <i class="fas fa-user-plus"></i>
+                    Kayıt Ol
+                </a>
+            </div>
+        </div>
+        
+        <div class="landing-footer">
+            <p>&copy; 2025 Kaşıkmate. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+    
+    <script>
+        // Eğer kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/check-auth');
+                if (response.ok) {
+                    window.location.href = '/dashboard.html';
+                }
+            } catch (error) {
+                // Giriş yapılmamış, ana sayfada kal
+            }
+        });
+    </script>
 </body>
-
 </html>

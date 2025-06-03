@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Kaşıkmate - Giriş</title>
+    <meta name="description" content="Kaşıkmate Video Konferans Uygulaması - Giriş">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">Kaşıkmate</div>
+            <p class="tagline">Video Konferans ve İşbirliği Platformu</p>
+        </div>
+        
+        <div id="auth-section">
+            <div class="auth-box" id="login-box">
+                <h2>Giriş Yap</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="E-posta" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Şifre" required>
+                    </div>
+                    <button type="submit" id="login-btn" class="primary-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Giriş Yap
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    Hesabın yok mu? <span id="show-register" class="link">Kayıt Ol</span>
+                </div>
+                <div id="login-error" class="auth-error"></div>
+            </div>
+            
+            <div class="auth-box" style="display:none" id="register-box">
+                <h2>Kayıt Ol</h2>
+                <form id="register-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="register-username" placeholder="Kullanıcı Adı" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="register-email" placeholder="E-posta" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="register-password" placeholder="Şifre (min 6 karakter)" required minlength="6">
+                    </div>
+                    <button type="submit" id="register-btn" class="primary-btn">
+                        <i class="fas fa-user-plus"></i>
+                        Kayıt Ol
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    Zaten hesabın var mı? <span id="show-login" class="link">Giriş Yap</span>
+                </div>
+                <div id="register-error" class="auth-error"></div>
+            </div>
+        </div>
+        
+        <div class="login-footer">
+            <p>&copy; 2025 Kaşıkmate. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+</body>
+</html>

@@ -6,12 +6,7 @@
     <title>QuickMeet Room</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
-    <script>
-        const params = new URLSearchParams(location.search);
-        if (!params.get("room")) location.href = "/";
-    </script>
+    <link rel="stylesheet" href="css/style.css">    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -69,10 +64,13 @@
                     <div class="board-icon tooltip">
                         <i class="fas fa-chalkboard"></i>
                         <span class="tooltiptext">Whiteboard</span>
-                    </div>
-                    <div class="cutcall tooltip">
+                    </div>                    <div class="cutcall tooltip">
                         <i class="fas fa-phone-slash"></i>
                         <span class="tooltiptext">Leave Call</span>
+                    </div>
+                    <div class="logout-btn tooltip" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="tooltiptext">Çıkış Yap</span>
                     </div>
 
 
@@ -84,28 +82,52 @@
             </div>
 
 
-        </div>
-
-        <div class="right-cont">
+        </div>        <div class="right-cont">
             <div class="head-title">
-
-                <div class="chats"><i class="fas fa-comment-alt mr-1"></i>Chats</div>
-                <div class="attendies"><i class="fas fa-users mr-1"></i>Attendies</div>
-
-
+                <div class="tabs">
+                    <div class="tab active" data-tab="chat"><i class="fas fa-comment-alt mr-1"></i>Chat</div>
+                    <div class="tab" data-tab="notes"><i class="fas fa-sticky-note mr-1"></i>Notlar</div>
+                    <div class="tab" data-tab="attendees"><i class="fas fa-users mr-1"></i>Katılımcılar</div>
+                </div>
             </div>
 
-            <div class="chat-cont">
-
+            <!-- Chat Tab -->
+            <div class="tab-content active" id="chat-tab">
+                <div class="chat-cont"></div>
+                <div class="chat-input-cont">
+                    <div class="ci-cont"><input type="text" class="chat-input" placeholder="Mesaj yazın.."></div>
+                    <div class="ci-send"><button class="chat-send">Gönder</button></div>
+                </div>
             </div>
-            <div class="chat-input-cont">
-                <div class="ci-cont"><input type="text" class="chat-input" placeholder="Type chat here.."></div>
-                <div class="ci-send"><button class="chat-send">Send</button></div>
+
+            <!-- Notes Tab -->
+            <div class="tab-content" id="notes-tab">
+                <div class="notes-header">
+                    <button id="add-note-btn" class="add-note-btn">
+                        <i class="fas fa-plus"></i> Yeni Not
+                    </button>
+                </div>
+                <div class="notes-list" id="notes-list">
+                    <!-- Notlar dinamik olarak buraya eklenecek -->
+                </div>
+                <div class="note-editor" id="note-editor" style="display:none;">
+                    <div class="note-editor-header">
+                        <button id="save-note-btn" class="save-note-btn">Kaydet</button>
+                        <button id="cancel-note-btn" class="cancel-note-btn">İptal</button>
+                    </div>
+                    <textarea id="note-content" class="note-textarea" placeholder="Notunuzu buraya yazın..."></textarea>
+                </div>
+            </div>
+
+            <!-- Attendees Tab -->
+            <div class="tab-content" id="attendees-tab">
+                <div class="attendees-list" id="attendees-list">
+                    <!-- Katılımcılar dinamik olarak buraya eklenecek -->
+                </div>
             </div>
         </div>
-    </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="js/room.js"></script>
+    </div>    <script src="/socket.io/socket.io.js"></script>    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script src="js/room.js?v=3"></script>
 </body>
 
 </html>
