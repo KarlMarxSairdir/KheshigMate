@@ -24,9 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = addMemberForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ekleniyor...';
-        submitBtn.disabled = true;
-
-        try {
+        submitBtn.disabled = true;        try {
+            console.log('🔍 Adding member:', username);
+            console.log('🔍 Project ID:', projectId);
+            
             const response = await fetch(`/projects/${projectId}/members`, {
                 method: 'POST',
                 headers: {
@@ -35,7 +36,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ username })
             });
 
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', response.headers);
+
             const data = await response.json();
+            console.log('📦 Response data:', data);
 
             if (response.ok) {
                 showStatus(data.message, 'success');
@@ -46,14 +51,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update member count
                 updateMemberCount();
-                
-            } else {
-                showStatus(data.message || 'Üye eklenirken hata oluştu', 'error');
+                  } else {
+                console.error('❌ Server error:', data);
+                showStatus(data.message || data.error || 'Üye eklenirken hata oluştu', 'error');
             }
 
         } catch (error) {
-            console.error('Add member error:', error);
-            showStatus('Sunucu hatası oluştu', 'error');
+            console.error('❌ Frontend error:', error);
+            console.error('❌ Error details:', error.message);
+            showStatus('Sunucu bağlantı hatası oluştu', 'error');
         } finally {
             // Reset button state
             submitBtn.innerHTML = originalBtnText;
@@ -75,14 +81,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading state
             removeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Çıkarılıyor...';
-            removeBtn.disabled = true;
-
-            try {
+            removeBtn.disabled = true;            try {
+                console.log('🔍 Removing member with ID:', userId);
+                console.log('🔍 DELETE URL:', `/projects/${projectId}/members/${userId}`);
+                
                 const response = await fetch(`/projects/${projectId}/members/${userId}`, {
                     method: 'DELETE'
                 });
 
+                console.log('📡 DELETE Response status:', response.status);
                 const data = await response.json();
+                console.log('📦 DELETE Response data:', data);
 
                 if (response.ok) {
                     showStatus(data.message, 'success');
@@ -95,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateMemberCount();
                     
                 } else {
+                    console.error('❌ DELETE Server error:', data);
                     showStatus(data.message || 'Üye çıkarılırken hata oluştu', 'error');
                     // Reset button state
                     removeBtn.innerHTML = '<i class="fas fa-trash"></i> Çıkar';

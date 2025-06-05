@@ -12,20 +12,33 @@ const ensureAuthenticated = (req, res, next) => {
 // Ensure user is project owner
 const ensureProjectOwner = async (req, res, next) => {
     try {
+        console.log('🔍 ensureProjectOwner middleware started');
+        console.log('👤 User:', req.user ? req.user.username : 'NOT AUTHENTICATED');
+        
         const projectId = req.params.id || req.params.projectId;
+        console.log('🆔 Project ID:', projectId);
+        
         const project = await Project.findById(projectId);
         
         if (!project) {
+            console.log('❌ Project not found:', projectId);
             return res.status(404).json({ error: 'Proje bulunamadı' });
         }
-          if (project.owner.toString() !== req.user._id.toString()) {
+        
+        console.log('✅ Project found:', project.name);
+        console.log('👤 Project owner:', project.owner);
+        console.log('👤 Current user ID:', req.user._id);
+        
+        if (project.owner.toString() !== req.user._id.toString()) {
+            console.log('❌ Access denied: User is not project owner');
             return res.status(403).json({ error: 'Bu işlem için proje sahibi olmanız gerekir' });
         }
         
+        console.log('✅ Access granted: User is project owner');
         req.project = project;
         next();
     } catch (error) {
-        console.error('Project owner check error:', error);
+        console.error('❌ Project owner check error:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 };
