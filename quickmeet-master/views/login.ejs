@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Giriş Yap - Kaşıkmate</title>
+    <meta name="description" content="Kaşıkmate Video Konferans Uygulaması - Giriş">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">Kaşıkmate</div>
+            <p class="tagline">Video Konferans ve İşbirliği Platformu</p>
+        </div>
+        
+        <div class="auth-box">
+            <h2>Giriş Yap</h2>
+            <% if (locals.error) { %>
+                <div class="auth-error"><%= error %></div>
+            <% } %>
+            <form action="/login" method="POST">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" name="email" placeholder="E-posta" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Şifre" required>
+                </div>
+                <button type="submit" class="primary-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Giriş Yap
+                </button>
+            </form>
+            <div class="auth-switch">
+                Hesabınız yok mu? <a href="/register" class="link">Kayıt Olun</a>
+            </div>
+        </div>
+        
+        <div class="login-footer">
+            <p>&copy; <%= new Date().getFullYear() %> Kaşıkmate. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+</body>
+</html>

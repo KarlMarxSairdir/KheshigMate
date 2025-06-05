@@ -15,6 +15,7 @@ const ChatMessage = require('./models/ChatMessage');
 const DrawingData = require('./models/DrawingData'); // Added DrawingData model
 const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
+const cors = require('cors'); // CORS paketi eklendi
 
 const PORT = process.env.PORT || 3000;
 
@@ -43,47 +44,416 @@ const Session = mongoose.model('Session', sessionSchema); // Added Session Model
 
 const app = express();
 
+// CORS middleware'ini burada kullanın
+app.use(cors({
+    origin: ['http://localhost:3000', 'https://localhost:3000'], // İstemcinizin çalıştığı adresler
+    credentials: true // Kimlik bilgileriyle (cookie vs.) isteklere izin ver
+}));
+
+// EJS View Engine Setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(express.json()); // JSON body parser eklendi
+app.use(express.urlencoded({ extended: true })); // URL-encoded body parser for form submissions
 
-// HTTPS için SSL sertifikaları
-let server, io;
-try {
-    const options = {
-        key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-        cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
-    };
-    server = https.createServer(options, app);
-    io = socketio(server);
-    console.log('✅ HTTPS server configured with SSL certificates');
-} catch (error) {
-    console.log('⚠️ SSL certificates not found, falling back to HTTP only');
-    server = http.createServer(app);
-    io = socketio(server);
-}
-
-const httpServer = http.createServer(app); // HTTP server eklendi
-const httpIo = socketio(httpServer); // HTTP için Socket.IO
-
-// PeerJS sunucusunu HTTPS sunucusuna entegre et - geçici olarak devre dışı
-// const peerServer = ExpressPeerServer(server, {
-//     debug: true,
-//     path: '/myapp'
-// });
-
-// app.use('/peerjs', peerServer);
-
+// Serve static files from the "public" directory (MOVED UP)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session middleware
+// Session middleware (MOVED UP)
 app.use(session({
     secret: 'kasikmate-secret-key',
     resave: false,
     saveUninitialized: false
 }));
 
-// Passport middleware
+// Passport middleware (MOVED UP)
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Ana Sayfa Route
+app.get('/', (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.redirect('/dashboard');
+    }
+    res.render('index'); 
+});
+
+// Authentication Routes
+app.get('/register', (req, res) => {
+    console.log("GET /register route hit!"); // Bu logu görmelisiniz
+    try {
+        res.render('register', { error: null });
+    } catch (renderError) {
+        console.error("Error rendering register.ejs:", renderError);
+        res.status(500).send("Error rendering registration page.");
+    }
+});
+
+app.post('/register', async (req, res) => {
+    const { username, email, password, skills } = req.body;
+    try {
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.render('register', { error: 'Bu e-posta adresi zaten kayıtlı.' });
+        }
+        user = new User({
+            username,
+            email,
+            password,
+            skills: skills ? skills.split(',').map(skill => skill.trim()) : []
+        });
+        await user.save();
+        res.redirect('/login');
+    } catch (err) {
+        console.error('Kayıt sırasında hata:', err);
+        res.render('register', { error: 'Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.' });
+    }
+});
+
+app.get('/login', (req, res) => {
+    const errorMessages = req.session.messages || [];
+    req.session.messages = []; 
+    res.render('login', { error: errorMessages.length > 0 ? errorMessages[0] : null });
+});
+
+// POST /login route (ensuring it's correctly placed before static and other general routes)
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/dashboard', // Should redirect to the new EJS dashboard
+    failureRedirect: '/login',     // On failure, redirect back to login
+    failureMessage: true           // Store error messages in session
+}));
+
+app.get('/logout', (req, res, next) => {
+    req.logout((err) => {
+        if (err) { return next(err); }
+        res.redirect('/');
+    });
+});
+
+// POST logout route for AJAX requests
+app.post('/logout', (req, res, next) => {
+    req.logout((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).json({ message: 'Çıkış işlemi başarısız.' });
+        }
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Session destroy error:', err);
+                return res.status(500).json({ message: 'Oturum sonlandırılamadı.' });
+            }
+            res.clearCookie('connect.sid');
+            res.json({ message: 'Başarıyla çıkış yapıldı.' });
+        });
+    });
+});
+
+// Check authentication status route
+app.get('/check-auth', (req, res) => {
+    if (req.isAuthenticated()) {
+        // Kullanıcı bilgilerini döndürürken şifre gibi hassas verileri dışarıda bırakın
+        const { _id, username, email, skills } = req.user;
+        res.json({ isAuthenticated: true, user: { _id, username, email, skills } });
+    } else {
+        res.status(401).json({ isAuthenticated: false, message: 'Kullanıcı doğrulanmadı.' });
+    }
+});
+
+// Middleware to ensure user is authenticated
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+// Dashboard Route
+app.get('/dashboard', ensureAuthenticated, async (req, res) => {
+    try {
+        // Kullanıcının projelerini veritabanından çek
+        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 }); // Projeleri çek ve sırala
+        res.render('dashboard', { 
+            user: req.user, // Oturum açmış kullanıcı bilgisi
+            projects: projects // Kullanıcının projeleri
+        });
+    } catch (err) {
+        console.error("Error rendering dashboard:", err);
+        res.status(500).send("Dashboard yüklenirken bir hata oluştu.");
+    }
+});
+
+// Project Routes
+// Create a new project
+app.post('/projects', ensureAuthenticated, async (req, res) => {
+    const { name, description } = req.body;
+    try {
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ message: 'Proje adı gereklidir.' });
+        }
+        const newProject = new Project({
+            name: name.trim(),
+            description: description ? description.trim() : '',
+            owner: req.user._id,
+            members: [req.user._id] // Sahibi aynı zamanda üye
+        });
+        await newProject.save();
+        res.status(201).json({ message: 'Proje başarıyla oluşturuldu.', project: newProject });
+    } catch (err) {
+        console.error('Error creating project:', err);
+        res.status(500).json({ message: 'Proje oluşturulurken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Get user's projects (Bu route dashboard.js tarafından kullanılacak)
+app.get('/projects', ensureAuthenticated, async (req, res) => {
+    try {
+        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 });
+        res.json({ projects }); // Projeleri { projects: [...] } formatında gönder
+    } catch (err) {
+        console.error('Error fetching projects:', err);
+        res.status(500).json({ message: 'Projeler alınırken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Get notes for a project
+app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        const notes = await ProjectNote.find({ project: projectId })
+            .populate('user', 'username email _id') 
+            .sort({ createdAt: -1 }); 
+
+        res.json({ notes });
+    } catch (err) {
+        console.error(`Error fetching notes for project ${req.params.projectId}:`, err);
+        res.status(500).json({ message: 'Notlar alınırken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Create a new note for a project
+app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        const { content } = req.body;
+        const userId = req.user._id;
+
+        if (!content || content.trim() === '') {
+            return res.status(400).json({ message: 'Not içeriği boş olamaz.' });
+        }
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+
+        const newNote = new ProjectNote({
+            project: projectId,
+            user: userId,
+            content: content.trim()
+        });
+
+        await newNote.save();
+        const populatedNote = await ProjectNote.findById(newNote._id).populate('user', 'username email _id');
+        
+        res.status(201).json({ message: 'Not başarıyla oluşturuldu.', note: populatedNote });
+
+    } catch (err) {
+        console.error(`Error creating note for project ${req.params.projectId}:`, err);
+        res.status(500).json({ message: 'Not oluşturulurken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Update an existing note
+app.put('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, noteId } = req.params;
+        const { content } = req.body;
+        const userId = req.user._id;
+
+        if (!content || content.trim() === '') {
+            return res.status(400).json({ message: 'Not içeriği boş olamaz.' });
+        }
+
+        const note = await ProjectNote.findById(noteId);
+
+        if (!note) {
+            return res.status(404).json({ message: 'Not bulunamadı.' });
+        }
+
+        if (note.user.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Bu notu düzenleme yetkiniz yok.' });
+        }
+        
+        if (note.project.toString() !== projectId) {
+             return res.status(400).json({ message: 'Not bu projeye ait değil.' });
+        }
+
+        note.content = content.trim();
+        note.updatedAt = Date.now();
+
+        await note.save();
+        const populatedNote = await ProjectNote.findById(note._id).populate('user', 'username email _id');
+
+        res.status(200).json({ message: 'Not başarıyla güncellendi.', note: populatedNote });
+
+    } catch (err) {
+        console.error(`Error updating note ${req.params.noteId} for project ${req.params.projectId}:`, err);
+        res.status(500).json({ message: 'Not güncellenirken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Delete a note
+app.delete('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, noteId } = req.params;
+        const userId = req.user._id;
+
+        const note = await ProjectNote.findById(noteId);
+
+        if (!note) {
+            return res.status(404).json({ message: 'Not bulunamadı.' });
+        }
+
+        if (note.user.toString() !== userId.toString()) {
+             return res.status(403).json({ message: 'Bu notu silme yetkiniz yok.' });
+        }
+
+        if (note.project.toString() !== projectId) {
+            return res.status(400).json({ message: 'Not bu projeye ait değil.' });
+        }
+
+        await ProjectNote.findByIdAndDelete(noteId);
+
+        res.status(200).json({ message: 'Not başarıyla silindi.' });    } catch (err) {
+        console.error(`Error deleting note ${req.params.noteId} for project ${req.params.projectId}:`, err);
+        res.status(500).json({ message: 'Not silinirken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
+// Delete a project (only project owner can delete)
+app.delete('/projects/:projectId', ensureAuthenticated, async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        const userId = req.user._id;
+
+        console.log('🗑️ Delete request for project:', projectId, 'by user:', req.user.username);
+
+        // Find the project
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+
+        // Only project owner can delete
+        if (project.owner.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Bu projeyi silme yetkiniz yok.' });
+        }
+
+        // Delete the project
+        await Project.findByIdAndDelete(projectId);
+
+        // Also delete related data (optional but recommended)
+        await ChatMessage.deleteMany({ project: projectId });
+        await ProjectNote.deleteMany({ project: projectId });
+        await DrawingData.deleteMany({ project: projectId });
+
+        console.log('✅ Project deleted successfully:', projectId);
+        res.status(200).json({ message: 'Proje başarıyla silindi.' });
+
+    } catch (err) {
+        console.error('❌ Delete project error:', err);
+        res.status(500).json({ message: 'Proje silinirken hata oluştu.', error: err.message });
+    }
+});
+
+// Room Route
+app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        const project = await Project.findById(projectId);
+
+        if (!project) {
+            // Proje bulunamazsa, kullanıcıyı dashboard\'a yönlendir veya bir hata mesajı göster
+            console.log(`Proje bulunamadı: ${projectId}`);
+            return res.redirect('/dashboard?error=projectnotfound');
+        }
+
+        // Proje üyelerini kontrol et (isteğe bağlı, eğer sadece üyeler girebilsin istiyorsanız)
+        // if (!project.members.includes(req.user._id)) {
+        //     console.log(`Kullanıcı ${req.user.username} proje ${project.name} üyesi değil.`);
+        //     return res.redirect('/dashboard?error=notmember');
+        // }
+
+        res.render('room', { 
+            user: req.user, 
+            project: project,
+            // Gerekirse room.js için ek ayarlar veya tokenlar buraya eklenebilir
+        });
+    } catch (err) {
+        console.error("Error rendering room:", err);
+        res.status(500).send("Oda yüklenirken bir hata oluştu.");
+    }
+});
+
+// HTTPS için SSL sertifikaları
+let server, io;
+
+// HTTPS KISMI TAMAMEN DEVRE DIŞI BIRAKILDI - BAŞLANGIÇ
+
+try {
+    const options = {
+        key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+        cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+    };
+    server = https.createServer(options, app);
+    io = socketio(server, {
+        cors: {
+            origin: "https://localhost:3000", 
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+    console.log('✅ HTTPS server configured with SSL certificates');
+} catch (error) {
+    console.log('⚠️ SSL certificates not found, falling back to HTTP only');
+    // Fallback to HTTP if SSL certs are not found (bu blok artık ana blok olacak)
+    server = http.createServer(app);
+    io = socketio(server, {
+        cors: {
+            origin: "http://localhost:3000", 
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+}
+
+// HTTPS KISMI TAMAMEN DEVRE DIŞI BIRAKILDI - SON
+
+// PeerJS sunucusunu HTTPS/HTTP sunucusuna entegre et
+const peerServer = ExpressPeerServer(server, {
+    debug: true,
+    path: '/' // Changed from '/peerjs' to '/' for simpler path resolution
+});
+app.use('/peerjs', peerServer);
+console.log('✅ PeerJS server configured on /peerjs');
+
+// app.use(express.static(path.join(__dirname, 'public'))); // MOVED UP - This line is now earlier
+
+// Session middleware - BU BLOK YUKARI TAŞINDI, BURADAN SİLİNECEK
+/*
+app.use(session({
+    secret: 'kasikmate-secret-key',
+    resave: false,
+    saveUninitialized: false
+}));
+*/
+
+// Passport middleware - BU BLOK YUKARI TAŞINDI, BURADAN SİLİNECEK
+/*
+app.use(passport.initialize());
+app.use(passport.session());
+*/
 
 // Passport local strategy
 passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
@@ -118,223 +488,229 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-let rooms = {};
-let socketroom = {};
-let socketname = {};
-let micSocket = {};
-let videoSocket = {};
-let roomBoard = {};
+// Eski genel oda yönetimi değişkenleri yorum satırına alındı
+// let rooms = {};
+// let socketroom = {};
+// let socketname = {};
+// let micSocket = {};
+// let videoSocket = {};
+// let roomBoard = {};
+
+// Proje bazlı kullanıcıları ve socket bilgilerini tutmak için yeni yapılar
+const projectUsers = {}; // Format: { projectId: { socketId: { userId, username }, ... }, ... }
+const socketToProjectMap = {}; // Format: { socketId: projectId, ... }
+const socketToUserMap = {}; // Format: { socketId: { userId, userName, projectId }, ... }
 
 // Socket.IO event handlers için ortak fonksiyon
 function setupSocketHandlers(io) {
-    io.on('connect', socket => {
-        // Kullanıcı bir proje odasına katılır
-        socket.on('join project', async (projectId, username) => {
+    io.on('connection', (socket) => {
+        console.log(`SERVER: Socket connected: ${socket.id}`);
+
+        socket.on('join project', async (projectId, userName, userId) => {
+            console.log(`SERVER: 'join project' event received for project ${projectId}, user ${userName} (${userId}), socket ${socket.id}`);
+            if (!projectId || !userName || !userId) {
+                console.error('join project: Missing parameters', { projectId, userName, userId });
+                return;
+            }
+
             socket.join(projectId);
-            socketname[socket.id] = username;
-            // Oda üyelerine kullanıcı katıldı mesajı gönder
-            socket.to(projectId).emit('message', `${username} projeye katıldı.`, 'Bot', moment().format("h:mm a"));
-            // Proje chat geçmişini gönder
-            const messages = await ChatMessage.find({ project: projectId }).populate('user', 'username email');
-            socket.emit('project chat history', messages);
-            // Proje çizim geçmişini gönder
-            const drawings = await DrawingData.find({ project: projectId });
-            socket.emit('project drawing history', drawings);
-        });
+            // Store user information associated with this socket
+            socketToUserMap[socket.id] = { userId, userName, projectId };
+            socketToProjectMap[socket.id] = projectId; // Bu satır eklendi
 
-    // Gerçek zamanlı chat mesajı gönderme
-    socket.on('project message', async (projectId, username, userId, msg) => {
-        const chatMessage = new ChatMessage({
-            project: projectId,
-            user: userId,
-            message: msg
-        });
-        await chatMessage.save();
-        io.to(projectId).emit('project message', {
-            user: { _id: userId, username },
-            message: msg,
-            createdAt: new Date()
-        });
-    });
-
-    // Gerçek zamanlı çizim verisi gönderme
-    socket.on('project draw', async (projectId, userId, data) => {
-        const drawing = new DrawingData({
-            project: projectId,
-            user: userId,
-            data
-        });
-        await drawing.save();
-        socket.to(projectId).emit('project draw', { user: userId, data });
-    });
-
-    // Oda ayrılma
-    socket.on('leave project', (projectId, username) => {
-        socket.leave(projectId);
-        socket.to(projectId).emit('message', `${username} projeden ayrıldı.`, 'Bot', moment().format("h:mm a"));
-    });
-
-    socket.on("join room", async (roomid, username) => { // Added async
-
-        socket.join(roomid);
-        socketroom[socket.id] = roomid;
-        socketname[socket.id] = username;
-        micSocket[socket.id] = 'on';
-        videoSocket[socket.id] = 'on';
-
-        if (rooms[roomid] && rooms[roomid].length > 0) {
-            rooms[roomid].push(socket.id);
-            socket.to(roomid).emit('message', `${username} joined the room.`, 'Bot', moment().format(
-                "h:mm a"
-            ));
-            io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket);
-        }
-        else {
-            rooms[roomid] = [socket.id];
-            io.to(socket.id).emit('join room', null, null, null, null);
-            // Create a new session if it doesn't exist
-            try { // Added try-catch for session creation
-                let session = await Session.findOne({ roomId: roomid });
-                if (!session) {
-                    session = new Session({ roomId: roomid, drawings: [], notes: '', canvasState: '' });
-                    await session.save();
-                    console.log(`Session created for room ${roomid}`);
-                } else {
-                    console.log(`Session found for room ${roomid}`);
-                }
-            } catch (err) {
-                console.error('Error creating or finding session:', err);
+            // Add user to project's user list if not already there
+            if (!projectUsers[projectId]) {
+                projectUsers[projectId] = [];
             }
-        }
+            const userInProject = projectUsers[projectId].find(u => u.userId === userId);
+            if (!userInProject) {
+                projectUsers[projectId].push({ userId, userName, socketId: socket.id });
+            } else {
+                // Update socketId if user reconnected with a new socket
+                userInProject.socketId = socket.id;
+                console.log(`SERVER: User ${userName} (${userId}) reconnected/updated socket ID in project ${projectId}.`);
+            }
+            
+            console.log(`${userName} (${userId}) joined project: ${projectId}. Socket: ${socket.id}`);
+            
+            // Send the current list of users in the project to the newly joined user
+            const usersInProjectList = projectUsers[projectId].map(u => ({ name: u.userName, id: u.userId, socketId: u.socketId }));
+            socket.emit('project-users-list', usersInProjectList);
+            console.log(`project-users-list sent to ${userName} (${userId}): `, usersInProjectList);
 
-        io.to(roomid).emit('user count', rooms[roomid].length);
 
-    });
+            // Notify other users in the project
+            socket.to(projectId).emit('user-joined', { name: userName, id: userId, socketId: socket.id });
+            console.log(`SERVER: user-joined event emitted in project ${projectId} for: ${userName} (${userId})`);
+            console.log(`SERVER: 'join project' event processing completed for socket ${socket.id}`);
 
-    socket.on('action', msg => {
-        if (msg == 'mute')
-            micSocket[socket.id] = 'off';
-        else if (msg == 'unmute')
-            micSocket[socket.id] = 'on';
-        else if (msg == 'videoon')
-            videoSocket[socket.id] = 'on';
-        else if (msg == 'videooff')
-            videoSocket[socket.id] = 'off';
-
-        socket.to(socketroom[socket.id]).emit('action', msg, socket.id);
-    })
-
-    socket.on('video-offer', (offer, sid) => {
-        socket.to(sid).emit('video-offer', offer, socket.id, socketname[socket.id], micSocket[socket.id], videoSocket[socket.id]);
-    })
-
-    socket.on('video-answer', (answer, sid) => {
-        socket.to(sid).emit('video-answer', answer, socket.id);
-    })
-
-    socket.on('new icecandidate', (candidate, sid) => {
-        socket.to(sid).emit('new icecandidate', candidate, socket.id);
-    })
-
-    socket.on('message', (msg, username, roomid) => {
-        io.to(roomid).emit('message', msg, username, moment().format(
-            "h:mm a"
-        ));
-    })
-
-    socket.on('getCanvas', async () => { // Added async
-        if (roomBoard[socketroom[socket.id]])
-            socket.emit('getCanvas', roomBoard[socketroom[socket.id]]);
-        else { // Added else block to fetch from DB
             try {
-                const session = await Session.findOne({ roomId: socketroom[socket.id] });
-                if (session && session.canvasState) {
-                    roomBoard[socketroom[socket.id]] = session.canvasState;
-                    socket.emit('getCanvas', session.canvasState);
+                const messages = await ChatMessage.find({ project: projectId }).populate('user', '_id username email').sort({ createdAt: 1 });
+                socket.emit('project chat history', messages);
+            } catch (err) {
+                console.error(`Error fetching chat history for project ${projectId}:`, err);
+            }
+        });
+
+        socket.on('project message', async (projectId, msg) => {
+            // const userInfo = projectUsers[projectId]?.[socket.id]; // Eski hatalı arama
+            const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id); // Düzeltilmiş arama
+            if (!userInfo) {
+                console.error('project message: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
+                return;
+            }
+            const { userId, username } = userInfo;
+
+            try {
+                const chatMessage = new ChatMessage({
+                    project: projectId,
+                    user: userId,
+                    message: msg
+                });
+                await chatMessage.save();
+                
+                io.to(projectId).emit('project message', {
+                    user: { _id: userId, username },
+                    message: msg,
+                    createdAt: chatMessage.createdAt
+                });
+            } catch (err) {
+                console.error(`Error saving/sending chat message for project ${projectId}:`, err);
+            }
+        });
+
+        socket.on('project draw', async (projectId, drawData) => {
+            // const userInfo = projectUsers[projectId]?.[socket.id]; // Eski hatalı arama
+            const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id); // Düzeltilmiş arama
+            if (!userInfo) {
+                console.error('project draw: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
+                return;
+            }
+            const { userId } = userInfo;
+
+            try {
+                const drawing = new DrawingData({
+                    project: projectId,
+                    user: userId,
+                    data: drawData
+                });
+                await drawing.save();
+            } catch (err) {
+                console.error(`Error saving drawing data for project ${projectId}:`, err);
+            }
+            
+            socket.to(projectId).emit('project draw', { user: userId, data: drawData });
+        });
+
+        socket.on('store canvas', async (url) => {
+            const projectId = socketToProjectMap[socket.id];
+            if (!projectId) {
+                console.error('store canvas: Project ID not found. Socket ID:', socket.id);
+                return;
+            }
+            try {
+                await Project.findByIdAndUpdate(projectId, { lastCanvasState: url });
+                console.log(`Canvas state stored for project ${projectId}`);
+            } catch (err) {
+                console.error(`Error storing canvas state for project ${projectId}:`, err);
+            }
+        });
+
+        socket.on('getCanvas', async () => {
+            const projectId = socketToProjectMap[socket.id];
+            if (!projectId) {
+                console.error('getCanvas: Project ID not found. Socket ID:', socket.id);
+                socket.emit('getCanvas', null);
+                return;
+            }
+            try {
+                const project = await Project.findById(projectId);
+                if (project && project.lastCanvasState) {
+                    socket.emit('getCanvas', project.lastCanvasState);
+                } else {
+                    socket.emit('getCanvas', null);
                 }
             } catch (err) {
-                console.error('Error fetching canvas state from DB:', err);
+                console.error(`Error fetching canvas state for project ${projectId}:`, err);
+                socket.emit('getCanvas', null);
             }
-        }
-    });
+        });
+    
+        socket.on('clearBoard', async () => {
+            const projectId = socketToProjectMap[socket.id];
+            if (!projectId) {
+                console.error('clearBoard: Project ID not found. Socket ID:', socket.id);
+                return;
+            }
+            try {
+                await Project.findByIdAndUpdate(projectId, { lastCanvasState: '' });
+                io.to(projectId).emit('clearBoard');
+                console.log(`Board cleared for project ${projectId} by socket ${socket.id}`);
+            } catch (err) {
+                console.error(`Error clearing board for project ${projectId}:`, err);
+            }
+        });
 
-    socket.on('draw', async (newx, newy, prevx, prevy, color, size) => { // Added async
-        socket.to(socketroom[socket.id]).emit('draw', newx, newy, prevx, prevy, color, size);
-        // Save drawing action to DB
-        try { // Added try-catch for saving drawing
-            await Session.updateOne(
-                { roomId: socketroom[socket.id] },
-                { $push: { drawings: { newx, newy, prevx, prevy, color, size, timestamp: new Date() } } }
-            );
-        } catch (err) {
-            console.error('Error saving drawing to DB:', err);
-        }
-    })
+        socket.on('leave project', (projectId, userId) => {
+            console.log(`leave project request: User ${userId} from project ${projectId}`);
+            // This is mostly handled by disconnect, but can be a manual trigger.
+            // Ensure it calls the same cleanup logic as disconnect if used.
+        });
 
-    socket.on('clearBoard', async () => { // Added async
-        socket.to(socketroom[socket.id]).emit('clearBoard');
-        // Clear drawings and canvas state in DB
-        try { // Added try-catch for clearing board
-            await Session.updateOne(
-                { roomId: socketroom[socket.id] },
-                { $set: { drawings: [], canvasState: '' } }
-            );
-            roomBoard[socketroom[socket.id]] = ''; // Clear in-memory cache as well
-        } catch (err) {
-            console.error('Error clearing board in DB:', err);
-        }
-    });
+        socket.on('disconnect', (reason) => {
+            console.log(`SERVER: Socket disconnected: ${socket.id}. Reason: ${reason}`);
+            const userInfo = socketToUserMap[socket.id];
+            if (userInfo) {
+                const { userId, userName, projectId } = userInfo;
+                console.log(`${userName} (${userId}) left project: ${projectId}. Socket: ${socket.id}`);
+                if (projectUsers[projectId]) {
+                    projectUsers[projectId] = projectUsers[projectId].filter(user => user.socketId !== socket.id); // Filter by socket.id
+                    // Notify other users in the project
+                    socket.to(projectId).emit('user-left', { name: userName, id: userId, socketId: socket.id }); // Send socketId as well
+                    console.log(`SERVER: user-left event emitted in project ${projectId} for: ${userName} (${userId}). Remaining users: ${projectUsers[projectId].length}`);
+                    if (projectUsers[projectId].length === 0) {
+                        delete projectUsers[projectId]; // Clean up if project is empty
+                        console.log(`SERVER: Project ${projectId} is now empty and removed from active list.`);
+                    }
+                }
+                delete socketToUserMap[socket.id]; // Clean up map
+            } else {
+                console.log(`SERVER: Socket ${socket.id} disconnected, but no user info found in map.`);
+            }
+            console.log(`SERVER: 'disconnect' event processing completed for socket ${socket.id}`);
+        });
 
-    socket.on('store canvas', async url => { // Added async
-        roomBoard[socketroom[socket.id]] = url;
-        // Save canvas state to DB
-        try { // Added try-catch for storing canvas
-            await Session.updateOne(
-                { roomId: socketroom[socket.id] },
-                { $set: { canvasState: url } }
-            );
-        } catch (err) {
-            console.error('Error storing canvas state to DB:', err);
-        }
-    })
-
-    socket.on('disconnect', () => {
-        if (!socketroom[socket.id]) return;
-        socket.to(socketroom[socket.id]).emit('message', `${socketname[socket.id]} left the chat.`, `Bot`, moment().format(
-            "h:mm a"
-        ));
-        socket.to(socketroom[socket.id]).emit('remove peer', socket.id);
-        var index = rooms[socketroom[socket.id]].indexOf(socket.id);
-        rooms[socketroom[socket.id]].splice(index, 1);
-        io.to(socketroom[socket.id]).emit('user count', rooms[socketroom[socket.id]].length);        delete socketroom[socket.id];
-        console.log('--------------------');
-        console.log(rooms[socketroom[socket.id]]);
-
-        //toDo: push socket.id out of rooms
-    });
+        // Handle transport errors specifically for more detailed logging
+        socket.on('error', (error) => {
+            console.error(`SERVER: Socket error for ${socket.id}:`, error);
+            // Additional details if available
+            if (error && error.description) {
+                console.error(`SERVER: Socket error description:`, error.description);
+            }
+        });
     });
 }
 
 // Her iki server için Socket.IO handler'larını kur
 setupSocketHandlers(io);
-setupSocketHandlers(httpIo);
+// setupSocketHandlers(httpIo); // KALDIRILDI
 
 
-// Server'ları başlat
+// Server'ı başlat
 server.listen(PORT, '0.0.0.0', () => {
-    const serverType = server.constructor.name === 'Server' ? 'HTTP' : 'HTTPS';
+    const serverType = server instanceof require('https').Server ? 'HTTPS' : 'HTTP'; // Düzeltilmiş satır
     console.log(`✅ ${serverType} Server is up and running on port ${PORT}`);
     console.log(`🌐 Local access: ${serverType.toLowerCase()}://localhost:${PORT}`);
-    if (serverType === 'HTTPS') {
+    if (serverType === 'HTTPS') { 
         console.log(`⚠️  For external access, users need to accept self-signed certificate`);
     }
 });
 
-httpServer.listen(3001, '0.0.0.0', () => {
-    console.log(`✅ HTTP Server is up and running on port 3001`);
-    console.log(`🌐 Local access: http://localhost:3001`);
-    console.log(`⚠️  External HTTP access will have media capture restrictions`);
-});
+// httpServer.listen(3001, '0.0.0.0', () => { // KALDIRILDI
+//     console.log(`✅ HTTP Server is up and running on port 3001`);
+//     console.log(`🌐 Local access: http://localhost:3001`);
+//     console.log(`⚠️  External HTTP access will have media capture restrictions`);
+// });
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -343,282 +719,4 @@ app.use((err, req, res, next) => {
         message: 'Sunucu hatası oluştu.', 
         error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
     });
-});
-
-// Authentication Routes
-// Kullanıcı kayıt
-app.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
-    console.log('Register attempt:', { username, email, password: '***' });
-    
-    try {
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-        if (existingUser) {
-            console.log('Registration failed: User already exists');
-            return res.status(400).json({ message: 'Bu e-posta veya kullanıcı adı zaten kullanılıyor.' });
-        }
-        
-        const user = new User({ username, email, password });
-        await user.save();
-        console.log('Registration successful for user:', username);
-        res.status(201).json({ message: 'Kullanıcı başarıyla kaydedildi.' });
-    } catch (err) {
-        console.error('Registration error:', err);
-        res.status(400).json({ message: 'Kayıt işlemi başarısız.', error: err.message });
-    }
-});
-
-// Kullanıcı giriş
-app.post('/login', (req, res, next) => {
-    console.log('Login attempt:', req.body);
-    passport.authenticate('local', (err, user, info) => {
-        console.log('Passport authenticate result:', { err, user: user ? user.username : null, info });
-        if (err) {
-            console.error('Login error:', err);
-            return next(err);
-        }
-        if (!user) {
-            console.log('Login failed:', info.message);
-            return res.status(400).json({ message: info.message });
-        }
-        req.logIn(user, (err) => {
-            if (err) {
-                console.error('Session login error:', err);
-                return next(err);
-            }
-            console.log('Login successful for user:', user.username);
-            res.json({ 
-                message: 'Giriş başarılı.', 
-                user: {
-                    _id: user._id,
-                    username: user.username,
-                    email: user.email
-                }
-            });
-        });
-    })(req, res, next);
-});
-
-// Debug: Kullanıcı listesi (sadece geliştirme aşamasında)
-app.get('/debug/users', async (req, res) => {
-    try {
-        const users = await User.find({}, 'username email createdAt');
-        res.json({
-            count: users.length,
-            users: users
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Kullanıcı durumu kontrolü
-app.get('/check-auth', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.json({ username: req.user.username, email: req.user.email, _id: req.user._id });
-    } else {
-        res.status(401).json({ message: 'Giriş yapılmamış.' });
-    }
-});
-
-// Kullanıcı çıkış
-app.post('/logout', (req, res) => {
-    req.logout((err) => {
-        if (err) {
-            console.error('Logout error:', err);
-            return res.status(500).json({ message: 'Çıkış işlemi başarısız.' });
-        }
-        req.session.destroy((err) => {
-            if (err) {
-                console.error('Session destroy error:', err);
-                return res.status(500).json({ message: 'Oturum sonlandırılamadı.' });
-            }
-            res.clearCookie('connect.sid');
-            res.json({ message: 'Başarıyla çıkış yapıldı.' });
-        });
-    });
-});
-
-// Proje oluşturma (sadece giriş yapmış kullanıcılar için)
-app.post('/projects', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    const { name, description } = req.body;
-    try {
-        const project = new Project({
-            name,
-            description,
-            owner: req.user._id,
-            members: [req.user._id]
-        });
-        await project.save();
-        res.status(201).json({ message: 'Proje oluşturuldu.', project });
-    } catch (err) {
-        res.status(400).json({ message: 'Proje oluşturulamadı.', error: err.message });
-    }
-});
-
-// Kullanıcının projelerini listeleme
-app.get('/projects', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    try {
-        console.log('🔍 Loading projects for user:', req.user.username);
-        const projects = await Project.find({ members: req.user._id })
-            .populate('owner', 'username email')
-            .sort({ createdAt: -1 });
-        console.log('📋 Found projects:', projects.length);
-        res.json({ projects });
-    } catch (err) {
-        console.error('❌ Get projects error:', err);
-        res.status(400).json({ message: 'Projeler alınamadı.', error: err.message });
-    }
-});
-
-// Proje silme (sadece proje sahibi silebilir)
-app.delete('/projects/:projectId', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    
-    try {
-        const projectId = req.params.projectId;
-        console.log('🗑️ Delete request for project:', projectId, 'by user:', req.user.username);
-        
-        // Projeyi bul
-        const project = await Project.findById(projectId);
-        if (!project) {
-            return res.status(404).json({ message: 'Proje bulunamadı.' });
-        }
-        
-        // Sadece proje sahibi silebilir
-        if (project.owner.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Bu projeyi silme yetkiniz yok.' });
-        }
-        
-        // Projeyi sil
-        await Project.findByIdAndDelete(projectId);
-        
-        // İlişkili verileri de sil (opsiyonel)
-        await ChatMessage.deleteMany({ project: projectId });
-        await ProjectNote.deleteMany({ project: projectId });
-        await DrawingData.deleteMany({ project: projectId });
-        
-        console.log('✅ Project deleted successfully:', projectId);
-        res.json({ message: 'Proje başarıyla silindi.' });
-        
-    } catch (err) {
-        console.error('❌ Delete project error:', err);
-        res.status(500).json({ message: 'Proje silinirken hata oluştu.', error: err.message });
-    }
-});
-
-// Belirli bir projenin chat mesajlarını getirme
-app.get('/projects/:projectId/chat', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    try {
-        const messages = await ChatMessage.find({ project: req.params.projectId }).populate('user', 'username email');
-        res.json({ messages });
-    } catch (err) {
-        res.status(400).json({ message: 'Mesajlar alınamadı.', error: err.message });
-    }
-});
-
-// Belirli bir projeye chat mesajı ekleme
-app.post('/projects/:projectId/chat', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    const { message } = req.body;
-    try {
-        const chatMessage = new ChatMessage({
-            project: req.params.projectId,
-            user: req.user._id,
-            message
-        });
-        await chatMessage.save();
-        res.status(201).json({ message: 'Mesaj gönderildi.', chatMessage });
-    } catch (err) {
-        res.status(400).json({ message: 'Mesaj gönderilemedi.', error: err.message });
-    }
-});
-
-// Proje bazlı çizim verisi ekleme
-app.post('/projects/:projectId/drawings', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    const { data } = req.body;
-    try {
-        const drawing = new DrawingData({
-            project: req.params.projectId,
-            user: req.user._id,
-            data
-        });
-        await drawing.save();
-        res.status(201).json({ message: 'Çizim kaydedildi.', drawing });
-    } catch (err) {
-        res.status(400).json({ message: 'Çizim kaydedilemedi.', error: err.message });
-    }
-});
-
-// Proje bazlı çizim verilerini getirme
-app.get('/projects/:projectId/drawings', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    try {
-        const drawings = await DrawingData.find({ project: req.params.projectId });
-        res.json({ drawings });
-    } catch (err) {
-        res.status(400).json({ message: 'Çizimler alınamadı.', error: err.message });
-    }
-});
-
-// Proje Note API'leri
-// Proje notlarını getirme
-app.get('/projects/:projectId/notes', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    try {
-        const notes = await ProjectNote.find({ project: req.params.projectId }).populate('user', 'username');
-        res.json({ notes });
-    } catch (err) {
-        res.status(400).json({ message: 'Notlar alınamadı.', error: err.message });
-    }
-});
-
-// Proje notu oluşturma
-app.post('/projects/:projectId/notes', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    const { content } = req.body;
-    try {
-        const note = new ProjectNote({
-            project: req.params.projectId,
-            user: req.user._id,
-            content
-        });
-        await note.save();
-        res.status(201).json({ message: 'Not oluşturuldu.', note });
-    } catch (err) {
-        res.status(400).json({ message: 'Not oluşturulamadı.', error: err.message });
-    }
-});
-
-// Proje notunu güncelleme
-app.put('/projects/:projectId/notes/:noteId', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    const { content } = req.body;
-    try {
-        const note = await ProjectNote.findByIdAndUpdate(
-            req.params.noteId, 
-            { content, updatedAt: new Date() }, 
-            { new: true }
-        );
-        if (!note) return res.status(404).json({ message: 'Not bulunamadı.' });
-        res.json({ message: 'Not güncellendi.', note });
-    } catch (err) {
-        res.status(400).json({ message: 'Not güncellenemedi.', error: err.message });
-    }
-});
-
-// Proje notunu silme
-app.delete('/projects/:projectId/notes/:noteId', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: 'Giriş yapmalısınız.' });
-    try {
-        const note = await ProjectNote.findByIdAndDelete(req.params.noteId);
-        if (!note) return res.status(404).json({ message: 'Not bulunamadı.' });
-        res.json({ message: 'Not silindi.' });
-    } catch (err) {
-        res.status(400).json({ message: 'Not silinemedi.', error: err.message });
-    }
 });

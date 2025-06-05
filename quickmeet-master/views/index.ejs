@@ -3,11 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Kaşıkmate - Video Konferans Platform</title>
+    <title>Kaşıkmate - Video Konferans Platformu</title>
     <meta name="description" content="Kaşıkmate Video Konferans ve İşbirliği Platformu">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/style.css"> <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
 <body class="landing-page">
@@ -22,22 +21,22 @@
             <div class="feature">
                 <i class="fas fa-video"></i>
                 <h3>HD Video Konferans</h3>
-                <p>Yüksek kaliteli video ve ses ile toplantılarınızı gerçekleştirin</p>
+                <p>Yüksek kaliteli video ve ses ile toplantılarınızı gerçekleştirin.</p>
             </div>
             <div class="feature">
                 <i class="fas fa-comments"></i>
                 <h3>Anlık Mesajlaşma</h3>
-                <p>Canlı chat özelliği ile ekibinizle anında iletişim kurun</p>
+                <p>Canlı chat özelliği ile ekibinizle anında iletişim kurun.</p>
             </div>
             <div class="feature">
                 <i class="fas fa-share-alt"></i>
                 <h3>Ekran Paylaşımı</h3>
-                <p>Ekranınızı paylaşarak sunumlar yapın ve işbirliği geliştirin</p>
+                <p>Ekranınızı paylaşarak sunumlar yapın ve işbirliğini geliştirin.</p>
             </div>
             <div class="feature">
                 <i class="fas fa-paint-brush"></i>
                 <h3>İşbirlikçi Whiteboard</h3>
-                <p>Gerçek zamanlı beyaz tahta ile fikirlerinizi görselleştirin</p>
+                <p>Gerçek zamanlı beyaz tahta ile fikirlerinizi görselleştirin.</p>
             </div>
         </div>
         
@@ -45,34 +44,25 @@
             <h2>Hemen Başlayın</h2>
             <p>Hesabınız var mı? Giriş yapın veya yeni bir hesap oluşturun.</p>
             <div class="cta-buttons">
-                <a href="login.html" class="primary-btn">
-                    <i class="fas fa-sign-in-alt"></i>
+                <a href="/login" class="primary-btn">                    <i class="fas fa-sign-in-alt"></i>
                     Giriş Yap
                 </a>
-                <a href="login.html" class="secondary-btn">
-                    <i class="fas fa-user-plus"></i>
+                <a href="/register" class="secondary-btn">                    <i class="fas fa-user-plus"></i>
                     Kayıt Ol
                 </a>
             </div>
         </div>
         
         <div class="landing-footer">
-            <p>&copy; 2025 Kaşıkmate. Tüm hakları saklıdır.</p>
+            <p>&copy; <%= new Date().getFullYear() %> Kaşıkmate. Tüm hakları saklıdır.</p>
         </div>
     </div>
     
     <script>
-        // Eğer kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                const response = await fetch('/check-auth');
-                if (response.ok) {
-                    window.location.href = '/dashboard.html';
-                }
-            } catch (error) {
-                // Giriş yapılmamış, ana sayfada kal
-            }
-        });
+        // Bu script bloğu artık server.js tarafındaki yönlendirme ile yönetilecek.
+        // İstemci tarafında /check-auth kontrolü burada gereksiz olabilir,
+        // çünkü ana sayfa zaten giriş yapmamış kullanıcılar için.
+        // Giriş yapmış kullanıcılar server.js tarafından /dashboard'a yönlendirilecek.
     </script>
 </body>
 </html>

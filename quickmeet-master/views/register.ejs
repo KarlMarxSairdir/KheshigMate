@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Kayıt Ol - Kaşıkmate</title>
+    <meta name="description" content="Kaşıkmate Video Konferans Uygulaması - Kayıt">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">Kaşıkmate</div>
+            <p class="tagline">Video Konferans ve İşbirliği Platformu</p>
+        </div>
+        
+        <div class="auth-box">
+            <h2>Kayıt Ol</h2>
+            <% if (locals.error) { %>
+                <div class="auth-error"><%= error %></div>
+            <% } %>
+            <form action="/register" method="POST">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="Kullanıcı Adı" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" name="email" placeholder="E-posta" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Şifre (min 6 karakter)" required minlength="6">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-tools"></i>
+                    <input type="text" id="skills" name="skills" placeholder="Yetkinlikler (örn: JavaScript, Python, Proje Yönetimi)">
+                </div>
+                <button type="submit" class="primary-btn">
+                    <i class="fas fa-user-plus"></i>
+                    Kayıt Ol
+                </button>
+            </form>
+            <div class="auth-switch">
+                Zaten bir hesabınız var mı? <a href="/login" class="link">Giriş Yapın</a>
+            </div>
+        </div>
+        
+        <div class="login-footer">
+            <p>&copy; <%= new Date().getFullYear() %> Kaşıkmate. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+</body>
+</html>

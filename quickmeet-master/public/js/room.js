@@ -1,98 +1,73 @@
-const socket = io();
+// Initialize Socket.IO client connection
+const socket = io({
+    secure: true, // Ensures connection is wss when on https
+    withCredentials: true // Add this for session/cookie handling
+});
+
+// Global değişkenler room.ejs\'den geliyor: ROOM_ID, USER_USERNAME, USER_ID
+const roomId = ROOM_ID; // Alias for clarity, using global ROOM_ID
+const userName = USER_USERNAME; // Alias for clarity, using global USER_USERNAME
+const userId = USER_ID; // Alias for clarity, using global USER_ID
+
 const myvideo = document.querySelector("#vd1");
-const chatRoom = document.querySelector('.chat-cont');
-const sendButton = document.querySelector('.chat-send');
-const messageField = document.querySelector('.chat-input');
+const chatRoom = document.querySelector('.chat-messages');
+const sendButton = document.querySelector('.chat-send-btn');
+const messageField = document.querySelector('.chat-input-modern');
 const videoContainer = document.querySelector('#vcont');
-const overlayContainer = document.querySelector('#overlay')
-const continueButt = document.querySelector('.continue-name');
-const nameField = document.querySelector('#name-field');
-const videoButt = document.querySelector('.novideo');
-const audioButt = document.querySelector('.audio');
-const cutCall = document.querySelector('.cutcall');
-const screenShareButt = document.querySelector('.screenshare');
-const whiteboardButt = document.querySelector('.board-icon')
+const videoButt = document.querySelector('.video-btn');
+const audioButt = document.querySelector('.audio-btn');
+const cutCall = document.querySelector('.disconnect-btn');
+const screenShareButt = document.querySelector('.screenshare-btn');
+const whiteboardButt = document.querySelector('.whiteboard-btn');
+let userMap = {}; // Kullanıcı ID'lerini ve adlarını eşleştirmek için
 
-// --- FAZ 1 FRONTEND ENTEGRASYONU ---
-// URL parametrelerini kontrol et
-const params = new URLSearchParams(window.location.search);
-const projectId = params.get('project');
-const roomId = params.get('room') || projectId; // Eski sistemle uyumluluk için
+// Kullanıcı bilgileri doğrudan EJS'den gelen global değişkenlerden alınır.
+// ROOM_ID, USER_USERNAME, USER_ID zaten global olarak tanımlı.
 
-// Kullanıcı bilgileri - localStorage kullanmak yerine session kontrol edelim
-let userId = localStorage.getItem('userId');
-let usernameFromStorage = localStorage.getItem('username');
-let username = usernameFromStorage;
+console.log('Oda ID:', ROOM_ID);
+console.log('Kullanıcı Adı:', USER_USERNAME);
+console.log('Kullanıcı ID:', USER_ID);
 
 // PeerJS değişkenleri
 let peer;
+let peerId; // To store our own peer ID when connection is open
 let localStream;
-let remoteStreams = {};
-let currentUser = null;
+let peerReady = false;
+let socketReady = false;
+let localMediaStarted = false; // Flag to track if local media has been started
 
-// WebRTC media constraints
-const mediaConstraints = { video: true, audio: true };
-
-// Eğer kullanıcı girişi yoksa ana sayfaya yönlendir
-if (!userId || !username) {
-    // Session kontrol et
-    fetch('/check-auth')
-        .then(res => res.json())
-        .then(user => {
-            username = user.username;
-            userId = user._id;
-            localStorage.setItem('username', username);
-            localStorage.setItem('userId', userId);
-            initializeRoom();
-        })
-        .catch(() => {
-            location.href = '/';
-        });
-} else {
-    initializeRoom();
-}
-
-function initializeRoom() {
-    // Overlay göster ve isim iste - eğer zaten isim varsa geç
-    if (username && username.trim() !== '') {
-        overlayContainer.style.visibility = 'hidden';
-        document.querySelector("#myname").innerHTML = `${username} (You)`;
-        
-        // Proje veya oda kontrolü
-        if (projectId) {
-            // Proje bazlı çalışma
-            socket.emit('join project', projectId, username);
-            document.title = `Kaşıkmate - Proje Çalışma Alanı`;
-        } else if (roomId) {
-            // Eski sistem uyumluluğu
-            socket.emit('join room', roomId, username);
-            document.title = `Kaşıkmate - Oda: ${roomId}`;
+// Sunucudan gelen odadaki mevcut kullanıcıların listesi
+socket.on('project-users-list', (usersInRoom) => {
+    console.log('Odadaki kullanıcılar:', usersInRoom);
+    // Kullanıcı listesini güncelle
+    userMap = {}; // Mevcut kullanıcı haritasını temizle
+    usersInRoom.forEach(user => {
+        if (user.id && user.name) {
+            userMap[user.id] = user.name;
         }
-        
-        // Video başlat
-        startCall();
-        
-    } else {
-        overlayContainer.style.visibility = 'visible';
+    });
+    // Katılımcılar sekmesini yükle
+    if (document.getElementById('attendees-tab')?.classList.contains('active')) {
+        loadAttendees();
     }
-}
+});
 
 // --- TAB SİSTEMİ ---
-const tabs = document.querySelectorAll('.tab');
-const tabContents = document.querySelectorAll('.tab-content');
+const tabs = document.querySelectorAll('.sidebar-tab');
+const tabContents = document.querySelectorAll('.tab-panel');
 
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-        // Aktif tab'ı kaldır
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
         
-        // Seçili tab'ı aktif yap
         tab.classList.add('active');
         const targetTab = tab.getAttribute('data-tab');
-        document.getElementById(`${targetTab}-tab`).classList.add('active');
+        const targetContent = document.getElementById(`${targetTab}-tab`);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
         
-        // Tab değişiminde gerekli işlemleri yap
         if (targetTab === 'notes') {
             loadNotes();
         } else if (targetTab === 'attendees') {
@@ -100,10 +75,10 @@ tabs.forEach(tab => {
         }
     });
 });
+    
 
 // --- NOT YÖNETİMİ ---
 let currentEditingNoteId = null;
-
 const addNoteBtn = document.getElementById('add-note-btn');
 const noteEditor = document.getElementById('note-editor');
 const saveNoteBtn = document.getElementById('save-note-btn');
@@ -111,42 +86,48 @@ const cancelNoteBtn = document.getElementById('cancel-note-btn');
 const noteContent = document.getElementById('note-content');
 const notesList = document.getElementById('notes-list');
 
-addNoteBtn.onclick = () => {
-    currentEditingNoteId = null;
-    noteContent.value = '';
-    noteEditor.style.display = 'flex';
-};
+if (addNoteBtn) {
+    addNoteBtn.onclick = () => {
+        currentEditingNoteId = null;
+        noteContent.value = '';
+        noteEditor.style.display = 'flex';
+    };
+}
 
-cancelNoteBtn.onclick = () => {
-    noteEditor.style.display = 'none';
-    currentEditingNoteId = null;
-};
-
-saveNoteBtn.onclick = async () => {
-    const content = noteContent.value.trim();
-    if (!content) return;
-    
-    try {
-        if (currentEditingNoteId) {
-            await updateNote(currentEditingNoteId, content);
-        } else {
-            await createNote(content);
-        }
+if (cancelNoteBtn) {
+    cancelNoteBtn.onclick = () => {
         noteEditor.style.display = 'none';
-        loadNotes();
-    } catch (err) {
-        alert('Not kaydetme hatası: ' + err.message);
-    }
-};
+        currentEditingNoteId = null;
+    };
+}
+
+if (saveNoteBtn) {
+    saveNoteBtn.onclick = async () => {
+        const content = noteContent.value.trim();
+        if (!content) return;
+        try {
+            if (currentEditingNoteId) {
+                await updateNote(currentEditingNoteId, content);
+            } else {
+                await createNote(content);
+            }
+            noteEditor.style.display = 'none';
+            loadNotes();
+        } catch (err) {
+            alert('Not kaydetme hatası: ' + err.message);
+        }
+    };
+}
 
 async function loadNotes() {
-    if (!projectId) return;
+    if (!ROOM_ID) return;
     try {
-        const response = await fetch(`/projects/${projectId}/notes`);
+        const response = await fetch(`/projects/${ROOM_ID}/notes`, { credentials: 'include' });
         const data = await response.json();
-        
         if (response.ok) {
             renderNotes(data.notes);
+        } else {
+            console.error('Notlar yüklenemedi:', data.message);
         }
     } catch (err) {
         console.error('Not yükleme hatası:', err);
@@ -154,61 +135,100 @@ async function loadNotes() {
 }
 
 function renderNotes(notes) {
+    if (!notesList) return;
     notesList.innerHTML = '';
+    if (!notes || notes.length === 0) {
+        notesList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-sticky-note"></i>
+                <h3>Henüz Not Yok</h3>
+                <p>İlk notunuzu eklemek için "Yeni Not Ekle" butonuna tıklayın.</p>
+            </div>
+        `;
+        return;
+    }
     notes.forEach(note => {
         const noteEl = document.createElement('div');
         noteEl.className = 'note-item';
         noteEl.innerHTML = `
-            <div class="note-item-header">
-                <span class="note-author">${note.user.username}</span>
-                <span class="note-date">${new Date(note.createdAt).toLocaleDateString()}</span>
+            <div class="note-header">
+                <div class="note-date">${new Date(note.createdAt).toLocaleDateString()}</div>
+                <div class="note-actions">
+                    <button class="note-action-btn edit-note-btn" onclick="editNote('${note._id}', \`${escapeAttributeForJS(note.content)}\`)" title="Düzenle">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="note-action-btn delete-note-btn" onclick="deleteNote('${note._id}')" title="Sil">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
-            <div class="note-preview">${note.content.substring(0, 100)}${note.content.length > 100 ? '...' : ''}</div>
-            <div class="note-actions">
-                <button class="note-action-btn edit" onclick="editNote('${note._id}', '${note.content.replace(/'/g, "\\'")}')">Düzenle</button>
-                <button class="note-action-btn delete" onclick="deleteNote('${note._id}')">Sil</button>
-            </div>
+            <div class="note-content">${escapeHTML(note.content)}</div>
         `;
         notesList.appendChild(noteEl);
     });
 }
 
+function escapeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[&<>"']/g, function (s) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[s];
+    });
+}
+
+// JavaScript dizesi içinde kullanılacak öznitelik değerlerini kaçırmak için yeni fonksiyon
+function escapeAttributeForJS(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/\\/g, '\\\\') // Önce ters eğik çizgileri kaçır
+              .replace(/`/g, '\\`')   // Backtick'leri kaçır
+              .replace(/'/g, '\\\'')  // Tek tırnakları kaçır
+              .replace(/"/g, '\\"');  // Çift tırnakları kaçır
+}
+
+
 async function createNote(content) {
-    const response = await fetch(`/projects/${projectId}/notes`, {
+    const response = await fetch(`/projects/${ROOM_ID}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
-    
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(error.message || 'Not oluşturulamadı');
     }
 }
 
 async function updateNote(noteId, content) {
-    const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
+    const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
-    
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(error.message || 'Not güncellenemedi');
     }
 }
 
 async function deleteNote(noteId) {
     if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
-    
     try {
-        const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
-            method: 'DELETE'
+        const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, { 
+            method: 'DELETE',
+            credentials: 'include' 
         });
-        
         if (response.ok) {
             loadNotes();
+        } else {
+            const error = await response.json();
+            alert('Not silme hatası: ' + (error.message || 'Bilinmeyen hata'));
         }
     } catch (err) {
         alert('Not silme hatası: ' + err.message);
@@ -217,64 +237,105 @@ async function deleteNote(noteId) {
 
 function editNote(noteId, content) {
     currentEditingNoteId = noteId;
-    noteContent.value = content;
+    noteContent.value = content; 
     noteEditor.style.display = 'flex';
 }
 
 function loadAttendees() {
     const attendeesList = document.getElementById('attendees-list');
-    attendeesList.innerHTML = '';
-    
-    // Mevcut kullanıcıyı ekle
+    if (!attendeesList) return;
+    attendeesList.innerHTML = ''; 
+
+    // Kendimizi ekle
     const myAttendee = document.createElement('div');
     myAttendee.className = 'attendee-item';
     myAttendee.innerHTML = `
-        <div class="attendee-avatar">${username.charAt(0).toUpperCase()}</div>
-        <div class="attendee-name">${username} (Sen)</div>
+        <div class="attendee-avatar">${USER_USERNAME.charAt(0).toUpperCase()}</div>
+        <div class="attendee-info">
+            <div class="attendee-name">${escapeHTML(USER_USERNAME)} (Siz)</div>
+            <div class="attendee-status">Çevrimiçi</div>
+        </div>
     `;
     attendeesList.appendChild(myAttendee);
-    
-    // Diğer katılımcıları ekle (Socket.IO'dan gelecek)
-    // TODO: Implement real attendees list from socket data
+
+    let otherAttendeesFound = false;
+    for (const peerId in userMap) {
+        if (userMap.hasOwnProperty(peerId) && peerId !== USER_ID) {
+            otherAttendeesFound = true;
+            const username = userMap[peerId];
+            const attendeeEl = document.createElement('div');
+            attendeeEl.className = 'attendee-item';
+            attendeeEl.id = `attendee-${peerId}`;
+            attendeeEl.innerHTML = `
+                <div class="attendee-avatar">${username.charAt(0).toUpperCase()}</div>
+                <div class="attendee-info">
+                    <div class="attendee-name">${escapeHTML(username)}</div>
+                    <div class="attendee-status">Çevrimiçi</div>
+                </div>
+            `;
+            attendeesList.appendChild(attendeeEl);
+        }
+    }
+
+    if (!otherAttendeesFound) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.innerHTML = `
+            <i class="fas fa-users"></i>
+            <h3>Henüz Kimse Katılmadı</h3>
+            <p>Diğer kullanıcıların katılmasını bekleyin.</p>
+        `;
+        attendeesList.appendChild(emptyState);
+    }
+    if (!otherAttendeesFound && Object.keys(userMap).length === 0) { // userMap boşsa ve başkası yoksa
+        const noOthers = document.createElement('p');
+        noOthers.className = 'empty-list-message';
+        noOthers.textContent = 'Odada başka katılımcı yok.';
+        attendeesList.appendChild(noOthers);
+    }
 }
 
 //whiteboard js start
-const whiteboardCont = document.querySelector('.whiteboard-cont');
+const whiteboardSection = document.querySelector('.whiteboard-section');
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext('2d');
 
-let boardVisisble = false;
-whiteboardCont.style.visibility = 'hidden';
+let boardVisible = false;
+whiteboardSection.style.display = 'none';
 
 let isDrawing = 0;
 let x = 0;
 let y = 0;
 let color = "black";
 let drawsize = 3;
-let colorRemote = "black";
-let drawsizeRemote = 3;
+// colorRemote ve drawsizeRemote global değişkenleri kaldırıldı, data objesinden alınacak.
 
-function fitToContainer(canvas) {
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+function fitToContainer(canvasElement) { // Parametre adı düzeltildi
+    canvasElement.style.width = '100%';
+    canvasElement.style.height = '100%';
+    canvasElement.width = canvasElement.offsetWidth;
+    canvasElement.height = canvasElement.offsetHeight;
 }
 
 fitToContainer(canvas);
 
-//getCanvas call is under join room call
 socket.on('getCanvas', url => {
-    let img = new Image();
-    img.onload = start;
-    img.src = url;
-
-    function start() {
-        ctx.drawImage(img, 0, 0);
+    if (!url) {
+        console.log('Canvas URL yok, temiz canvas.');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
+        return;
     }
-
-    console.log('got canvas', url)
-})
+    let img = new Image();
+    img.onload = function() { 
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        ctx.drawImage(img, 0, 0);
+        console.log('Canvas yüklendi (URL ile)');
+    };
+    img.onerror = function() {
+        console.error('Canvas resmi yüklenemedi:', url);
+    };
+    img.src = url;
+});
 
 function setColor(newcolor) {
     color = newcolor;
@@ -282,29 +343,27 @@ function setColor(newcolor) {
 }
 
 function setEraser() {
-    color = "white";
+    color = "white"; 
     drawsize = 10;
 }
 
-//might remove this
-function reportWindowSize() {
+window.onresize = function() { 
     fitToContainer(canvas);
-}
-
-window.onresize = reportWindowSize;
+    socket.emit('getCanvas'); // Yeniden boyutlandırmada canvası tekrar iste
+};
 
 function clearBoard() {
-    if (window.confirm('Are you sure you want to clear board? This cannot be undone')) {
+    if (window.confirm('Tahtayı temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        socket.emit('store canvas', canvas.toDataURL());
-        socket.emit('clearBoard');
+        socket.emit('store canvas', canvas.toDataURL()); 
+        socket.emit('clearBoard'); 
     }
-    else return;
 }
 
 socket.on('clearBoard', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-})
+    console.log('Beyaz tahta uzak bir kullanıcı tarafından temizlendi.');
+});
 
 function draw(newx, newy, oldx, oldy) {
     ctx.strokeStyle = color;
@@ -314,13 +373,11 @@ function draw(newx, newy, oldx, oldy) {
     ctx.lineTo(newx, newy);
     ctx.stroke();
     ctx.closePath();
-
-    socket.emit('store canvas', canvas.toDataURL());
 }
 
-function drawRemote(newx, newy, oldx, oldy) {
-    ctx.strokeStyle = colorRemote;
-    ctx.lineWidth = drawsizeRemote;
+function drawRemote(newx, newy, oldx, oldy, remoteColor, remoteSize) {
+    ctx.strokeStyle = remoteColor;
+    ctx.lineWidth = remoteSize;
     ctx.beginPath();
     ctx.moveTo(oldx, oldy);
     ctx.lineTo(newx, newy);
@@ -332,702 +389,684 @@ canvas.addEventListener('mousedown', e => {
     x = e.offsetX;
     y = e.offsetY;
     isDrawing = 1;
-})
+});
 
 canvas.addEventListener('mousemove', e => {
     if (isDrawing) {
         draw(e.offsetX, e.offsetY, x, y);
-        socket.emit('draw', e.offsetX, e.offsetY, x, y, color, drawsize);
+        socket.emit('project draw', ROOM_ID, { // USER_ID sunucu tarafında socket'ten alınacak
+            newX: e.offsetX, newY: e.offsetY, 
+            prevX: x, prevY: y, 
+            color: color, size: drawsize 
+        });
         x = e.offsetX;
         y = e.offsetY;
     }
-})
+});
 
-window.addEventListener('mouseup', e => {
+canvas.addEventListener('mouseup', e => {
     if (isDrawing) {
         isDrawing = 0;
+        socket.emit('store canvas', canvas.toDataURL()); 
     }
-})
+});
 
-socket.on('draw', (newX, newY, prevX, prevY, color, size) => {
-    colorRemote = color;
-    drawsizeRemote = size;
-    drawRemote(newX, newY, prevX, prevY);
-})
+socket.on('project draw', (eventData) => {
+    // eventData = { user: emittingUserId, data: { newX, newY, prevX, prevY, color, size } }
+    if (eventData.user !== USER_ID) { 
+        console.log('Uzak çizim alındı:', eventData);
+        drawRemote(eventData.data.newX, eventData.data.newY, eventData.data.prevX, eventData.data.prevY, eventData.data.color, eventData.data.size);
+    }
+});
 
+socket.on('canvasUpdate', url => { 
+    console.log("'canvasUpdate' eventi alındı. URL:", url ? 'Mevcut' : 'Yok');
+    if (url) {
+        let img = new Image();
+        img.onload = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = url;
+    } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
+    }
+});
 //whiteboard js end
-
-// PeerJS yapılandırması - HTTPS sunucusuyla uyumlu
 
 // PeerJS başlatma fonksiyonu
 function initializePeer() {
-    if (!userId) {
-        console.error("Cannot initialize Peer: userId not available.");
+    if (peer) {
+        console.log('PeerJS already initialized or initialization in progress.');
         return;
     }
-    if (typeof Peer === 'undefined') {
-        console.error('PeerJS library is not loaded!');
-        return;
-    }
-
-    console.log('Initializing Peer for user:', userId);
+    console.log(`Peer başlatılıyor, kullanıcı: ${userId}`);
     try {
         peer = new Peer(userId, {
-            host: location.hostname,
-            port: location.port || 3000,
-            path: '/peerjs/myapp',
-            secure: true,
-            debug: 3
+            host: window.location.hostname,
+            port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
+            path: '/peerjs',
+            secure: window.location.protocol === 'https:',
+            debug: 3,
+            config: {'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]}
         });
 
+        console.log(`PeerJS sunucusuna bağlanılıyor: host=${peer.options.host}, port=${peer.options.port}, path=${peer.options.path}, secure=${peer.options.secure}`);
+
         peer.on('open', (id) => {
-            console.log('My peer ID is: ' + id);
+            console.log('PeerJS bağlantısı açıldı. ID: ' + id);
+            peerId = id; 
+            peerReady = true;
+            if (socketReady) {
+                console.log('PeerJS ready, socket already connected. Attempting to join project and start media.');
+                attemptStartLocalMediaAndJoin();
+            } else {
+                console.log('PeerJS ready, waiting for Socket.IO to connect.');
+            }
         });
 
         peer.on('call', (call) => {
-            console.log('Incoming call from', call.peer);
-            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-                .then((stream) => {
-                    if (!localStream) {
-                        myvideo.srcObject = stream;
-                        myvideo.muted = true;
+            const remoteUserId = call.peer;
+            const remoteUsername = userMap[remoteUserId] || `Kullanıcı ${remoteUserId.substring(0,6)}`;
+            console.log(`Gelen arama: ${remoteUsername} (${remoteUserId})`);            
+            if (localStream) {
+                call.answer(localStream);
+                setupCallEvents(call, remoteUsername, remoteUserId); // remoteUserId eklendi
+            } else {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then((stream) => {
                         localStream = stream;
-                    }
-                    call.answer(localStream);
-                    call.on('stream', (remoteStream) => {
-                        console.log('Received remote stream from', call.peer);
-                        addRemoteVideo(remoteStream, call.peer);
+                        myvideo.srcObject = stream;
+                        myvideo.muted = true; // Kendi videomuzu sessize al
+                        call.answer(localStream);
+                        setupCallEvents(call, remoteUsername, remoteUserId); // remoteUserId eklendi
+                    })
+                    .catch((err) => {
+                        console.error('Aramayı cevaplamak için local stream alınamadı:', err);
+                        alert('Kamera/mikrofon erişimi reddedildi.');
                     });
-                    call.on('close', () => {
-                        console.log('Call with', call.peer, 'closed');
-                        removeRemoteVideo(call.peer);
-                    });
-                })
-                .catch((err) => {
-                    console.error('Failed to get local stream for answering call:', err);
-                });
+            }
         });
 
         peer.on('error', (err) => {
-            console.error('PeerJS error:', err);
+            console.error('PeerJS Hatası:', err);
+            if (err.type === 'unavailable-id') {
+                alert('Bu kullanıcı IDsi zaten kullanımda. Lütfen sayfayı yenileyin veya farklı bir ID ile giriş yapmayı deneyin.');
+            } else if (err.type === 'peer-unavailable') {
+                console.warn('Aranan peer bulunamadı:', err.message);
+                // İlgili kullanıcı için video elementini kaldırabiliriz
+                const unavailablePeerId = err.message.match(/Could not connect to peer (.*)/);
+                if (unavailablePeerId && unavailablePeerId[1]) {
+                    removeRemoteVideo(unavailablePeerId[1]);
+                }
+            } else if (err.type === 'network') {
+                console.error('PeerJS ağ hatası. Bağlantı kopmuş olabilir.', err);
+            } else if (err.type === 'webrtc') {
+                console.error('PeerJS WebRTC hatası:', err);
+            } else {
+                console.error('Bilinmeyen PeerJS hatası:', err.type, err);
+            }
         });
 
         peer.on('disconnected', () => {
-            console.log('PeerJS disconnected. Attempting to reconnect...');
+            console.warn('PeerJS sunucusundan bağlantı kesildi. Yeniden bağlanmaya çalışılıyor...');
+            // PeerJS otomatik yeniden bağlanmayı dener. Gerekirse manuel:
+            // setTimeout(() => { if (peer && !peer.destroyed && !peer.open) peer.reconnect(); }, 3000);
         });
 
         peer.on('close', () => {
-            console.log('PeerJS connection closed.');
+            console.log('PeerJS bağlantısı tamamen kapandı.');
         });
 
     } catch (error) {
-        console.error("Error initializing PeerJS:", error);
+        console.error("PeerJS başlatılırken kritik hata oluştu:", error);
+        alert('Video konferans altyapısı başlatılamadı. Lütfen sayfayı yenileyin.');
     }
 }
 
-// Remote video ekleme fonksiyonu
-function addRemoteVideo(stream, peerId) {
-    if (document.getElementById(`peer-${peerId}`)) return;
+// attemptStartLocalMedia fonksiyonu kaldırılacak veya yorum satırı yapılacak.
+// function attemptStartLocalMedia() {
+// if (peerReady && socketReady && !localStream) { 
+// console.log("CLIENT: PeerJS ve Socket.IO hazır, local media başlatılıyor.");
+// startLocalMedia();
+// }
+// }
+
+async function attemptStartLocalMediaAndJoin() {
+    if (!socketReady || !peerReady) {
+        console.log('CLIENT: Socket veya PeerJS henüz hazır değil, medya başlatma veya katılma denemesi yapılamaz.');
+        return;
+    }
+
+    console.log(`CLIENT: Yerel medya başlatma ve katılma denemesi. localMediaStarted: ${localMediaStarted}, socketReady: ${socketReady}, peerReady: ${peerReady}`);
+
+    try {
+        console.log('CLIENT: startLocalMedia() çağrılıyor...');
+        await startLocalMedia(); // Bu fonksiyon, localStream zaten varsa durumu yönetir.
+        localMediaStarted = true; // startLocalMedia başarılı olduktan sonra true olarak ayarla
+        console.log('CLIENT: Yerel medya başarıyla başlatıldı/onaylandı. "join project" yayınlanıyor.');
+        socket.emit('join project', roomId, userName, userId);
+    } catch (error) {
+        console.error('CLIENT: attemptStartLocalMediaAndJoin içinde yerel medya başlatılamadı:', error);
+        // startLocalMedia'nın catch bloğu zaten UI güncellemelerini (örn. video/ses düğmelerini devre dışı bırakma) yönetir.
+    }
+}
+
+
+async function startLocalMedia() {
+    if (localStream) { 
+        console.log("Local media zaten aktif.");
+        await callExistingPeers(); // Ensure this is awaited if it becomes async
+        return Promise.resolve(); // Return a resolved promise
+    }
+    console.log('Yerel medya (kamera/mikrofon) başlatılıyor...');
+    return navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(async stream => { // Added async here
+            localStream = stream;
+            myvideo.srcObject = stream;
+            myvideo.muted = true;
+            console.log('Yerel medya başarıyla başlatıldı.');
+            await callExistingPeers(); // Ensure this is awaited
+        })
+        .catch(err => {
+            console.error("Yerel medya alınamadı:", err);
+            alert("Kamera veya mikrofonunuza erişilemedi. Lütfen tarayıcı izinlerini kontrol edin ve sayfayı yenileyin.");
+            if(videoButt) videoButt.disabled = true;
+            if(audioButt) audioButt.disabled = true;
+            return Promise.reject(err); // Propagate the error
+        });
+}
+
+function callExistingPeers() {
+    if (!peer || !peer.open || !localStream) {
+        console.log("Mevcut peerler aranamıyor: PeerJS hazır değil veya local stream yok.");
+        return;
+    }
+    console.log("Mevcut peerler aranıyor (userMap):", userMap);
+    for (const peerIdToCall in userMap) {
+        if (userMap.hasOwnProperty(peerIdToCall) && peerIdToCall !== USER_ID) {
+            // Zaten bir bağlantı var mı kontrol et (isteğe bağlı, peer.connections üzerinden)
+            if (!peer.connections[peerIdToCall] || peer.connections[peerIdToCall].length === 0) {
+                 callPeer(peerIdToCall, userMap[peerIdToCall]);
+            } else {
+                console.log(`${userMap[peerIdToCall]} ile zaten bağlantı var veya kuruluyor.`);
+            }
+        }
+    }
+}
+
+
+function callPeer(peerIdToCall, usernameToCall) {
+    if (!localStream) {
+        console.warn(`Local stream yok, ${usernameToCall} aranamıyor.`);
+        // Belki local stream'i başlatmayı dene? Veya kullanıcıya bildir.
+        // startLocalMedia(); // Bu döngüye sokabilir, dikkatli ol.
+        return;
+    }
+    if (peer && peer.open && peerIdToCall !== USER_ID) {
+        console.log(`${usernameToCall} (${peerIdToCall}) aranıyor...`);
+        const call = peer.call(peerIdToCall, localStream);
+        if (call) {
+            setupCallEvents(call, usernameToCall, peerIdToCall); // remoteUserId eklendi
+        } else {
+            console.error(`${usernameToCall} aranamadı (call objesi null). Peer durumu:`, peer);
+        }
+    } else {
+        console.warn(`Peer ${usernameToCall} (${peerIdToCall}) aranamıyor. Peer açık değil veya kendi ID'miz.`);
+    }
+}
+
+
+function setupCallEvents(call, remoteUsername, remoteUserId) { // remoteUserId eklendi
+    console.log(`Arama (${remoteUsername} - ${remoteUserId}) için eventler ayarlanıyor.`);
+    call.on('stream', (remoteStream) => {
+        console.log(`Uzak stream (${remoteUsername} - ${remoteUserId}) alındı.`);
+        addRemoteVideo(remoteStream, remoteUserId, remoteUsername); // remoteUserId kullanıldı
+    });
+    call.on('close', () => {
+        console.log(`Arama (${remoteUsername} - ${remoteUserId}) kapandı.`);
+        removeRemoteVideo(remoteUserId); // remoteUserId kullanıldı
+    });
+    call.on('error', (err) => {
+        console.error(`Arama (${remoteUsername} - ${remoteUserId}) hatası:`, err);
+        removeRemoteVideo(remoteUserId); // remoteUserId kullanıldı
+    });
+}
+
+function addRemoteVideo(stream, peerId, peerUsername) {
+    if (document.getElementById(`peer-${peerId}`)) {
+        console.log(`${peerUsername} (${peerId}) için video zaten mevcut.`);
+        // Varolan videonun stream'ini güncellemek gerekebilir, eğer değiştiyse.
+        // const existingVideo = document.querySelector(`#peer-${peerId} video`);
+        // if (existingVideo && existingVideo.srcObject !== stream) existingVideo.srcObject = stream;
+        return;
+    }
     
     const vidCont = document.createElement('div');
     const video = document.createElement('video');
-    const name = document.createElement('div');
+    const nameTag = document.createElement('div');
     
     vidCont.id = `peer-${peerId}`;
-    vidCont.className = "video-box";
+    vidCont.className = "video-box remote-video-box";
     
     video.srcObject = stream;
     video.autoplay = true;
-    video.muted = true;
+    video.playsInline = true; // iOS için önemli
     video.className = "video-frame";
+    video.addEventListener('loadedmetadata', () => { // Video oynatılmaya hazır olduğunda
+        video.play().catch(e => console.error("Uzak video oynatma hatası:", e));
+    });
     
-    name.className = "nametag";
-    name.innerHTML = `User ${peerId}`;
+    nameTag.className = "nametag";
+    nameTag.innerHTML = escapeHTML(peerUsername) || `Kullanıcı ${peerId.substring(0, 6)}`; 
     
     vidCont.appendChild(video);
-    vidCont.appendChild(name);
+    vidCont.appendChild(nameTag);
     videoContainer.appendChild(vidCont);
+    console.log(`${peerUsername} (${peerId}) için video eklendi.`);
 }
 
-// Remote video kaldırma fonksiyonu
 function removeRemoteVideo(peerId) {
     const videoElement = document.getElementById(`peer-${peerId}`);
     if (videoElement) {
+        const videoFrame = videoElement.querySelector('video');
+        if (videoFrame && videoFrame.srcObject) {
+            videoFrame.srcObject.getTracks().forEach(track => track.stop()); // Stream'i durdur
+        }
         videoElement.remove();
+        console.log(`Kullanıcı ${peerId} için video kaldırıldı.`);
     }
 }
 
-var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-
-// Room code display
-document.querySelector('.roomcode').innerHTML = `${roomId || projectId}`;
-
-function CopyClassText() {
-    var textToCopy = document.querySelector('.roomcode');
-    var currentRange;
-    if (document.getSelection().rangeCount > 0) {
-        currentRange = document.getSelection().getRangeAt(0);
-        window.getSelection().removeRange(currentRange);
+socket.on('connect', () => {
+    socketReady = true;
+    console.log(`CLIENT: Socket.IO sunucusuna başarıyla bağlanıldı. Socket ID: ${socket.id}`);
+    if (peerReady) { 
+        console.log('CLIENT: Socket connected, PeerJS already ready. Attempting to join project and start media.');
+        attemptStartLocalMediaAndJoin();
     } else {
-        currentRange = false;
-    }
-
-    var CopyRange = document.createRange();
-    CopyRange.selectNode(textToCopy);
-    window.getSelection().addRange(CopyRange);
-    document.execCommand("copy");
-
-    window.getSelection().removeRange(CopyRange);
-
-    if (currentRange) {
-        window.getSelection().addRange(currentRange);
-    }
-
-    document.querySelector(".copycode-button").textContent = "Copied!"
-    setTimeout(() => {
-        document.querySelector(".copycode-button").textContent = "Copy Code";
-    }, 5000);
-}
-
-// Name entry overlay
-continueButt.addEventListener('click', () => {
-    if (nameField.value == '') return;
-    username = nameField.value;
-    overlayContainer.style.visibility = 'hidden';
-    document.querySelector("#myname").innerHTML = `${username} (You)`;
-    
-    if (projectId) {
-        socket.emit('join project', projectId, username);
-    } else {
-        socket.emit('join room', roomId, username);
-    }
-    
-    startCall();
-});
-
-nameField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
-        continueButt.click();
+        console.log('CLIENT: Socket connected, waiting for PeerJS to be ready.');
     }
 });
 
-// Video grid management
-socket.on('user count', count => {
-    if (count > 1) {
-        videoContainer.className = 'video-cont';
-    } else {
-        videoContainer.className = 'video-cont-single';
-    }
-})
-
-// WebRTC variables
-let peerConnection;
-const configuration = { iceServers: [{ urls: "stun:stun.stunprotocol.org" }] }
-let connections = {};
-let cName = {};
-let audioTrackSent = {};
-let videoTrackSent = {};
-let mystream, myscreenshare;
-let audioAllowed = 1;
-let videoAllowed = 1;
-let micInfo = {};
-let videoInfo = {};
-let mymuteicon = document.querySelector("#mymuteicon");
-let myvideooff = document.querySelector("#myvideooff");
-
-mymuteicon.style.visibility = 'hidden';
-myvideooff.style.visibility = 'hidden';
-
-function handleGetUserMediaError(e) {
-    switch (e.name) {
-        case "NotFoundError":
-            alert("Unable to open your call because no camera and/or microphone were found.");
-            break;
-        case "SecurityError":
-        case "PermissionDeniedError":
-            break;
-        default:
-            alert("Error opening your camera and/or microphone: " + e.message);
-            break;
-    }
-}
-
-function reportError(e) {
-    console.log(e);
-    return;
-}
-
-function startCall() {
-    navigator.mediaDevices.getUserMedia(mediaConstraints)
-        .then(localStream => {
-            myvideo.srcObject = localStream;
-            myvideo.muted = true;
-            mystream = localStream;
-
-            localStream.getTracks().forEach(track => {
-                for (let key in connections) {
-                    connections[key].addTrack(track, localStream);
-                    if (track.kind === 'audio')
-                        audioTrackSent[key] = track;
-                    else
-                        videoTrackSent[key] = track;
-                }
-            })
-        })
-        .catch(handleGetUserMediaError);
-}
-
-function handleVideoOffer(offer, sid, cname, micinf, vidinf) {
-    console.log('video offer', sid, cname);
-    cName[sid] = cname;
-    micInfo[sid] = micinf;
-    videoInfo[sid] = vidinf;
-
-    connections[sid] = new RTCPeerConnection(configuration);
-
-    connections[sid].onicecandidate = function (event) {
-        if (event.candidate) {
-            console.log('icecandidate fired');
-            socket.emit('new icecandidate', event.candidate, sid);
-        }
-    };
-
-    connections[sid].ontrack = function (event) {
-        if (!document.getElementById(sid)) {
-            console.log('track event fired');
-            let vidCont = document.createElement('div');
-            let newvideo = document.createElement('video');
-            let name = document.createElement('div');
-            let muteIcon = document.createElement('div');
-            let videoOff = document.createElement('div');
-            
-            vidCont.id = sid;
-            vidCont.className = "video-box";
-            newvideo.srcObject = event.streams[0];
-            newvideo.autoplay = true;
-            newvideo.muted = true;
-            newvideo.className = "video-frame";
-            
-            name.className = "nametag";
-            name.innerHTML = `${cname}`;
-            
-            muteIcon.id = `mute${sid}`;
-            muteIcon.className = "mute-icon";
-            muteIcon.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
-            muteIcon.style.visibility = micinf == 'on' ? 'hidden' : 'visible';
-            
-            videoOff.id = `vidoff${sid}`;
-            videoOff.className = "video-off";
-            videoOff.innerHTML = `Video Off`;
-            videoOff.style.visibility = vidinf == 'on' ? 'hidden' : 'visible';
-            
-            vidCont.appendChild(newvideo);
-            vidCont.appendChild(name);
-            vidCont.appendChild(muteIcon);
-            vidCont.appendChild(videoOff);
-            
-            videoContainer.appendChild(vidCont);
-        }
-    };
-
-    connections[sid].onremovetrack = function (event) {
-        if (document.getElementById(sid)) {
-            document.getElementById(sid).remove();
-        }
-    }
-
-    connections[sid].onnegotiationneeded = function () {
-        connections[sid].createOffer()
-            .then(function (offer) {
-                return connections[sid].setLocalDescription(offer);
-            })
-            .then(function () {
-                socket.emit('video-offer', connections[sid].localDescription, sid);
-            })
-            .catch(reportError);
-    };
-
-    let desc = new RTCSessionDescription(offer);
-
-    connections[sid].setRemoteDescription(desc)
-        .then(() => { return navigator.mediaDevices.getUserMedia(mediaConstraints) })
-        .then((localStream) => {
-            localStream.getTracks().forEach(track => {
-                connections[sid].addTrack(track, localStream);
-                console.log('added local stream to peer')
-                if (track.kind === 'audio') {
-                    audioTrackSent[sid] = track;
-                    if (!audioAllowed)
-                        audioTrackSent[sid].enabled = false;
-                }
-                else {
-                    videoTrackSent[sid] = track;
-                    if (!videoAllowed)
-                        videoTrackSent[sid].enabled = false
-                }
-            })
-        })
-        .then(() => {
-            return connections[sid].createAnswer();
-        })
-        .then(answer => {
-            return connections[sid].setLocalDescription(answer);
-        })
-        .then(() => {
-            socket.emit('video-answer', connections[sid].localDescription, sid);
-        })
-        .catch(reportError);
-}
-
-function handleNewIceCandidate(candidate, sid) {
-    var candidate = new RTCIceCandidate(candidate);
-
-    connections[sid].addIceCandidate(candidate)
-        .catch(reportError);
-}
-
-function handleVideoAnswer(answer, sid) {
-    console.log('video answer', sid);
-    var desc = new RTCSessionDescription(answer);
-    connections[sid].setRemoteDescription(desc).catch(reportError);
-}
-
-//Thanks to (https://github.com/miroslavpejic85) for ScreenShare Code
-screenShareButt.addEventListener('click', () => {
-    screenShareToggle();
+// Handle reconnection attempts and successful reconnections
+socket.on('reconnect_attempt', (attemptNumber) => {
+    console.log(`CLIENT: Socket reconnect attempt ${attemptNumber}`);
 });
 
-let screenshareEnabled = false;
-function screenShareToggle() {
-    if (screenshareEnabled) {
-        stopScreenShare();
-    } else {
-        startScreenShare();
-    }
-}
+socket.on('reconnect_error', (error) => {
+    console.error('CLIENT: Socket reconnect error:', error);
+});
 
-function startScreenShare() {
-    navigator.mediaDevices.getDisplayMedia({ video: true })
-        .then((stream) => {
-            screenshareEnabled = true;
-            myscreenshare = stream;
-            
-            for (let key in connections) {
-                const videoSender = connections[key].getSenders().find(sender => 
-                    sender.track && sender.track.kind === 'video'
-                );
-                if (videoSender) {
-                    videoSender.replaceTrack(stream.getVideoTracks()[0]);
-                }
+socket.on('reconnect_failed', () => {
+    console.error('CLIENT: Socket reconnect failed after multiple attempts.');
+});
+
+socket.on('reconnect', (attemptNumber) => {
+    // The 'connect' event will also fire on successful reconnection.
+    // Re-joining the project is handled by the 'connect' event listener.
+    console.log(`CLIENT: Socket yeniden bağlandı (${socket.id}), attempt: ${attemptNumber}. (Join project handled by 'connect' event)`);
+});
+
+socket.on('user-joined', (data) => { // data should be { id, name, socketId }
+    const newUserId = data.id;
+    const newUsername = data.name;
+    console.log(`Yeni kullanıcı odaya katıldı: ${newUsername} (ID: ${newUserId}, Socket: ${data.socketId})`);
+    if (newUserId !== userId) { // Use aliased userId
+        if (!userMap[newUserId]) {
+            userMap[newUserId] = newUsername; 
+            console.log(`User map güncellendi (yeni katılan): ${newUsername}`, userMap);
+            if (document.getElementById('attendees-tab')?.classList.contains('active')) {
+                loadAttendees(); 
             }
-            
-            myvideo.srcObject = stream;
-            
-            screenShareButt.innerHTML = (screenshareEnabled 
-                ? `<i class="fas fa-desktop"></i><span class="tooltiptext">Stop Share Screen</span>`
-                : `<i class="fas fa-desktop"></i><span class="tooltiptext">Share Screen</span>`
-            );
-            
-            myscreenshare.getVideoTracks()[0].onended = function() {
-                if (screenshareEnabled) screenShareToggle();
-            };
-        })
-        .catch((e) => {
-            alert("Unable to share screen:" + e.message);
-            console.error(e);
-        });
-}
-
-function stopScreenShare() {
-    screenshareEnabled = false;
-    navigator.mediaDevices.getUserMedia(mediaConstraints)
-        .then((stream) => {
-            for (let key in connections) {
-                const videoSender = connections[key].getSenders().find(sender => 
-                    sender.track && sender.track.kind === 'video'
-                );
-                if (videoSender) {
-                    videoSender.replaceTrack(stream.getVideoTracks()[0]);
-                }
-            }
-            
-            myvideo.srcObject = stream;
-            mystream = stream;
-            
-            screenShareButt.innerHTML = `<i class="fas fa-desktop"></i><span class="tooltiptext">Share Screen</span>`;
-        });
-}
-
-socket.on('video-offer', handleVideoOffer);
-socket.on('new icecandidate', handleNewIceCandidate);
-socket.on('video-answer', handleVideoAnswer);
-
-socket.on('join room', async (conc, cnames, micinfo, videoinfo) => {
-    socket.emit('getCanvas');
-    if (cnames)
-        cName = cnames;
-
-    if (micinfo)
-        micInfo = micinfo;
-
-    if (videoinfo)
-        videoInfo = videoinfo;
-
-    if (conc) {
-        conc.forEach(sid => {
-            connections[sid] = new RTCPeerConnection(configuration);
-
-            connections[sid].onicecandidate = function (event) {
-                if (event.candidate) {
-                    console.log('icecandidate fired');
-                    socket.emit('new icecandidate', event.candidate, sid);
-                }
-            };
-
-            connections[sid].ontrack = function (event) {
-                if (!document.getElementById(sid)) {
-                    console.log('track event fired');
-                    let vidCont = document.createElement('div');
-                    let newvideo = document.createElement('video');
-                    let name = document.createElement('div');
-                    let muteIcon = document.createElement('div');
-                    let videoOff = document.createElement('div');
-                    
-                    vidCont.id = sid;
-                    vidCont.className = "video-box";
-                    newvideo.srcObject = event.streams[0];
-                    newvideo.autoplay = true;
-                    newvideo.muted = true;
-                    newvideo.className = "video-frame";
-                    
-                    name.className = "nametag";
-                    name.innerHTML = `${cName[sid]}`;
-                    
-                    muteIcon.id = `mute${sid}`;
-                    muteIcon.className = "mute-icon";
-                    muteIcon.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
-                    muteIcon.style.visibility = micInfo[sid] == 'on' ? 'hidden' : 'visible';
-                    
-                    videoOff.id = `vidoff${sid}`;
-                    videoOff.className = "video-off";
-                    videoOff.innerHTML = `Video Off`;
-                    videoOff.style.visibility = videoInfo[sid] == 'on' ? 'hidden' : 'visible';
-                    
-                    vidCont.appendChild(newvideo);
-                    vidCont.appendChild(name);
-                    vidCont.appendChild(muteIcon);
-                    vidCont.appendChild(videoOff);
-                    
-                    videoContainer.appendChild(vidCont);
-                }
-            };
-
-            connections[sid].onremovetrack = function (event) {
-                if (document.getElementById(sid)) {
-                    document.getElementById(sid).remove();
-                }
-            }
-
-            connections[sid].onnegotiationneeded = function () {
-                connections[sid].createOffer()
-                    .then(function (offer) {
-                        return connections[sid].setLocalDescription(offer);
-                    })
-                    .then(function () {
-                        socket.emit('video-offer', connections[sid].localDescription, sid);
-                    })
-                    .catch(reportError);
-            };
-        });
-
-        console.log('added all sockets to connections');
-        startCall();
-    } else {
-        console.log('waiting for someone to join');
-        navigator.mediaDevices.getUserMedia(mediaConstraints)
-            .then(localStream => {
-                myvideo.srcObject = localStream;
-                myvideo.muted = true;
-                mystream = localStream;
-            })
-            .catch(handleGetUserMediaError);
-    }
-})
-
-socket.on('remove peer', sid => {
-    if (document.getElementById(sid)) {
-        document.getElementById(sid).remove();
-    }
-    delete connections[sid];
-})
-
-// Chat functionality
-sendButton.addEventListener('click', () => {
-    const msg = messageField.value;
-    messageField.value = '';
-    if (projectId) {
-        socket.emit('project message', projectId, username, userId, msg);
-    } else {
-        socket.emit('message', msg, username, roomId);
-    }
-})
-
-messageField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
-        sendButton.click();
+        }
+        if (localStream && peer && peer.open) {
+            callPeer(newUserId, newUsername);
+        } else {
+            console.log(`Local stream veya peer hazır değil, ${newUsername} aranamıyor (user-joined).`);
+        }
     }
 });
 
-socket.on('message', (msg, sendername, time) => {
-    chatRoom.scrollTop = chatRoom.scrollHeight;
-    chatRoom.innerHTML += `<div class="message">
-    <div class="info">
-        <div class="username">${sendername}</div>
-        <div class="time">${time}</div>
-    </div>
-    <div class="content">
-        ${msg}
-    </div>
-</div>`
+socket.on('user-left', (data) => { // data should be { id, name, socketId }
+    const leftUserId = data.id;
+    const leftUsername = userMap[leftUserId] || data.name || leftUserId;
+    console.log(`Kullanıcı ${leftUsername} (${leftUserId}, Socket: ${data.socketId}) odadan ayrıldı.`);
+    removeRemoteVideo(leftUserId);
+    if (userMap[leftUserId]) {
+        delete userMap[leftUserId];
+        console.log(`User map güncellendi (ayrılan ${leftUsername}):`, userMap);
+        const attendeeElement = document.getElementById(`attendee-${leftUserId}`);
+        if (attendeeElement) {
+            attendeeElement.remove();
+        } else if (document.getElementById('attendees-tab')?.classList.contains('active')) {
+            loadAttendees(); 
+        }
+        // Eğer katılımcı kalmadıysa mesaj göster
+        if (Object.keys(userMap).length === 0 && document.getElementById('attendees-tab')?.classList.contains('active')) {
+            loadAttendees(); // Bu, "başka katılımcı yok" mesajını gösterecektir.
+        }
+    }
 });
 
-// Video/Audio controls
-videoButt.addEventListener('click', () => {
-    if (videoAllowed) {
-        for (let key in videoTrackSent) {
-            videoTrackSent[key].enabled = false;
-        }
-        videoButt.innerHTML = `<i class="fas fa-video-slash"></i>`;
-        videoAllowed = 0;
-        myvideooff.style.visibility = 'visible';
-        socket.emit('action', 'videooff');
-    } else {
-        for (let key in videoTrackSent) {
-            videoTrackSent[key].enabled = true;
-        }
-        videoButt.innerHTML = `<i class="fas fa-video"></i>`;
-        videoAllowed = 1;
-        myvideooff.style.visibility = 'hidden';
-        socket.emit('action', 'videoon');
-    }
-})
+socket.on('project message', (data) => {
+    // data = { user: { _id, username }, message, createdAt }
+    appendMessage(data.user.username, data.message, data.createdAt, data.user._id === USER_ID);
+});
 
-audioButt.addEventListener('click', () => {
-    if (audioAllowed) {
-        for (let key in audioTrackSent) {
-            audioTrackSent[key].enabled = false;
-        }
-        audioButt.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
-        audioAllowed = 0;
-        mymuteicon.style.visibility = 'visible';
-        socket.emit('action', 'mute');
-    } else {
-        for (let key in audioTrackSent) {
-            audioTrackSent[key].enabled = true;
-        }
-        audioButt.innerHTML = `<i class="fas fa-microphone"></i>`;
-        audioAllowed = 1;
-        mymuteicon.style.visibility = 'hidden';
-        socket.emit('action', 'unmute');
-    }
-})
+if (sendButton) {
+    sendButton.addEventListener('click', () => {
+        const msg = messageField.value;
+        if (msg.trim() === '') return;
+        // USER_ID sunucu tarafında socket'ten alınacak, USER_USERNAME de oradan alınabilir.
+        socket.emit('project message', ROOM_ID, msg); 
+        messageField.value = '';
+    });
+}
 
-socket.on('action', (msg, sid) => {
-    if (msg == 'mute') {
-        console.log(sid + ' muted themself');
-        document.querySelector(`#mute${sid}`).style.visibility = 'visible';
-        micInfo[sid] = 'off';
-    }
-    else if (msg == 'unmute') {
-        console.log(sid + ' unmuted themself');
-        document.querySelector(`#mute${sid}`).style.visibility = 'hidden';
-        micInfo[sid] = 'on';
-    }
-    else if (msg == 'videooff') {
-        console.log(sid + 'turned video off');
-        document.querySelector(`#vidoff${sid}`).style.visibility = 'visible';
-        videoInfo[sid] = 'off';
-    }
-    else if (msg == 'videoon') {
-        console.log(sid + 'turned video on');
-        document.querySelector(`#vidoff${sid}`).style.visibility = 'hidden';
-        videoInfo[sid] = 'on';
-    }
-})
-
-whiteboardButt.addEventListener('click', () => {
-    if (boardVisisble) {
-        whiteboardCont.style.visibility = 'hidden';
-        boardVisisble = false;
-    }
-    else {
-        whiteboardCont.style.visibility = 'visible';
-        boardVisisble = true;
-    }
-})
-
-cutCall.addEventListener('click', () => {
-    if (projectId) {
-        socket.emit('leave project', projectId, username);
-    }
-    location.href = '/';
-})
-
-// Çıkış butonu event listener'ı
-const logoutBtn = document.getElementById('logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                // Proje bağlantısını kes
-                if (projectId && username) {
-                    socket.emit('leave project', projectId, username);
-                }
-                
-                // localStorage temizle
-                localStorage.removeItem('userId');
-                localStorage.removeItem('username');
-                
-                // Ana sayfaya yönlendir
-                location.href = '/';
-            } else {
-                console.error('Çıkış yapılamadı');
-            }
-        } catch (error) {
-            console.error('Çıkış sırasında hata:', error);
-            // Hata durumunda da ana sayfaya yönlendir
-            location.href = '/';
+if (messageField) {
+    messageField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { 
+            e.preventDefault(); 
+            sendButton.click();
         }
     });
 }
 
-// Proje mesajları için özel handler
-socket.on('project message', (data) => {
+function appendMessage(sender, message, timestamp, isMe) {
+    if (!chatRoom) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('chat-message');
+    if (isMe) {
+        msgDiv.classList.add('my-message');
+    }
+    
+    const senderSpan = document.createElement('span');
+    senderSpan.className = 'sender';
+    senderSpan.textContent = isMe ? 'Siz' : escapeHTML(sender);
+    
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'timestamp';
+    timeSpan.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    const contentP = document.createElement('p');
+    // Mesaj içeriği sunucudan güvenli geliyorsa (sanitize edilmişse) doğrudan atanabilir.
+    // Emin değilseniz: contentP.textContent = escapeHTML(message);
+    contentP.textContent = message; 
+    
+    msgDiv.appendChild(senderSpan);
+    msgDiv.appendChild(timeSpan);
+    msgDiv.appendChild(contentP);
+    chatRoom.appendChild(msgDiv);
     chatRoom.scrollTop = chatRoom.scrollHeight;
-    const time = new Date(data.createdAt).toLocaleTimeString();
-    chatRoom.innerHTML += `<div class="message">
-    <div class="info">
-        <div class="username">${data.user.username}</div>
-        <div class="time">${time}</div>
-    </div>
-    <div class="content">
-        ${data.message}
-    </div>
-</div>`
+}
+
+let isAudioOn = true;
+let isVideoOn = true;
+
+if (audioButt) {
+    audioButt.addEventListener('click', () => {
+        isAudioOn = !isAudioOn;
+        audioButt.innerHTML = isAudioOn ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
+        if (localStream) {
+            localStream.getAudioTracks().forEach(track => track.enabled = isAudioOn);
+        }
+    });
+}
+
+if (videoButt) {
+    videoButt.addEventListener('click', () => {
+        isVideoOn = !isVideoOn;
+        videoButt.innerHTML = isVideoOn ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+        if (localStream) {
+            localStream.getVideoTracks().forEach(track => track.enabled = isVideoOn);
+        }
+        const myVideoOffElement = document.getElementById('myvideooff');
+        if (myVideoOffElement) {
+            myVideoOffElement.style.display = isVideoOn ? 'none' : 'block';
+        }
+    });
+}
+
+if (cutCall) {
+    cutCall.addEventListener('click', () => {
+        if (peer) {
+            peer.destroy(); // Tüm bağlantıları kapatır ve PeerServer'dan kaydı siler
+        }
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        // socket.emit('leave project', ROOM_ID, USER_ID); // Sunucuya ayrılma bilgisi (isteğe bağlı, socket disconnect de yeterli olabilir)
+        window.location.href = '/dashboard';
+    });
+}
+
+let screenStream = null;
+let isScreenSharing = false;
+let originalVideoTrack = null; // Orijinal kamera track'ini saklamak için
+
+if (screenShareButt) {
+    screenShareButt.addEventListener('click', async () => {
+        if (isScreenSharing) {
+            await stopScreenSharing();
+        } else {
+            await startScreenSharing();
+        }
+    });
+}
+
+async function startScreenSharing() {
+    if (!localStream || !peer || !peer.open) {
+        alert("Ekran paylaşımı için önce kamera ve mikrofon bağlantısının kurulması gerekmektedir.");
+        return;
+    }
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+        
+        const screenVideoTrack = screenStream.getVideoTracks()[0];
+        
+        // Orijinal kamera track'ini sakla (eğer varsa)
+        if (localStream.getVideoTracks().length > 0) {
+            originalVideoTrack = localStream.getVideoTracks()[0].clone(); // Klonla ki orijinali etkilenmesin
+        } else {
+            originalVideoTrack = null; // Kamera kapalıysa veya yoksa
+        }
+
+        // Mevcut video track'lerini değiştir (tüm peer bağlantıları için)
+        for (const peerId in peer.connections) {
+            if (peer.connections.hasOwnProperty(peerId)) {
+                peer.connections[peerId].forEach(connection => {
+                    const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(screenVideoTrack).catch(e => console.error("Ekran paylaşımı için replaceTrack hatası:", e));
+                    }
+                });
+            }
+        }
+        
+        // Kendi lokal video track'ini de güncelle (eğer kamera açıksa)
+        if (localStream.getVideoTracks().length > 0) {
+            localStream.removeTrack(localStream.getVideoTracks()[0]); // Eski kamera track'ini kaldır
+        }
+        localStream.addTrack(screenVideoTrack); // Ekran track'ini ekle
+        
+        // Kendi video elementini güncelle (sadece ekran görüntüsü, ses devam eder)
+        const tempStream = new MediaStream();
+        tempStream.addTrack(screenVideoTrack);
+        if (localStream.getAudioTracks().length > 0) { // Ses varsa ekle
+            tempStream.addTrack(localStream.getAudioTracks()[0]);
+        }
+        myvideo.srcObject = tempStream;
+
+
+        isScreenSharing = true;
+        screenShareButt.classList.add('sharing');
+        screenShareButt.innerHTML = '<i class="fas fa-stop-circle"></i> Paylaşımı Durdur';
+
+        screenVideoTrack.onended = () => { 
+            stopScreenSharing(true); // Kullanıcı tarayıcıdan paylaşımı durdurursa
+        };
+        console.log('Ekran paylaşımı başlatıldı.');
+        
+    } catch (err) {
+        console.error("Ekran paylaşımı hatası:", err);
+        if (err.name === "NotAllowedError") {
+            alert('Ekran paylaşımı izni verilmedi.');
+        } else {
+            alert('Ekran paylaşılamadı. Lütfen tekrar deneyin.');
+        }
+        isScreenSharing = false; 
+    }
+}
+
+async function stopScreenSharing(stoppedByBrowser = false) {
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+    }
+
+    if (localStream && peer && peer.open) {
+        // Ekran track'ini localStream'den kaldır
+        const screenTrack = localStream.getVideoTracks().find(t => t.label.includes("screen")); // Veya daha güvenilir bir yöntem
+        if (screenTrack) {
+            localStream.removeTrack(screenTrack);
+        }
+
+        // Orijinal kamera track'ine geri dön (eğer saklanmışsa)
+        if (originalVideoTrack) {
+            localStream.addTrack(originalVideoTrack); // Saklanan kamera track'ini ekle
+            
+            for (const peerId in peer.connections) {
+                if (peer.connections.hasOwnProperty(peerId)) {
+                    peer.connections[peerId].forEach(connection => {
+                        const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+                        if (sender) {
+                            sender.replaceTrack(originalVideoTrack).catch(e => console.error("Kameraya geri dönmek için replaceTrack hatası:", e));
+                        }
+                    });
+                }
+            }
+            myvideo.srcObject = localStream; // Tam stream'i (kamera + ses) ata
+            originalVideoTrack = null; // Saklanan track'i temizle
+        } else {
+            // Kamera track'i yoksa (belki başlangıçta kapalıydı), videoyu kapat
+            myvideo.srcObject = localStream; // Sadece ses varsa onu gösterir veya boş
+            if (localStream.getVideoTracks().length === 0 && isVideoOn) { // Video açıktı ama track yok
+                 // Kullanıcıya video kaynağı olmadığını belirtmek için UI güncellemesi yapılabilir.
+                 // Örneğin, video butonunu "video-slash" durumuna getir.
+                if(videoButt) {
+                    videoButt.innerHTML = '<i class="fas fa-video-slash"></i>';
+                    isVideoOn = false;
+                    const myVideoOffElement = document.getElementById('myvideooff');
+                    if (myVideoOffElement) myVideoOffElement.style.display = 'block';
+                }
+            }
+        }
+    }
+
+    isScreenSharing = false;
+    if (screenShareButt) {
+        screenShareButt.classList.remove('sharing');
+        screenShareButt.innerHTML = '<i class="fas fa-desktop"></i> Ekran Paylaş';
+    }
+    console.log('Ekran paylaşımı durduruldu.');
+    if (stoppedByBrowser) {
+        alert("Ekran paylaşımı tarayıcı tarafından durduruldu.");
+    }
+}
+
+
+if (whiteboardButt) {
+    whiteboardButt.addEventListener('click', () => {
+        boardVisible = !boardVisible;
+        whiteboardSection.style.display = boardVisible ? 'flex' : 'none';
+        
+        // Whiteboard icon'u güncelle
+        const icon = whiteboardButt.querySelector('i');
+        if (icon) {
+            icon.className = boardVisible ? 'fas fa-video' : 'fas fa-chalkboard';
+        }
+        
+        if (boardVisible) {
+            fitToContainer(canvas);
+            socket.emit('getCanvas'); 
+        }
+    });
+}
+
+socket.on('project chat history', (messages) => {
+    if (!chatRoom) return;
+    chatRoom.innerHTML = ''; 
+    messages.forEach(msg => { // Fixed: Added parentheses around msg
+        appendMessage(msg.user.username, msg.message, msg.createdAt, msg.user._id === userId); // Changed USER_ID to userId
+    });
+    console.log('Proje chat geçmişi yüklendi.', messages.length, 'mesaj');
+    chatRoom.scrollTop = chatRoom.scrollHeight; // Mesajlar yüklendikten sonra en alta kaydır
 });
 
-// Oda ayrılma (ör: sayfa kapatılırken)
-window.addEventListener('beforeunload', () => {
-    if (projectId && username) {
-        socket.emit('leave project', projectId, username);
+socket.on('project drawing history', (drawings) => {
+    console.log('Proje çizim geçmişi alınıyor...', drawings ? drawings.length : 0, 'çizim');
+    if (boardVisisble && whiteboardCont.style.visibility === 'visible') {
+        // 'getCanvas' zaten en son durumu yükleyecektir.
+        // Eğer geçmişteki her adımı çizmek gerekiyorsa (genellikle gerekmez):
+        // if (drawings && drawings.length > 0 && ctx) {
+        //     ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        //     drawings.forEach(drawing => {
+        //         if (drawing.data) { // Sunucudan gelen formatı kontrol et
+        //             drawRemote(drawing.data.newX, drawing.data.newY, drawing.data.prevX, drawing.data.prevY, drawing.data.color, drawing.data.size);
+        //         }
+        //     });
+        //     console.log('Çizim geçmişi canvasa yüklendi.');
+        // }
+        socket.emit('getCanvas'); // Sunucudan son durumu iste, bu daha verimli
     }
 });
+
+console.log('room.js yüklendi ve çalışmaya hazır.');
+
+function initializeRoom() {
+    console.log('CLIENT: Initializing room...');
+    if (!USER_ID || !ROOM_ID) {
+        console.error("CLIENT: User ID or Room ID is missing. Cannot initialize room.");
+        alert("Oda bilgileri eksik, lütfen sayfayı yenileyin.");
+        return;
+    }
+    
+    console.log(`CLIENT: Room ID: ${ROOM_ID}, User ID: ${USER_ID}, Username: ${USER_USERNAME}`);
+    
+    initializePeer(); // PeerJS bağlantısını başlat
+
+    // Sohbet geçmişini yükle
+    if (socket.connected) {
+        console.log('CLIENT: Socket already connected in initializeRoom. Fetching chat history.');
+        socket.emit('get project chat history', ROOM_ID);
+    } else {
+        socket.once('connect', () => { 
+            console.log('CLIENT: Socket connected (handler in initializeRoom). Fetching chat history.');
+            socket.emit('get project chat history', ROOM_ID);
+        });
+    }
+}
+
+// Sayfa kapanırken veya yenilenirken kullanıcıyı odadan ayır
+window.addEventListener('beforeunload', () => {
+    console.log('CLIENT: beforeunload event triggered.');
+    if (socket && socket.connected) {
+        // Sunucu, socket.disconnect olayında temizliği halletmelidir.
+    }
+    if (peer && !peer.destroyed) {
+        console.log('CLIENT: Destroying PeerJS connection.');
+        peer.destroy();
+    }
+});
+
+// DOM hazır olduğunda odayı başlat
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('CLIENT: DOM fully loaded and parsed. Calling initializeRoom.');
+    initializeRoom();
+});
+
+// initializeRoom(); // Bu satır yukarıdaki DOMContentLoaded ile değiştirildi.

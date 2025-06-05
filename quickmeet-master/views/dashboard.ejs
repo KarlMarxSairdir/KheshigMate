@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Kaşıkmate - Dashboard</title>
+    <meta name="description" content="Kaşıkmate Proje Yönetimi Dashboard">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="modern-dashboard-page">    <!-- Modern Dashboard Header -->
+    <header class="modern-dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="dashboard-logo">Kaşıkmate</div>
+                <div class="breadcrumb">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="username"><%= user ? user.username : 'Kullanıcı' %></span>
+                        <span class="user-role">Proje Yöneticisi</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="modern-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış</span>
+                </button>
+            </div>
+        </div>
+    </header>    <!-- Modern Dashboard Main Content -->
+    <main class="modern-dashboard-main">
+        <div class="dashboard-hero">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <i class="fas fa-rocket"></i>
+                    Hoş Geldiniz!
+                </h1>
+                <p class="hero-subtitle">
+                    Projelerinizi yönetin, ekibinizle işbirliği yapın ve başarıya ulaşın
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-projects"><%= projects ? projects.length : 0 %></div>
+                        <div class="stat-label">Toplam Proje</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Aktif Destek</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Sınırsız İmkan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Yeni Proje Oluşturma Kartı -->
+            <div class="modern-card create-project-card">
+                <div class="card-icon-header">
+                    <div class="card-icon create-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h2>Yeni Proje Oluştur</h2>
+                    <p>Hemen başlayın ve yeni bir proje yaratın</p>
+                </div>
+                <div class="card-content">
+                    <form id="create-project-form" action="/projects" method="POST">
+                        <div class="modern-form-group">
+                            <label for="project-name">
+                                <i class="fas fa-project-diagram"></i>
+                                Proje Adı
+                            </label>
+                            <input type="text" id="project-name" name="projectName" 
+                                   placeholder="Örn: Web Tasarım Projesi" required>
+                        </div>
+                        <div class="modern-form-group">
+                            <label for="project-desc">
+                                <i class="fas fa-file-alt"></i>
+                                Proje Açıklaması
+                            </label>
+                            <textarea id="project-desc" name="projectDescription" 
+                                      placeholder="Projenizin detaylarını açıklayın..." rows="4"></textarea>
+                        </div>                        <button type="submit" id="create-project" class="modern-primary-btn create-btn">
+                            <i class="fas fa-rocket"></i>
+                            <span>Proje Oluştur</span>
+                        </button>
+                    </form>
+                </div>
+            </div>            <!-- Projeler Listesi -->
+            <div class="modern-card projects-list-card">
+                <div class="card-icon-header">
+                    <div class="card-icon projects-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div class="header-with-action">
+                        <div>
+                            <h2>Projeleriniz</h2>
+                            <p>Mevcut projelerinizi görüntüleyin ve yönetin</p>
+                        </div>
+                        <button id="refresh-projects" class="modern-secondary-btn refresh-btn">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Yenile</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="project-list-loading" class="modern-loading" style="display:none">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <span>Projeler yükleniyor...</span>
+                    </div>
+                    
+                    <div id="project-list" class="projects-grid">
+                        <% if (projects && projects.length > 0) { %>
+                            <% projects.forEach(function(project) { %>
+                                <div class="modern-project-item" data-project-id="<%= project._id %>">
+                                    <div class="project-header">
+                                        <div class="project-icon">
+                                            <i class="fas fa-project-diagram"></i>
+                                        </div>
+                                        <div class="project-status">
+                                            <span class="status-badge active">Aktif</span>
+                                        </div>
+                                    </div>
+                                    <div class="project-info">
+                                        <h3><%= project.name %></h3>
+                                        <p><%= project.description || 'Açıklama eklenmemiş' %></p>
+                                        <div class="project-meta">
+                                            <span class="meta-item">
+                                                <i class="fas fa-calendar"></i>
+                                                <%= new Date(project.createdAt).toLocaleDateString('tr-TR') %>
+                                            </span>
+                                            <span class="meta-item">
+                                                <i class="fas fa-users"></i>
+                                                1 Üye
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="project-actions">
+                                        <a href="/room/<%= project._id %>" class="modern-primary-btn join-btn">
+                                            <i class="fas fa-video"></i>
+                                            <span>Katıl</span>
+                                        </a>
+                                        <button class="modern-danger-btn delete-btn delete-project-btn" 
+                                                data-project-id="<%= project._id %>"
+                                                title="Projeyi Sil">
+                                            <i class="fas fa-trash"></i>                                        </button>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                      <div id="project-list-empty" class="modern-empty-state" 
+                         <% if (projects && projects.length > 0) { %>style="display: none;"<% } %>>
+                        <div class="empty-icon">
+                            <i class="fas fa-folder-plus"></i>
+                        </div>
+                        <h3>Henüz hiç projeniz yok</h3>
+                        <p>İlk projenizi oluşturmak için yukarıdaki formu kullanın!</p>
+                        <button class="modern-secondary-btn" onclick="document.getElementById('project-name').focus()">
+                            <i class="fas fa-plus"></i>
+                            <span>İlk Projenizi Oluşturun</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Proje Silme Onay Modal -->
+    <div id="delete-modal" class="modal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Projeyi Sil</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Bu projeyi silmek istediğinizden emin misiniz?</p>
+                <p class="warning"><strong>Bu işlem geri alınamaz!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-delete" class="danger-btn">Sil</button>
+                <button id="cancel-delete" class="secondary-btn">İptal</button>
+            </div>
+        </div>
+    </div>
+    <!-- dashboard.js script'i /js/dashboard.js olarak public klasöründen yüklenecek -->
+    <script src="/js/dashboard.js"></script> 
+</body>
+</html>

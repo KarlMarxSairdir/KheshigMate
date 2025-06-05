@@ -5,6 +5,7 @@ const projectSchema = new mongoose.Schema({
     description: { type: String },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    lastCanvasState: { type: String }, // Added lastCanvasState for whiteboard persistence
     createdAt: { type: Date, default: Date.now }
 });
 
