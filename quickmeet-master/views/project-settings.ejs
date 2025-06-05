@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Kaşıkmate - Proje Ayarları</title>
+    <meta name="description" content="Kaşıkmate Proje Ayarları">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="modern-dashboard-page">
+    <!-- Modern Dashboard Header -->
+    <header class="modern-dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="dashboard-logo">Kaşıkmate</div>
+                <div class="breadcrumb">
+                    <i class="fas fa-home"></i>
+                    <a href="/dashboard">Dashboard</a>
+                    <span class="breadcrumb-separator">/</span>
+                    <i class="fas fa-cog"></i>
+                    <span><%= project.name %> Ayarları</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="username"><%= user ? user.username : 'Kullanıcı' %></span>
+                        <span class="user-role">Proje Sahibi</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="modern-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modern Settings Main Content -->
+    <main class="modern-dashboard-main">
+        <div class="settings-container">
+            <div class="settings-hero">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <i class="fas fa-cog"></i>
+                        Proje Ayarları
+                    </h1>
+                    <p class="hero-subtitle">
+                        <strong><%= project.name %></strong> projesini yönetin
+                    </p>
+                </div>
+            </div>
+
+            <div class="settings-grid">
+                <!-- Proje Bilgileri Kartı -->
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info-circle"></i> Proje Bilgileri</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-row">
+                            <label>Proje Adı:</label>
+                            <span><%= project.name %></span>
+                        </div>
+                        <div class="info-row">
+                            <label>Açıklama:</label>
+                            <span><%= project.description || 'Açıklama bulunmuyor' %></span>
+                        </div>
+                        <div class="info-row">
+                            <label>Oluşturulma:</label>
+                            <span><%= new Date(project.createdAt).toLocaleDateString('tr-TR') %></span>
+                        </div>
+                        <div class="info-row">
+                            <label>Proje Sahibi:</label>
+                            <span>
+                                <i class="fas fa-crown text-warning"></i>
+                                <%= project.owner.username %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Üye Ekleme Kartı -->
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user-plus"></i> Yeni Üye Ekle</h3>
+                    </div>
+                    <div class="card-content">
+                        <form id="add-member-form" class="member-form">
+                            <div class="form-group">
+                                <label for="member-username">Kullanıcı Adı:</label>
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        id="member-username" 
+                                        name="username" 
+                                        placeholder="Eklemek istediğiniz kullanıcının adını girin"
+                                        required
+                                    >
+                                    <button type="submit" class="btn-add-member">
+                                        <i class="fas fa-plus"></i>
+                                        Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="member-status" class="status-message"></div>
+                    </div>
+                </div>
+
+                <!-- Mevcut Üyeler Kartı -->
+                <div class="settings-card full-width">
+                    <div class="card-header">
+                        <h3><i class="fas fa-users"></i> Proje Üyeleri</h3>
+                        <span class="member-count"><%= project.members.length %> üye</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="members-list" id="members-list">
+                            <% project.members.forEach(member => { %>
+                                <div class="member-item" data-user-id="<%= member.user._id %>">
+                                    <div class="member-info">
+                                        <div class="member-avatar">
+                                            <i class="fas fa-user-circle"></i>
+                                        </div>
+                                        <div class="member-details">
+                                            <div class="member-name">
+                                                <%= member.user.username %>
+                                                <% if (member.role === 'owner') { %>
+                                                    <span class="role-badge owner">
+                                                        <i class="fas fa-crown"></i>
+                                                        Sahip
+                                                    </span>
+                                                <% } else if (member.role === 'editor') { %>
+                                                    <span class="role-badge editor">
+                                                        <i class="fas fa-edit"></i>
+                                                        Editör
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                            <div class="member-email"><%= member.user.email %></div>
+                                            <% if (member.user.skills && member.user.skills.length > 0) { %>
+                                                <div class="member-skills">
+                                                    <% member.user.skills.forEach(skill => { %>
+                                                        <span class="skill-tag"><%= skill %></span>
+                                                    <% }); %>
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <div class="member-actions">
+                                        <% if (member.role !== 'owner') { %>
+                                            <button 
+                                                class="btn-remove-member" 
+                                                data-user-id="<%= member.user._id %>"
+                                                data-username="<%= member.user.username %>"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                                Çıkar
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hızlı Eylemler Kartı -->
+                <div class="settings-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bolt"></i> Hızlı Eylemler</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="quick-actions">
+                            <a href="/room/<%= project._id %>" class="action-btn primary">
+                                <i class="fas fa-video"></i>
+                                <span>Odaya Git</span>
+                            </a>
+                            <a href="/dashboard" class="action-btn secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                <span>Dashboard'a Dön</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="/js/project-settings.js"></script>
+    <script>
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    console.error('Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

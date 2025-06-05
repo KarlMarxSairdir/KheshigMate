@@ -122,16 +122,33 @@
                         <span>Projeler yükleniyor...</span>
                     </div>
                     
-                    <div id="project-list" class="projects-grid">
-                        <% if (projects && projects.length > 0) { %>
+                    <div id="project-list" class="projects-grid">                        <% if (projects && projects.length > 0) { %>
                             <% projects.forEach(function(project) { %>
-                                <div class="modern-project-item" data-project-id="<%= project._id %>">
+                                <% 
+                                // Kullanıcının bu projedeki rolünü kontrol et
+                                let userRole = 'member';
+                                let isOwner = false;
+                                if (project.owner && project.owner._id && project.owner._id.toString() === user._id.toString()) {
+                                    userRole = 'owner';
+                                    isOwner = true;
+                                } else {
+                                    const membership = project.members ? project.members.find(member => 
+                                        member.user && member.user._id && member.user._id.toString() === user._id.toString()
+                                    ) : null;
+                                    if (membership) {
+                                        userRole = membership.role;
+                                    }
+                                }
+                                %>                                <div class="modern-project-item" data-project-id="<%= project._id %>">
                                     <div class="project-header">
                                         <div class="project-icon">
                                             <i class="fas fa-project-diagram"></i>
-                                        </div>
-                                        <div class="project-status">
-                                            <span class="status-badge active">Aktif</span>
+                                        </div>                                        <div class="project-status">
+                                            <% if (isOwner) { %>
+                                                <span class="status-badge owner" style="background: red !important; color: white !important; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; display: inline-block;">SAHİBİ</span>
+                                            <% } else { %>
+                                                <span class="status-badge active">Aktif</span>
+                                            <% } %>
                                         </div>
                                     </div>
                                     <div class="project-info">
@@ -144,19 +161,27 @@
                                             </span>
                                             <span class="meta-item">
                                                 <i class="fas fa-users"></i>
-                                                1 Üye
+                                                <%= project.members ? project.members.length : 1 %> Üye
                                             </span>
                                         </div>
-                                    </div>
-                                    <div class="project-actions">
-                                        <a href="/room/<%= project._id %>" class="modern-primary-btn join-btn">
+                                    </div>                                    <div class="project-actions">                                        <a href="/room/<%= project._id %>" class="modern-primary-btn join-btn">
                                             <i class="fas fa-video"></i>
                                             <span>Katıl</span>
-                                        </a>
-                                        <button class="modern-danger-btn delete-btn delete-project-btn" 
-                                                data-project-id="<%= project._id %>"
-                                                title="Projeyi Sil">
-                                            <i class="fas fa-trash"></i>                                        </button>
+                                        </a>                                        
+                                        <% if (isOwner) { %>
+                                            <a href="/projects/<%= project._id %>/settings" 
+                                               class="modern-secondary-btn settings-btn" 
+                                               style="background: blue !important; color: white !important; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: inline-block; margin: 0 0.25rem;"
+                                               title="Proje Ayarları">
+                                                <i class="fas fa-cog"></i>
+                                                AYARLAR
+                                            </a>
+                                            <button class="modern-danger-btn delete-btn delete-project-btn" 
+                                                    data-project-id="<%= project._id %>"
+                                                    title="Projeyi Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        <% } %>
                                     </div>
                                 </div>
                             <% }); %>
@@ -195,8 +220,7 @@
                 <button id="cancel-delete" class="secondary-btn">İptal</button>
             </div>
         </div>
-    </div>
-    <!-- dashboard.js script'i /js/dashboard.js olarak public klasöründen yüklenecek -->
-    <script src="/js/dashboard.js"></script> 
+    </div>    <!-- dashboard.js script'i /js/dashboard.js olarak public klasöründen yüklenecek -->
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>

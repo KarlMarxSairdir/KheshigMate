@@ -229,9 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .finally(function() {
                 if (projectListLoading) projectListLoading.style.display = 'none';
             });
-    }
-
-    // Projeleri görüntüle
+    }    // Projeleri görüntüle
     function displayProjects(projects) {
         if (!projectList || !projectListEmpty) {
             console.error("projectList or projectListEmpty element not found in displayProjects");
@@ -248,10 +246,54 @@ document.addEventListener('DOMContentLoaded', function() {
         projectListEmpty.style.display = 'none';
         projectList.style.display = 'block';
 
+        // Kullanıcı ID'sini localStorage'dan al
+        var currentUserId = localStorage.getItem('userId');
+        console.log('🔍 Current user ID from localStorage:', currentUserId);
+
         var projectsHTML = '';
         for (var i = 0; i < projects.length; i++) {
             var project = projects[i];
             var createdDate = new Date(project.createdAt).toLocaleDateString('tr-TR');
+            
+            // Owner kontrolü yap
+            var isOwner = false;
+            if (project.owner && project.owner._id && currentUserId) {
+                isOwner = project.owner._id.toString() === currentUserId.toString();
+            }
+            
+            console.log('📋 Project:', project.name, '- Is owner:', isOwner, '- Owner ID:', project.owner ? project.owner._id : 'null');
+            
+            // Status badge - owner ise "SAHİBİ", değilse "Aktif"
+            var statusBadge = isOwner ? 
+                '<span class="status-badge owner" style="background: red !important; color: white !important; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; display: inline-block;">SAHİBİ</span>' :
+                '<span class="status-badge active">Aktif</span>';
+            
+            // Project actions - owner ise settings button ve delete button, değilse sadece katıl
+            var projectActions = '';
+            if (isOwner) {
+                projectActions = 
+                    '<a href="/room/' + project._id + '" class="modern-primary-btn join-btn">' +
+                    '    <i class="fas fa-video"></i>' +
+                    '    <span>Katıl</span>' +
+                    '</a>' +
+                    '<a href="/projects/' + project._id + '/settings" class="modern-secondary-btn settings-btn" ' +
+                    '   style="background: blue !important; color: white !important; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: inline-block; margin: 0 0.25rem;" ' +
+                    '   title="Proje Ayarları">' +
+                    '    <i class="fas fa-cog"></i>' +
+                    '    AYARLAR' +
+                    '</a>' +
+                    '<button class="modern-danger-btn delete-btn delete-project-btn" ' +
+                    '        data-project-id="' + project._id + '" ' +
+                    '        title="Projeyi Sil">' +
+                    '    <i class="fas fa-trash"></i>' +
+                    '</button>';
+            } else {
+                projectActions = 
+                    '<a href="/room/' + project._id + '" class="modern-primary-btn join-btn">' +
+                    '    <i class="fas fa-video"></i>' +
+                    '    <span>Katıl</span>' +
+                    '</a>';
+            }
             
             projectsHTML += 
                 '<div class="modern-project-item" data-project-id="' + project._id + '">' +
@@ -260,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '            <i class="fas fa-project-diagram"></i>' +
                 '        </div>' +
                 '        <div class="project-status">' +
-                '            <span class="status-badge active">Aktif</span>' +
+                            statusBadge +
                 '        </div>' +
                 '    </div>' +
                 '    <div class="project-info">' +
@@ -273,20 +315,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 '            </span>' +
                 '            <span class="meta-item">' +
                 '                <i class="fas fa-users"></i>' +
-                '                1 Üye' +
+                '                ' + (project.members ? project.members.length : 1) + ' Üye' +
                 '            </span>' +
                 '        </div>' +
                 '    </div>' +
                 '    <div class="project-actions">' +
-                '        <a href="/room/' + project._id + '" class="modern-primary-btn join-btn">' +
-                '            <i class="fas fa-video"></i>' +
-                '            <span>Katıl</span>' +
-                '        </a>' +
-                '        <button class="modern-danger-btn delete-btn delete-project-btn" ' +
-                '                data-project-id="' + project._id + '"' +
-                '                title="Projeyi Sil">' +
-                '            <i class="fas fa-trash"></i>' +
-                '        </button>' +
+                        projectActions +
                 '    </div>' +
                 '</div>';
         }
