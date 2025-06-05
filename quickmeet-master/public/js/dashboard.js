@@ -28,11 +28,18 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('- projectList:', projectList);
 
     // Sayfa yüklendiğinde auth kontrolü ve verileri yükle
-    init();
-
-    function init() {
+    init();    function init() {
         checkAuth().then(function() {
-            return loadProjects();
+            // Server-side render edilen projeler varsa, onları korumak için
+            // sadece boş liste durumunda client-side yükleme yap
+            var existingProjects = document.querySelectorAll('.modern-project-item');
+            if (existingProjects.length === 0) {
+                return loadProjects();
+            } else {
+                // Mevcut projeler varsa sadece event listener'ları ekle
+                attachProjectEventListeners();
+                console.log('✅ Using server-side rendered projects');
+            }
         }).catch(function(error) {
             console.error('Init error:', error);
         });
@@ -340,6 +347,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 openModal();
             };
         }
+    }    // Silme butonlarına event listener ekle
+    function attachProjectEventListeners() {
+        console.log('🔗 Attaching event listeners to existing projects');
+        
+        // Delete butonlarına event listener ekle
+        var deleteButtons = document.querySelectorAll('.delete-project-btn');
+        deleteButtons.forEach(function(button) {
+            button.onclick = function(e) {
+                e.preventDefault();
+                var projectId = this.getAttribute('data-project-id');
+                var projectItem = this.closest('.modern-project-item');
+                var projectName = projectItem ? projectItem.querySelector('h3').textContent : 'Bu proje';
+                
+                currentDeleteId = projectId;
+                if (deleteModal) {
+                    var modalBody = deleteModal.querySelector('.modal-body p');
+                    if (modalBody) {
+                        modalBody.textContent = '"' + projectName + '" projesini silmek istediğinizden emin misiniz?';
+                    }
+                    openModal();
+                }
+            };
+        });
+        
+        console.log('✅ Event listeners attached to', deleteButtons.length, 'delete buttons');
     }    // Silme modalını aç
     function openModal() {
         console.log('🔓 Opening delete modal');

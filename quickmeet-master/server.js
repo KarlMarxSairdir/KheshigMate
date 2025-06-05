@@ -16,9 +16,7 @@ const DrawingData = require('./models/DrawingData'); // Added DrawingData model
 const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
-
-// Import middleware
-const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth');
+const { ensureProjectOwner } = require('./middleware/auth'); // Project owner middleware
 
 const PORT = process.env.PORT || 3000;
 
@@ -47,14 +45,9 @@ const Session = mongoose.model('Session', sessionSchema); // Added Session Model
 
 const app = express();
 
-// SSL Certificate files for HTTPS
-const privateKey = fs.readFileSync(path.join(__dirname, '..', 'key.pem'), 'utf8');
-const certificate = fs.readFileSync(path.join(__dirname, '..', 'cert.pem'), 'utf8');
-const credentials = { key: privateKey, cert: certificate };
-
 // CORS middleware'ini burada kullanın
 app.use(cors({
-    origin: ['https://localhost:3000', 'https://192.168.1.100:3000', 'http://localhost:3000'], // Support both HTTPS and HTTP
+    origin: ['http://localhost:3000', 'https://localhost:3000'], // İstemcinizin çalıştığı adresler
     credentials: true // Kimlik bilgileriyle (cookie vs.) isteklere izin ver
 }));
 
@@ -168,36 +161,22 @@ app.get('/check-auth', (req, res) => {
     }
 });
 
+// Middleware to ensure user is authenticated
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
 // Dashboard Route
 app.get('/dashboard', ensureAuthenticated, async (req, res) => {
     try {
-        // Kullanıcının sahip olduğu veya üyesi olduğu projeleri çek
-        const projects = await Project.find({
-            $or: [
-                { owner: req.user._id }, // Kullanıcının sahip olduğu projeler
-                { 'members.user': req.user._id } // Kullanıcının üyesi olduğu projeler
-            ]
-        })
-        .populate('owner', 'username email')
-        .populate('members.user', 'username email')
-        .sort({ createdAt: -1 });
-        
-        // Debug için log'lar ekle
-        console.log('Dashboard - User ID:', req.user._id.toString());
-        console.log('Dashboard - Projects found:', projects.length);
-        if (projects.length > 0) {
-            projects.forEach((project, index) => {
-                console.log(`Project ${index + 1}:`);
-                console.log('  - Name:', project.name);
-                console.log('  - Owner ID:', project.owner ? project.owner._id.toString() : 'No owner');
-                console.log('  - Is user owner?', project.owner && project.owner._id.toString() === req.user._id.toString());
-                console.log('  - Members count:', project.members ? project.members.length : 0);
-            });
-        }
-        
+        // Kullanıcının projelerini veritabanından çek
+        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 }); // Projeleri çek ve sırala
         res.render('dashboard', { 
             user: req.user, // Oturum açmış kullanıcı bilgisi
-            projects: projects // Kullanıcının erişebileceği projeler
+            projects: projects // Kullanıcının projeleri
         });
     } catch (err) {
         console.error("Error rendering dashboard:", err);
@@ -212,14 +191,12 @@ app.post('/projects', ensureAuthenticated, async (req, res) => {
     try {
         if (!name || name.trim() === '') {
             return res.status(400).json({ message: 'Proje adı gereklidir.' });
-        }        const newProject = new Project({
+        }
+        const newProject = new Project({
             name: name.trim(),
             description: description ? description.trim() : '',
             owner: req.user._id,
-            members: [{ 
-                user: req.user._id, 
-                role: 'owner' 
-            }] // Sahibi otomatik olarak owner rolüyle üye
+            members: [req.user._id] // Sahibi aynı zamanda üye
         });
         await newProject.save();
         res.status(201).json({ message: 'Proje başarıyla oluşturuldu.', project: newProject });
@@ -232,17 +209,7 @@ app.post('/projects', ensureAuthenticated, async (req, res) => {
 // Get user's projects (Bu route dashboard.js tarafından kullanılacak)
 app.get('/projects', ensureAuthenticated, async (req, res) => {
     try {
-        // Kullanıcının sahip olduğu veya üyesi olduğu projeleri çek
-        const projects = await Project.find({
-            $or: [
-                { owner: req.user._id }, // Kullanıcının sahip olduğu projeler
-                { 'members.user': req.user._id } // Kullanıcının üyesi olduğu projeler
-            ]
-        })
-        .populate('owner', 'username email')
-        .populate('members.user', 'username email')
-        .sort({ createdAt: -1 });
-        
+        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 });
         res.json({ projects }); // Projeleri { projects: [...] } formatında gönder
     } catch (err) {
         console.error('Error fetching projects:', err);
@@ -285,16 +252,10 @@ app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => 
             project: projectId,
             user: userId,
             content: content.trim()
-        });        await newNote.save();
+        });
+
+        await newNote.save();
         const populatedNote = await ProjectNote.findById(newNote._id).populate('user', 'username email _id');
-        
-        // Socket.IO ile gerçek zamanlı not ekleme bildirimi
-        if (io) {
-            io.to(projectId).emit('note created', {
-                note: populatedNote,
-                projectId: projectId
-            });
-        }
         
         res.status(201).json({ message: 'Not başarıyla oluşturuldu.', note: populatedNote });
 
@@ -367,18 +328,208 @@ app.delete('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req
 
         res.status(200).json({ message: 'Not başarıyla silindi.' });    } catch (err) {
         console.error(`Error deleting note ${req.params.noteId} for project ${req.params.projectId}:`, err);
-        res.status(500).json({ message: 'Not silinirken sunucu hatası oluştu.', error: err.message });
+        res.status(500).json({ message: 'Not silinirken sunucu hatası oluştu.', error: err.message });    }
+});
+
+// Project Settings Route - Render project settings page
+app.get('/projects/:projectId/settings', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+    try {
+        const project = req.project; // ensureProjectOwner middleware'i project'i req'e ekler
+        
+        // Populate owner and members info
+        await project.populate([
+            { path: 'owner', select: 'username email' },
+            { path: 'members.user', select: 'username email' }
+        ]);
+        
+        res.render('project-settings', { 
+            user: req.user, 
+            project: project,
+            title: `${project.name} - Proje Ayarları`
+        });
+    } catch (err) {
+        console.error('Error rendering project settings:', err);
+        res.status(500).send('Proje ayarları yüklenirken bir hata oluştu.');
+    }
+});
+
+// Project Members API Routes
+// Add member to project
+app.post('/projects/:projectId/members', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+    try {
+        const project = req.project;
+        const { username } = req.body;
+
+        if (!username || username.trim() === '') {
+            return res.status(400).json({ message: 'Kullanıcı adı gereklidir.' });
+        }
+
+        // Find user by username
+        const userToAdd = await User.findOne({ username: username.trim() });
+        if (!userToAdd) {
+            return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+        }
+
+        // Check if user is already a member
+        const isAlreadyMember = project.members.some(member => 
+            member.user.toString() === userToAdd._id.toString()
+        );
+
+        if (isAlreadyMember) {
+            return res.status(400).json({ message: 'Bu kullanıcı zaten proje üyesi.' });
+        }
+
+        // Add user as member
+        project.members.push({
+            user: userToAdd._id,
+            role: 'member',
+            joinedAt: new Date()
+        });
+
+        await project.save();
+
+        // Populate user info for response
+        await project.populate('members.user', 'username email');
+
+        res.status(200).json({ 
+            message: 'Üye başarıyla eklendi.',
+            member: project.members[project.members.length - 1]
+        });
+
+    } catch (err) {
+        console.error('Error adding member:', err);
+        res.status(500).json({ message: 'Üye eklenirken hata oluştu.', error: err.message });
+    }
+});
+
+// Remove member from project
+app.delete('/projects/:projectId/members/:userId', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+    try {
+        const project = req.project;
+        const userIdToRemove = req.params.userId;
+
+        // Don't allow removing the owner
+        if (project.owner.toString() === userIdToRemove) {
+            return res.status(400).json({ message: 'Proje sahibi çıkarılamaz.' });
+        }
+
+        // Find and remove member
+        const memberIndex = project.members.findIndex(member => 
+            member.user.toString() === userIdToRemove
+        );
+
+        if (memberIndex === -1) {
+            return res.status(404).json({ message: 'Üye bulunamadı.' });
+        }
+
+        project.members.splice(memberIndex, 1);
+        await project.save();
+
+        res.status(200).json({ message: 'Üye başarıyla çıkarıldı.' });
+
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Üye çıkarılırken hata oluştu.', error: err.message });
     }
 });
 
 // Delete a project (only project owner can delete)
-app.delete('/projects/:projectId', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+app.post('/projects/:projectId/members', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+    try {
+        const project = req.project;
+        const { username } = req.body;
+
+        if (!username || username.trim() === '') {
+            return res.status(400).json({ message: 'Kullanıcı adı gereklidir.' });
+        }
+
+        // Find user by username
+        const userToAdd = await User.findOne({ username: username.trim() });
+        if (!userToAdd) {
+            return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+        }
+
+        // Check if user is already a member
+        const isAlreadyMember = project.members.some(member => 
+            member.user.toString() === userToAdd._id.toString()
+        );
+
+        if (isAlreadyMember) {
+            return res.status(400).json({ message: 'Bu kullanıcı zaten proje üyesi.' });
+        }
+
+        // Add user as member
+        project.members.push({
+            user: userToAdd._id,
+            role: 'member',
+            joinedAt: new Date()
+        });
+
+        await project.save();
+
+        // Populate user info for response
+        await project.populate('members.user', 'username email');
+
+        res.status(200).json({ 
+            message: 'Üye başarıyla eklendi.',
+            member: project.members[project.members.length - 1]
+        });
+
+    } catch (err) {
+        console.error('Error adding member:', err);
+        res.status(500).json({ message: 'Üye eklenirken hata oluştu.', error: err.message });
+    }
+});
+
+// Remove member from project
+app.delete('/projects/:projectId/members/:userId', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+    try {
+        const project = req.project;
+        const userIdToRemove = req.params.userId;
+
+        // Don't allow removing the owner
+        if (project.owner.toString() === userIdToRemove) {
+            return res.status(400).json({ message: 'Proje sahibi çıkarılamaz.' });
+        }
+
+        // Find and remove member
+        const memberIndex = project.members.findIndex(member => 
+            member.user.toString() === userIdToRemove
+        );
+
+        if (memberIndex === -1) {
+            return res.status(404).json({ message: 'Üye bulunamadı.' });
+        }
+
+        project.members.splice(memberIndex, 1);
+        await project.save();
+
+        res.status(200).json({ message: 'Üye başarıyla çıkarıldı.' });
+
+    } catch (err) {
+        console.error('Error removing member:', err);
+        res.status(500).json({ message: 'Üye çıkarılırken hata oluştu.', error: err.message });
+    }
+});
+
+// Delete a project (only project owner can delete)
+app.delete('/projects/:projectId', ensureAuthenticated, async (req, res) => {
     try {
         const projectId = req.params.projectId;
+        const userId = req.user._id;
+
         console.log('🗑️ Delete request for project:', projectId, 'by user:', req.user.username);
 
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = req.project;
+        // Find the project
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+
+        // Only project owner can delete
+        if (project.owner.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Bu projeyi silme yetkiniz yok.' });
+        }
 
         // Delete the project
         await Project.findByIdAndDelete(projectId);
@@ -397,262 +548,40 @@ app.delete('/projects/:projectId', ensureAuthenticated, ensureProjectOwner, asyn
     }
 });
 
-// Add member to project (only project owner can add members)
-app.post('/projects/:projectId/members', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
+// Room Route
+app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
     try {
         const projectId = req.params.projectId;
-        const { username } = req.body;
-
-        if (!username || username.trim() === '') {
-            return res.status(400).json({ message: 'Kullanıcı adı gereklidir.' });
-        }
-
-        // Kullanıcıyı bul
-        const userToAdd = await User.findOne({ username: username.trim() });
-        if (!userToAdd) {
-            return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
-        }
-
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = req.project;
-
-        // Kullanıcı zaten üye mi kontrol et
-        const isAlreadyMember = project.members.some(member => 
-            member.user.toString() === userToAdd._id.toString()
-        );
-
-        if (isAlreadyMember) {
-            return res.status(400).json({ message: 'Kullanıcı zaten proje üyesi.' });
-        }
-
-        // Kullanıcıyı editör olarak ekle
-        project.members.push({
-            user: userToAdd._id,
-            role: 'editor'
-        });
-
-        await project.save();
-
-        // Güncellenmiş proje bilgisini üye bilgileriyle birlikte döndür
-        const updatedProject = await Project.findById(projectId)
-            .populate('owner', 'username email')
-            .populate('members.user', 'username email');
-
-        console.log(`✅ User ${userToAdd.username} added to project ${project.name} as editor by ${req.user.username}`);
-
-        res.status(200).json({ 
-            message: 'Kullanıcı başarıyla projeye eklendi.',
-            member: {
-                user: {
-                    _id: userToAdd._id,
-                    username: userToAdd.username,
-                    email: userToAdd.email
-                },
-                role: 'editor'
-            },
-            project: updatedProject
-        });
-
-    } catch (err) {
-        console.error('❌ Add member error:', err);
-        res.status(500).json({ message: 'Üye eklenirken hata oluştu.', error: err.message });
-    }
-});
-
-// Get project members (only project members can view)
-app.get('/projects/:projectId/members', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
-    try {
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = await Project.findById(req.params.projectId)
-            .populate('owner', 'username email skills')
-            .populate('members.user', 'username email skills');
+        const project = await Project.findById(projectId);
 
         if (!project) {
-            return res.status(404).json({ message: 'Proje bulunamadı.' });
+            // Proje bulunamazsa, kullanıcıyı dashboard\'a yönlendir veya bir hata mesajı göster
+            console.log(`Proje bulunamadı: ${projectId}`);
+            return res.redirect('/dashboard?error=projectnotfound');
         }
 
-        res.status(200).json({ 
-            members: project.members,
-            owner: project.owner
-        });
+        // Proje üyelerini kontrol et (isteğe bağlı, eğer sadece üyeler girebilsin istiyorsanız)
+        // if (!project.members.includes(req.user._id)) {
+        //     console.log(`Kullanıcı ${req.user.username} proje ${project.name} üyesi değil.`);
+        //     return res.redirect('/dashboard?error=notmember');
+        // }
 
-    } catch (err) {
-        console.error('❌ Get members error:', err);
-        res.status(500).json({ message: 'Üyeler alınırken hata oluştu.', error: err.message });
-    }
-});
-
-// Remove member from project (only project owner can remove members)
-app.delete('/projects/:projectId/members/:userId', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
-    try {
-        const { projectId, userId } = req.params;
-
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = req.project;
-
-        // Sahibi silinmeye çalışılıyor mu kontrol et
-        if (project.owner.toString() === userId) {
-            return res.status(400).json({ message: 'Proje sahibi projeden çıkarılamaz.' });
-        }
-
-        // Üyeyi bul ve çıkar
-        const memberIndex = project.members.findIndex(member => 
-            member.user.toString() === userId
-        );
-
-        if (memberIndex === -1) {
-            return res.status(404).json({ message: 'Kullanıcı proje üyesi değil.' });
-        }
-
-        const removedMember = project.members[memberIndex];
-        project.members.splice(memberIndex, 1);
-
-        await project.save();
-
-        console.log(`✅ User ${userId} removed from project ${project.name} by ${req.user.username}`);
-
-        res.status(200).json({ 
-            message: 'Kullanıcı başarıyla projeden çıkarıldı.',
-            removedMember: removedMember
-        });
-
-    } catch (err) {
-        console.error('❌ Remove member error:', err);
-        res.status(500).json({ message: 'Üye çıkarılırken hata oluştu.', error: err.message });
-    }
-});
-
-// Canvas Drawing Data Routes
-// Save canvas drawing data
-app.post('/projects/:projectId/drawing', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
-    try {
-        const projectId = req.params.projectId;
-        const { data } = req.body;
-
-        if (!data) {
-            return res.status(400).json({ message: 'Canvas verisi gereklidir.' });
-        }
-
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = req.project;
-
-        // Yeni çizim verisi oluştur
-        const drawingData = new DrawingData({
-            project: projectId,
-            user: req.user._id,
-            data: data
-        });
-
-        await drawingData.save();
-
-        console.log(`✅ Canvas data saved for project ${project.name} by ${req.user.username}`);
-
-        res.status(201).json({ 
-            message: 'Canvas verisi başarıyla kaydedildi.',
-            drawingData: {
-                _id: drawingData._id,
-                project: drawingData.project,
-                user: drawingData.user,
-                createdAt: drawingData.createdAt
-            }
-        });
-
-    } catch (err) {
-        console.error('❌ Save canvas data error:', err);
-        res.status(500).json({ message: 'Canvas verisi kaydedilirken hata oluştu.', error: err.message });
-    }
-});
-
-// Get latest canvas drawing data
-app.get('/projects/:projectId/drawing', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
-    try {
-        const projectId = req.params.projectId;
-
-        // En son kaydedilen çizim verisini al
-        const latestDrawing = await DrawingData.findOne({ project: projectId })
-            .sort({ createdAt: -1 })
-            .populate('user', 'username');
-
-        if (!latestDrawing) {
-            return res.status(404).json({ message: 'Bu proje için çizim verisi bulunamadı.' });
-        }
-
-        console.log(`✅ Canvas data retrieved for project ${projectId}`);
-
-        res.status(200).json({ 
-            message: 'Canvas verisi başarıyla alındı.',
-            drawingData: latestDrawing
-        });
-
-    } catch (err) {
-        console.error('❌ Get canvas data error:', err);
-        res.status(500).json({ message: 'Canvas verisi alınırken hata oluştu.', error: err.message });
-    }
-});
-
-// Get all canvas drawing data for a project (history)
-app.get('/projects/:projectId/drawing/history', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
-    try {
-        const projectId = req.params.projectId;
-        const { limit = 10, skip = 0 } = req.query;
-
-        // Çizim verisi geçmişini al
-        const drawingHistory = await DrawingData.find({ project: projectId })
-            .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .skip(parseInt(skip))
-            .populate('user', 'username email')
-            .select('-data'); // Büyük veri boyutu nedeniyle data alanını hariç tut
-
-        const totalCount = await DrawingData.countDocuments({ project: projectId });
-
-        console.log(`✅ Canvas history retrieved for project ${projectId}, ${drawingHistory.length} items`);
-
-        res.status(200).json({ 
-            message: 'Canvas geçmişi başarıyla alındı.',
-            history: drawingHistory,
-            pagination: {
-                total: totalCount,
-                limit: parseInt(limit),
-                skip: parseInt(skip),
-                hasMore: totalCount > (parseInt(skip) + parseInt(limit))
-            }
-        });
-
-    } catch (err) {
-        console.error('❌ Get canvas history error:', err);
-        res.status(500).json({ message: 'Canvas geçmişi alınırken hata oluştu.', error: err.message });
-    }
-});
-
-// Project Settings Route (only project owner can access)
-app.get('/projects/:projectId/settings', ensureAuthenticated, ensureProjectOwner, async (req, res) => {
-    try {
-        // Proje bilgisi middleware'den geliyor (req.project)
-        const project = await Project.findById(req.params.projectId)
-            .populate('owner', 'username email skills')
-            .populate('members.user', 'username email skills');
-
-        if (!project) {
-            return res.status(404).send('Proje bulunamadı.');
-        }
-
-        console.log(`✅ User ${req.user.username} accessing settings for project: ${project.name}`);
-
-        res.render('project-settings', { 
+        res.render('room', { 
             user: req.user, 
-            project: project
+            project: project,
+            // Gerekirse room.js için ek ayarlar veya tokenlar buraya eklenebilir
         });
     } catch (err) {
-        console.error("Error rendering project settings:", err);
-        res.status(500).send("Proje ayarları yüklenirken bir hata oluştu.");
+        console.error("Error rendering room:", err);
+        res.status(500).send("Oda yüklenirken bir hata oluştu.");
     }
 });
 
 // HTTPS için SSL sertifikaları
 let server, io;
 
-// HTTPS Configuration - ENABLED
+// HTTPS KISMI TAMAMEN DEVRE DIŞI BIRAKILDI - BAŞLANGIÇ
+
 try {
     const options = {
         key: fs.readFileSync(path.join(__dirname, 'key.pem')),
@@ -661,26 +590,26 @@ try {
     server = https.createServer(options, app);
     io = socketio(server, {
         cors: {
-            origin: ["https://localhost:3000", "https://192.168.1.100:3000"], // Allow both localhost and network IP
+            origin: "https://localhost:3000", 
             methods: ["GET", "POST"],
             credentials: true
         }
     });
     console.log('✅ HTTPS server configured with SSL certificates');
 } catch (error) {
-    console.error('❌ SSL certificates not found:', error.message);
-    console.log('📁 Looking for cert files in:', __dirname);
-    console.log('⚠️ Falling back to HTTP mode');
-    
+    console.log('⚠️ SSL certificates not found, falling back to HTTP only');
+    // Fallback to HTTP if SSL certs are not found (bu blok artık ana blok olacak)
     server = http.createServer(app);
     io = socketio(server, {
         cors: {
-            origin: ["http://localhost:3000", "http://192.168.1.100:3000"], 
+            origin: "http://localhost:3000", 
             methods: ["GET", "POST"],
             credentials: true
         }
     });
 }
+
+// HTTPS KISMI TAMAMEN DEVRE DIŞI BIRAKILDI - SON
 
 // PeerJS sunucusunu HTTPS/HTTP sunucusuna entegre et
 const peerServer = ExpressPeerServer(server, {
@@ -829,7 +758,9 @@ function setupSocketHandlers(io) {
             } catch (err) {
                 console.error(`Error saving/sending chat message for project ${projectId}:`, err);
             }
-        });        socket.on('project draw', async (projectId, drawData) => {
+        });
+
+        socket.on('project draw', async (projectId, drawData) => {
             // const userInfo = projectUsers[projectId]?.[socket.id]; // Eski hatalı arama
             const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id); // Düzeltilmiş arama
             if (!userInfo) {
@@ -850,114 +781,6 @@ function setupSocketHandlers(io) {
             }
             
             socket.to(projectId).emit('project draw', { user: userId, data: drawData });
-        });        // Real-time note synchronization
-        socket.on('note created', async (projectId, noteData) => {
-            const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id);
-            if (!userInfo) {
-                console.error('note created: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
-                return;
-            }
-            const { userId, userName } = userInfo;
-
-            try {
-                // Create the note in database
-                const note = new ProjectNote({
-                    project: projectId,
-                    user: userId,
-                    title: noteData.title || '',
-                    content: noteData.content
-                });
-                await note.save();
-
-                // Broadcast to all users in the project
-                io.to(projectId).emit('note created', {
-                    id: note._id,
-                    title: note.title,
-                    content: note.content,
-                    user: { _id: userId, username: userName },
-                    createdAt: note.createdAt,
-                    updatedAt: note.updatedAt
-                });
-
-                console.log(`Note created in project ${projectId} by user ${userName}`);
-            } catch (err) {
-                console.error(`Error creating note for project ${projectId}:`, err);
-                socket.emit('note error', { message: 'Note could not be created' });
-            }
-        });
-
-        socket.on('note updated', async (projectId, noteId, noteData) => {
-            const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id);
-            if (!userInfo) {
-                console.error('note updated: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
-                return;
-            }
-            const { userId, userName } = userInfo;
-
-            try {
-                // Update the note in database
-                const note = await ProjectNote.findOneAndUpdate(
-                    { _id: noteId, project: projectId },
-                    { 
-                        title: noteData.title || '',
-                        content: noteData.content,
-                        updatedAt: new Date()
-                    },
-                    { new: true }
-                ).populate('user', 'username');
-
-                if (!note) {
-                    socket.emit('note error', { message: 'Note not found' });
-                    return;
-                }
-
-                // Broadcast to all users in the project
-                io.to(projectId).emit('note updated', {
-                    id: note._id,
-                    title: note.title,
-                    content: note.content,
-                    user: note.user,
-                    createdAt: note.createdAt,
-                    updatedAt: note.updatedAt
-                });
-
-                console.log(`Note ${noteId} updated in project ${projectId} by user ${userName}`);
-            } catch (err) {
-                console.error(`Error updating note ${noteId} for project ${projectId}:`, err);
-                socket.emit('note error', { message: 'Note could not be updated' });
-            }
-        });
-
-        socket.on('note deleted', async (projectId, noteId) => {
-            const userInfo = projectUsers[projectId]?.find(u => u.socketId === socket.id);
-            if (!userInfo) {
-                console.error('note deleted: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
-                return;
-            }
-            const { userId, userName } = userInfo;
-
-            try {
-                // Delete the note from database
-                const note = await ProjectNote.findOneAndDelete({
-                    _id: noteId,
-                    project: projectId
-                });
-
-                if (!note) {
-                    socket.emit('note error', { message: 'Note not found' });
-                    return;
-                }
-
-                // Broadcast to all users in the project
-                io.to(projectId).emit('note deleted', {
-                    id: noteId
-                });
-
-                console.log(`Note ${noteId} deleted from project ${projectId} by user ${userName}`);
-            } catch (err) {
-                console.error(`Error deleting note ${noteId} for project ${projectId}:`, err);
-                socket.emit('note error', { message: 'Note could not be deleted' });
-            }
         });
 
         socket.on('store canvas', async (url) => {

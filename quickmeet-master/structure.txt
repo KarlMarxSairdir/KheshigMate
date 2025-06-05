@@ -1,0 +1,45 @@
+﻿|-- middleware
+  |-- auth.js
+|-- models
+  |-- ChatMessage.js
+  |-- DrawingData.js
+  |-- Project.js
+  |-- ProjectNote.js
+  |-- User.js
+|-- public
+  |-- css
+    |-- style.css
+    |-- style.css.map
+    |-- style.scss
+  |-- js
+    |-- auth.js
+    |-- dashboard.js
+    |-- landing.js
+    |-- project-settings.js
+    |-- room.js
+    |-- room_backup.js
+    |-- room_fixed.js
+    |-- room_new.js
+|-- views
+  |-- dashboard.ejs
+  |-- index.ejs
+  |-- login.ejs
+  |-- project-settings.ejs
+  |-- register.ejs
+  |-- room.ejs
+|-- .gitignore
+|-- cert.pem
+|-- debug-login.js
+|-- expressApp.js
+|-- FAZ1_DURUM_RAPORU.md
+|-- FAZ1_FINAL_RAPOR.md
+|-- FAZ1_YAPLACAKLAR.md
+|-- key.pem
+|-- LICENSE
+|-- package-lock.json
+|-- package.json
+|-- README.md
+|-- server.js
+|-- structure.txt
+|-- TEKNIK_DOKUMANTASYON.md
+|-- test-db.js

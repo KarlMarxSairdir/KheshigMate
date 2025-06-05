@@ -192,13 +192,6 @@ function escapeAttributeForJS(str) {
 
 
 async function createNote(content) {
-    // Send via Socket.IO for real-time sync
-    socket.emit('note created', ROOM_ID, {
-        title: content.substring(0, 50), // Use first 50 chars as title
-        content: content
-    });
-    
-    // Also save via HTTP API as backup
     const response = await fetch(`/projects/${ROOM_ID}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,13 +205,6 @@ async function createNote(content) {
 }
 
 async function updateNote(noteId, content) {
-    // Send via Socket.IO for real-time sync
-    socket.emit('note updated', ROOM_ID, noteId, {
-        title: content.substring(0, 50), // Use first 50 chars as title
-        content: content
-    });
-    
-    // Also update via HTTP API as backup
     const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -233,12 +219,7 @@ async function updateNote(noteId, content) {
 
 async function deleteNote(noteId) {
     if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
-    
     try {
-        // Send via Socket.IO for real-time sync
-        socket.emit('note deleted', ROOM_ID, noteId);
-        
-        // Also delete via HTTP API as backup
         const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, { 
             method: 'DELETE',
             credentials: 'include' 
@@ -1043,96 +1024,6 @@ socket.on('project drawing history', (drawings) => {
         socket.emit('getCanvas'); // Sunucudan son durumu iste, bu daha verimli
     }
 });
-
-// Real-time note synchronization events
-socket.on('note created', (noteData) => {
-    console.log('New note created:', noteData);
-    // If notes tab is active, refresh the notes
-    if (document.getElementById('notes-tab')?.classList.contains('active')) {
-        loadNotes();
-    }
-    // Show notification
-    const title = noteData.title || noteData.content.substring(0, 30) + '...';
-    showNotification(`${noteData.user.username} created a new note: "${title}"`);
-});
-
-socket.on('note updated', (noteData) => {
-    console.log('Note updated:', noteData);
-    // If notes tab is active, refresh the notes
-    if (document.getElementById('notes-tab')?.classList.contains('active')) {
-        loadNotes();
-    }
-    // Show notification
-    const title = noteData.title || noteData.content.substring(0, 30) + '...';
-    showNotification(`${noteData.user.username} updated note: "${title}"`);
-});
-
-socket.on('note deleted', (noteData) => {
-    console.log('Note deleted:', noteData);
-    // If notes tab is active, refresh the notes
-    if (document.getElementById('notes-tab')?.classList.contains('active')) {
-        loadNotes();
-    }
-    // Show notification
-    showNotification('A note was deleted');
-});
-
-socket.on('note error', (errorData) => {
-    console.error('Note error:', errorData);
-    alert('Error: ' + errorData.message);
-});
-
-// Helper function to show notifications
-function showNotification(message) {
-    // Create a simple notification
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #007bff;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        font-size: 14px;
-        max-width: 300px;
-        word-wrap: break-word;
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    // Add CSS animation
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    document.body.appendChild(notification);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-in';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 5000);
-}
 
 console.log('room.js yüklendi ve çalışmaya hazır.');
 
