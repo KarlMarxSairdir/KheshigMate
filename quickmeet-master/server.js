@@ -194,12 +194,15 @@ app.post('/projects', ensureAuthenticated, async (req, res) => {
     try {
         if (!name || name.trim() === '') {
             return res.status(400).json({ message: 'Proje adı gereklidir.' });
-        }
-        const newProject = new Project({
+        }        const newProject = new Project({
             name: name.trim(),
             description: description ? description.trim() : '',
             owner: req.user._id,
-            members: [req.user._id] // Sahibi aynı zamanda üye
+            members: [{
+                user: req.user._id,
+                role: 'owner',
+                joinedAt: new Date()
+            }] // Sahibi aynı zamanda üye olarak ekle
         });
         await newProject.save();
         res.status(201).json({ message: 'Proje başarıyla oluşturuldu.', project: newProject });
@@ -212,7 +215,18 @@ app.post('/projects', ensureAuthenticated, async (req, res) => {
 // Get user's projects (Bu route dashboard.js tarafından kullanılacak)
 app.get('/projects', ensureAuthenticated, async (req, res) => {
     try {
-        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 });
+        // Kullanıcının sahip olduğu ve üye olduğu tüm projeleri getir
+        const projects = await Project.find({
+            $or: [
+                { owner: req.user._id }, // Sahip olduğu projeler
+                { 'members.user': req.user._id } // Üye olduğu projeler
+            ]
+        })
+        .populate('owner', 'username email _id') // Owner bilgisini populate et
+        .populate('members.user', 'username email _id') // Üye bilgilerini populate et
+        .sort({ createdAt: -1 });
+        
+        console.log(`📋 Found ${projects.length} projects for user ${req.user.username}`);
         res.json({ projects }); // Projeleri { projects: [...] } formatında gönder
     } catch (err) {
         console.error('Error fetching projects:', err);

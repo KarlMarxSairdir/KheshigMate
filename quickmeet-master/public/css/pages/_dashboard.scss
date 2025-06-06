@@ -41,6 +41,14 @@
     color: var(--kheshig-navy);
     font-family: var(--font-serif);
     text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    
+    i {
+        color: var(--kheshig-red);
+        animation: horseBounce 2s ease-in-out infinite;
+    }
 }
 
 .breadcrumb {
@@ -832,9 +840,21 @@
             justify-content: center;
         }
     }
-    
-    .modal-content {
+      .modal-content {
         margin: var(--space-lg);
         width: calc(100% - 2rem);
+    }
+}
+
+// Horse bounce animation for logo
+@keyframes horseBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-8px);
+    }
+    60% {
+        transform: translateY(-4px);
     }
 }

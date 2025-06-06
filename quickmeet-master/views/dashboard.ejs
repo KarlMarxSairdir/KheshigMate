@@ -5,17 +5,23 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>KheshigMate - Dashboard</title>
     <meta name="description" content="KheshigMate Orta Asya Proje Yönetimi Dashboard">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+    <!-- Kullanıcı bilgilerini JavaScript'e aktar -->
+    <script>
+        const CURRENT_USER_ID = "<%= user._id %>";
+        const CURRENT_USERNAME = "<%= user.username %>";
+    </script>
 </head>
 
 <body class="modern-dashboard-page">
     <!-- Modern Dashboard Header -->
     <header class="modern-dashboard-header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="dashboard-logo">KheshigMate</div>
+        <div class="header-content">            <div class="header-left">
+                <div class="dashboard-logo">
+                    <i class="fas fa-horse-head"></i>
+                    KheshigMate
+                </div>
                 <div class="breadcrumb">
                     <i class="fas fa-home"></i>
                     <span>Kheshig Merkezi</span>

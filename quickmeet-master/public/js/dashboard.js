@@ -214,10 +214,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('Projeler yüklenemedi');
                 }
                 return response.json();
-            })
-            .then(function(data) {
+            })            .then(function(data) {
                 console.log('📄 Projects response:', data);
+                console.log('📄 Raw projects array:', data.projects);
                 var projects = data.projects || [];
+                
+                // Her projeyi debug et
+                projects.forEach(function(project, index) {
+                    console.log(`📋 Project ${index + 1}: "${project.name}"`);
+                    console.log(`  - ID: ${project._id}`);
+                    console.log(`  - Owner:`, project.owner);
+                    console.log(`  - Members:`, project.members);
+                    console.log(`  - Created:`, project.createdAt);
+                });
+                
                 displayProjects(projects);
             })
             .catch(function(error) {
@@ -251,21 +261,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         projectListEmpty.style.display = 'none';
-        projectList.style.display = 'block';
+        projectList.style.display = 'block';        // Kullanıcı ID'sini global değişkenden al (server-side'dan gelir)
+        var currentUserId = window.CURRENT_USER_ID || localStorage.getItem('userId');
+        console.log('🔍 Current user ID:', currentUserId);
+        console.log('🔍 Available global vars:', { 
+            CURRENT_USER_ID: window.CURRENT_USER_ID, 
+            CURRENT_USERNAME: window.CURRENT_USERNAME 
+        });
 
-        // Kullanıcı ID'sini localStorage'dan al
-        var currentUserId = localStorage.getItem('userId');
-        console.log('🔍 Current user ID from localStorage:', currentUserId);
+        if (!currentUserId) {
+            console.error('❌ Current user ID not found! Cannot determine ownership.');
+            return;
+        }
 
         var projectsHTML = '';
         for (var i = 0; i < projects.length; i++) {
             var project = projects[i];
             var createdDate = new Date(project.createdAt).toLocaleDateString('tr-TR');
-            
-            // Owner kontrolü yap
+              // Owner kontrolü yap - detaylı debug
             var isOwner = false;
             if (project.owner && project.owner._id && currentUserId) {
-                isOwner = project.owner._id.toString() === currentUserId.toString();
+                var ownerIdStr = project.owner._id.toString();
+                var currentUserIdStr = currentUserId.toString();
+                isOwner = ownerIdStr === currentUserIdStr;
+                
+                console.log('🔍 Ownership check for project "' + project.name + '":');
+                console.log('  - Owner ID (from project):', ownerIdStr);
+                console.log('  - Current User ID:', currentUserIdStr);
+                console.log('  - Are they equal?', isOwner);
+                console.log('  - Project.owner object:', project.owner);
+            } else {
+                console.log('❌ Missing data for ownership check:', {
+                    hasOwner: !!project.owner,
+                    hasOwnerId: !!(project.owner && project.owner._id),
+                    hasCurrentUserId: !!currentUserId
+                });
             }
             
             console.log('📋 Project:', project.name, '- Is owner:', isOwner, '- Owner ID:', project.owner ? project.owner._id : 'null');

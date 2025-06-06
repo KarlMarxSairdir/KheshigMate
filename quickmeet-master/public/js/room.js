@@ -188,11 +188,9 @@ function loadAttendees() {
             <div class="attendee-status">Çevrimiçi</div>
         </div>
     `;
-    attendeesList.appendChild(myAttendee);
-
-    let otherAttendeesFound = false;
+    attendeesList.appendChild(myAttendee);    let otherAttendeesFound = false;
     for (const peerId in userMap) {
-        if (userMap.hasOwnProperty(peerId) && peerId !== USER_ID) {
+        if (Object.prototype.hasOwnProperty.call(userMap, peerId) && peerId !== USER_ID) {
             otherAttendeesFound = true;
             const username = userMap[peerId];
             const attendeeEl = document.createElement('div');
@@ -449,8 +447,7 @@ function callExistingPeers() {
         return;
     }
     console.log("Mevcut peerler aranıyor (userMap):", userMap);
-    for (const peerIdToCall in userMap) {
-        if (userMap.hasOwnProperty(peerIdToCall) && peerIdToCall !== USER_ID) {
+    for (const peerIdToCall in userMap) {        if (Object.prototype.hasOwnProperty.call(userMap, peerIdToCall) && peerIdToCall !== USER_ID) {
             // Zaten bir bağlantı var mı kontrol et (isteğe bağlı, peer.connections üzerinden)
             if (!peer.connections[peerIdToCall] || peer.connections[peerIdToCall].length === 0) {
                  callPeer(peerIdToCall, userMap[peerIdToCall]);
@@ -736,11 +733,9 @@ async function startScreenSharing() {
             originalVideoTrack = localStream.getVideoTracks()[0].clone(); // Klonla ki orijinali etkilenmesin
         } else {
             originalVideoTrack = null; // Kamera kapalıysa veya yoksa
-        }
-
-        // Mevcut video track'lerini değiştir (tüm peer bağlantıları için)
+        }        // Mevcut video track'lerini değiştir (tüm peer bağlantıları için)
         for (const peerId in peer.connections) {
-            if (peer.connections.hasOwnProperty(peerId)) {
+            if (Object.prototype.hasOwnProperty.call(peer.connections, peerId)) {
                 peer.connections[peerId].forEach(connection => {
                     const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
                     if (sender) {
@@ -802,8 +797,7 @@ async function stopScreenSharing(stoppedByBrowser = false) {
         if (originalVideoTrack) {
             localStream.addTrack(originalVideoTrack); // Saklanan kamera track'ini ekle
             
-            for (const peerId in peer.connections) {
-                if (peer.connections.hasOwnProperty(peerId)) {
+            for (const peerId in peer.connections) {                if (Object.prototype.hasOwnProperty.call(peer.connections, peerId)) {
                     peer.connections[peerId].forEach(connection => {
                         const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
                         if (sender) {
@@ -846,7 +840,7 @@ socket.on('project chat history', (messages) => {
     if (!chatRoom) return;
     chatRoom.innerHTML = ''; 
     messages.forEach(msg => { // Fixed: Added parentheses around msg
-        appendMessage(msg.user.username, msg.message, msg.createdAt, msg.user._id === userId); // Changed USER_ID to userId
+        appendMessage(msg.user.username, msg.message, msg.createdAt, msg.user._id === USER_ID); // Fixed: USER_ID instead of userId
     });
     console.log('Proje chat geçmişi yüklendi.', messages.length, 'mesaj');
     chatRoom.scrollTop = chatRoom.scrollHeight; // Mesajlar yüklendikten sonra en alta kaydır
