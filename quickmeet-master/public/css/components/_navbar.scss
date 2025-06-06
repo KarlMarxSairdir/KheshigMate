@@ -1,0 +1,289 @@
+// Navigation components
+
+// Main navbar
+navbar {
+    .logo {
+        font-size: 28px;
+        color: #393e46;
+        font-weight: bold;
+        padding: 0 12%;
+        margin-top: 32px;
+    }
+}
+
+// Room header navigation
+.room-header {
+    background: var(--gradient-primary);
+    color: var(--kheshig-cream);
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-lg);
+    border-bottom: 2px solid var(--kheshig-bronze);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.room-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xl);
+}
+
+.room-logo {
+    font-family: var(--font-serif);
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--kheshig-cream);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.room-logo::before {
+    content: "🐎";
+    font-size: 1.6rem;
+    filter: sepia(1) hue-rotate(25deg) saturate(2);
+}
+
+.room-project-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.room-project-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--kheshig-cream);
+}
+
+.room-code-display {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.9rem;
+    color: var(--kheshig-bronze);
+}
+
+// Dashboard header
+.dashboard-header {
+    background: rgba(253, 246, 227, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    padding: var(--space-xl) var(--space-xxl) !important;
+    border-radius: var(--radius-xxl) !important;
+    margin-bottom: var(--space-xxl) !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+    box-shadow: var(--shadow-lg) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.dashboard-header::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 4px !important;
+    background: var(--gradient-gold) !important;
+}
+
+.header-content {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.header-left h1 {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    background: var(--gradient-primary) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    margin-bottom: var(--space-sm) !important;
+    font-family: var(--font-serif) !important;
+}
+
+.header-subtitle {
+    color: var(--kheshig-sage) !important;
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+}
+
+// User profile section in header
+.header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-lg) !important;
+}
+
+.user-profile {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-md) !important;
+    background: rgba(212, 175, 55, 0.1) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.user-avatar {
+    color: var(--kheshig-gold) !important;
+    font-size: 1.8rem !important;
+}
+
+.user-details {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.username {
+    font-weight: 700 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 1rem !important;
+}
+
+.user-role {
+    font-size: 0.85rem !important;
+    color: var(--kheshig-sage) !important;
+    font-weight: 500 !important;
+}
+
+// Breadcrumb navigation
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.breadcrumb i {
+    color: #667eea;
+}
+
+// Settings hero section
+.settings-hero {
+    background: var(--gradient-primary) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: var(--space-xxl) !important;
+    margin-bottom: var(--space-xxl) !important;
+    color: var(--kheshig-cream) !important;
+    text-align: center !important;
+    box-shadow: var(--shadow-xl) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.settings-hero::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: radial-gradient(circle at 30% 40%, rgba(212, 175, 55, 0.3) 0%, transparent 50%) !important;
+}
+
+.settings-hero h1 {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: var(--space-md) !important;
+    position: relative !important;
+    z-index: 2 !important;
+    font-family: var(--font-serif) !important;
+}
+
+.settings-hero p {
+    font-size: 1.1rem !important;
+    opacity: 0.9 !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+// Tab navigation
+.head-title {
+    font-weight: bold;
+    color: $black;
+    background-color: #ffffff;
+    width: 100%;
+    display: flex;
+    border-bottom: 2px solid $black;
+
+    .chats,
+    .attendies {
+        padding: 10px;
+        padding-top: 20px;
+        width: 100%;
+        text-align: center;
+        transition: background-color 0.5s;
+
+        &:hover {
+            background-color: #f8f8f8;
+            cursor: pointer;
+        }
+    }
+}
+
+// Navigation utilities
+.nav-link {
+    color: var(--kheshig-sage);
+    text-decoration: none;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--kheshig-gold);
+}
+
+.nav-link.active {
+    background: var(--gradient-gold);
+    color: white;
+}
+
+// Mobile navigation toggle
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--kheshig-cream);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: block;
+    }
+    
+    .room-header-left {
+        gap: var(--space-md);
+    }
+    
+    .room-logo {
+        font-size: 1.4rem;
+    }
+    
+    .dashboard-header {
+        padding: var(--space-lg) !important;
+    }
+    
+    .header-content {
+        flex-direction: column !important;
+        gap: var(--space-lg) !important;
+        text-align: center !important;
+    }
+    
+    .header-left h1 {
+        font-size: 2rem !important;
+    }
+}

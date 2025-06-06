@@ -1,0 +1,254 @@
+// Form components and input styles
+
+// Room code input
+.roomcode {
+    width: 100%;
+    margin-top: 30px;
+    font-size: 24px;
+    color: #393e46;
+    text-align: center;
+    padding: 10px 0;
+    border: none;
+    border-bottom: 3px solid #232931;
+    border-top: 2px solid white;
+    font-weight: bold;
+
+    &:focus {
+        background-color: white;
+        border: 0;
+        border-bottom: 3px solid #232931;
+        border-top: 2px solid white;
+        outline: none;
+        border-radius: 0;
+    }
+}
+
+.roomcode-error {
+    border-bottom: 3px solid rgb(211, 28, 28);
+}
+
+// Name field input
+.name-field {
+    margin: 0px auto;
+    margin-top: 20px;
+    border: 0;
+    font-weight: bold;
+    padding: 10px;
+    width: 90%;
+    border-bottom: 3px solid $nicegreen;
+    color: $black;
+    height: 40px;
+
+    &:focus {
+        outline: none;
+    }
+}
+
+// Chat input
+.chat-input {
+    width: 100%;
+    height: 36px;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border: none;
+    border-bottom: 3px solid $nicegreen;
+    color: $black;
+
+    &:focus {
+        outline: none;
+    }
+}
+
+// Modern form groups (Orta Asya theme)
+.input-group {
+    position: relative;
+    margin-bottom: var(--space-lg);
+}
+
+.input-group i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    transition: color 0.3s ease;
+    z-index: 100;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    border: 2px solid rgba(149, 165, 166, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    height: 48px;
+    box-sizing: border-box;
+    display: block;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+}
+
+.input-group input:focus + i {
+    color: var(--secondary);
+}
+
+// Modern form group with labels
+.modern-form-group {
+    margin-bottom: var(--space-lg) !important;
+}
+
+.modern-form-group label {
+    display: block !important;
+    margin-bottom: var(--space-sm) !important;
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.9rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-xs) !important;
+}
+
+.modern-form-group label i {
+    color: var(--kheshig-gold) !important;
+}
+
+.modern-form-group input,
+.modern-form-group textarea {
+    width: 100% !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    border: 2px solid rgba(149, 165, 166, 0.3) !important;
+    border-radius: var(--radius-lg) !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    background: rgba(253, 246, 227, 0.8) !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    color: var(--kheshig-navy) !important;
+}
+
+.modern-form-group input:focus,
+.modern-form-group textarea:focus {
+    outline: none !important;
+    border-color: var(--kheshig-gold) !important;
+    background: rgba(253, 246, 227, 1) !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
+}
+
+.modern-form-group textarea {
+    resize: vertical !important;
+    min-height: 120px !important;
+}
+
+// Input placeholder styles
+.input-group input::placeholder {
+    color: #999;
+}
+
+// Room code display container
+.copycode-cont {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    display: flex;
+
+    .roomcode {
+        color: $nicegreen;
+        padding: 10px 20px;
+        background-color: white;
+        border-bottom: 3px solid $nicegreen;
+        font-weight: bold;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+}
+
+// Search and filter inputs
+.search-input {
+    width: 100%;
+    padding: var(--space-md);
+    border: 2px solid rgba(149, 165, 166, 0.2);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--kheshig-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+// Form validation styles
+.form-error {
+    color: var(--error);
+    font-size: 0.875rem;
+    margin-top: var(--space-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.form-success {
+    color: var(--success);
+    font-size: 0.875rem;
+    margin-top: var(--space-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+// Radio and checkbox styles
+.form-radio,
+.form-checkbox {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--kheshig-bronze);
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-checkbox {
+    border-radius: var(--radius-sm);
+}
+
+.form-radio:checked,
+.form-checkbox:checked {
+    background: var(--gradient-gold);
+    border-color: var(--kheshig-gold);
+}
+
+.form-radio:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+}
+
+.form-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}

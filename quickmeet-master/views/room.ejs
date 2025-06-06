@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Kaşıkmate Odası - <%= project.name %></title>
-    <meta name="description" content="Kaşıkmate Proje Odası">    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=1.0.2">
+    <title>KheshigMate Odası - <%= project.name %></title>
+    <meta name="description" content="KheshigMate Elite Proje Odası">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css?v=3.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
     <!-- Oda ve kullanıcı bilgilerini JavaScript'e aktar -->
     <script>
@@ -15,15 +16,16 @@
     </script>
 </head>
 
-<body class="room-page">    <!-- Modern Header Bar -->
+<body class="room-page">
+    <!-- Modern Header Bar -->
     <div class="room-header">
         <div class="room-header-left">
-            <div class="room-logo">Kaşıkmate</div>
+            <div class="room-logo">KheshigMate</div>
             <div class="room-project-info">
                 <span class="room-project-name"><%= project.name %></span>
                 <span class="room-code-display">
                     <i class="fas fa-key"></i>
-                    Oda Kodu: <%= project._id %>
+                    Kheshig Kodu: <%= project._id %>
                     <button class="copy-code-btn" onclick="copyRoomId()" title="Kodu Kopyala">
                         <i class="fas fa-copy"></i>
                     </button>
@@ -46,8 +48,7 @@
         </div>
     </div>
 
-    <div class="modern-room-container">        <div class="video-section">
-            <div class="video-container-modern" id="vcont">
+    <div class="modern-room-container">        <div class="video-section">            <div class="video-container-modern" id="vcont">
                 <div class="video-box-modern">
                     <video class="video-frame-modern" id="vd1" autoplay playsinline></video>
                     <div class="video-overlay">
@@ -56,6 +57,39 @@
                         <div class="video-off-modern" id="myvideooff">
                             <i class="fas fa-video-slash"></i>
                             <span>Video Kapalı</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Whiteboard overlay -->
+                <div class="whiteboard-section">
+                    <div class="whiteboard-container">
+                        <canvas id="whiteboard" height="800" width="1200"></canvas>
+                        <div class="whiteboard-tools">
+                            <div class="tool-category">
+                                <span class="tool-label">Renkler</span>
+                                <div class="color-palette">
+                                    <div class="color-option black" onclick="setColor('black')" title="Siyah"></div>
+                                    <div class="color-option red" onclick="setColor('#e74c3c')" title="Kırmızı"></div>
+                                    <div class="color-option yellow" onclick="setColor('#f1c40f')" title="Sarı"></div>
+                                    <div class="color-option green" onclick="setColor('#27ae60')" title="Yeşil"></div>
+                                    <div class="color-option blue" onclick="setColor('#3498db')" title="Mavi"></div>
+                                    <div class="color-option orange" onclick="setColor('#e67e22')" title="Turuncu"></div>
+                                    <div class="color-option purple" onclick="setColor('#9b59b6')" title="Mor"></div>
+                                    <div class="color-option pink" onclick="setColor('#fd79a8')" title="Pembe"></div>
+                                </div>
+                            </div>
+                            <div class="tool-category">
+                                <span class="tool-label">Araçlar</span>
+                                <div class="tool-buttons">
+                                    <button class="tool-btn" onclick="setEraser()" title="Silgi">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                    <button class="tool-btn clear-btn" onclick="clearBoard()" title="Temizle">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -79,40 +113,9 @@
                         <i class="fas fa-phone-slash"></i>
                     </button>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
 
-        <div class="whiteboard-section">
-            <div class="whiteboard-container">
-                <canvas id="whiteboard" height="1000" width="1000"></canvas>
-                <div class="whiteboard-tools">
-                    <div class="tool-category">
-                        <span class="tool-label">Renkler</span>
-                        <div class="color-palette">
-                            <div class="color-option black" onclick="setColor('black')" title="Siyah"></div>
-                            <div class="color-option red" onclick="setColor('#e74c3c')" title="Kırmızı"></div>
-                            <div class="color-option yellow" onclick="setColor('#f1c40f')" title="Sarı"></div>
-                            <div class="color-option green" onclick="setColor('#27ae60')" title="Yeşil"></div>
-                            <div class="color-option blue" onclick="setColor('#3498db')" title="Mavi"></div>
-                            <div class="color-option orange" onclick="setColor('#e67e22')" title="Turuncu"></div>
-                            <div class="color-option purple" onclick="setColor('#9b59b6')" title="Mor"></div>
-                            <div class="color-option pink" onclick="setColor('#fd79a8')" title="Pembe"></div>
-                        </div>
-                    </div>
-                    <div class="tool-category">
-                        <span class="tool-label">Araçlar</span>
-                        <div class="tool-buttons">
-                            <button class="tool-btn" onclick="setEraser()" title="Silgi">
-                                <i class="fas fa-eraser"></i>
-                            </button>
-                            <button class="tool-btn clear-btn" onclick="clearBoard()" title="Temizle">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>        <div class="sidebar-panel">
+        <div class="sidebar-panel">
             <div class="sidebar-header">
                 <div class="project-title-modern">
                     <i class="fas fa-project-diagram"></i>

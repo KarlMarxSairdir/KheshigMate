@@ -1,0 +1,175 @@
+// Login and Register pages styles
+
+// Common page styles
+.login-page, .register-page {
+    background: var(--gradient-steppe) !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: var(--space-lg) !important;
+}
+
+// Page containers
+.login-container, .register-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    padding: var(--space-xxl) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: var(--shadow-xl) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(212, 175, 55, 0.2) !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    position: relative !important;
+}
+
+// Headers
+.login-header, .register-header {
+    text-align: center !important;
+    margin-bottom: var(--space-xl) !important;
+    color: var(--kheshig-navy) !important;
+}
+
+.login-header .logo, .register-header .logo {
+    font-size: 2.5rem !important;
+    margin-bottom: var(--space-sm) !important;
+    background: var(--gradient-gold) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3) !important;
+    font-weight: 700 !important;
+    font-family: var(--font-serif) !important;
+}
+
+.tagline {
+    color: var(--kheshig-sage) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: var(--space-lg) !important;
+    font-style: italic !important;
+}
+
+// Auth box
+.auth-box {
+    position: relative;
+    z-index: 2;
+}
+
+.auth-box h2 {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    margin-bottom: var(--space-lg) !important;
+    text-align: center !important;
+    font-family: var(--font-serif) !important;
+}
+
+// Error messages
+.auth-error {
+    background: rgba(231, 76, 60, 0.1) !important;
+    color: var(--error) !important;
+    padding: var(--space-md) !important;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: var(--space-lg) !important;
+    border-left: 4px solid var(--error) !important;
+    font-size: 0.9rem !important;
+    text-align: center !important;
+}
+
+// Links section
+.auth-links, .auth-switch {
+    text-align: center !important;
+    margin-top: var(--space-lg) !important;
+    color: var(--kheshig-sage) !important;
+    font-size: 0.9rem !important;
+}
+
+.auth-links a, .auth-switch a {
+    color: var(--kheshig-gold) !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+}
+
+.auth-links a:hover, .auth-switch a:hover {
+    color: var(--kheshig-bronze) !important;
+    text-decoration: underline !important;
+}
+
+// Footer
+.login-footer {
+    text-align: center !important;
+    margin-top: var(--space-xl) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.8rem !important;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .login-container, .register-container {
+        padding: var(--space-xl) !important;
+        margin: var(--space-md) !important;
+        max-width: calc(100% - 2rem) !important;
+    }
+    
+    .login-header .logo, .register-header .logo {
+        font-size: 2rem !important;
+    }
+    
+    .auth-box h2 {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container, .register-container {
+        padding: var(--space-lg) !important;
+        margin: var(--space-sm) !important;
+    }
+    
+    .login-header .logo, .register-header .logo {
+        font-size: 1.8rem !important;
+    }
+}
+
+// Animation effects
+.auth-box {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Special effects for Orta Asya theme
+.login-container::before, .register-container::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -50% !important;
+    left: -50% !important;
+    width: 200% !important;
+    height: 200% !important;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(149, 165, 166, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(44, 62, 80, 0.1) 0%, transparent 50%) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    animation: rotateBackground 20s linear infinite !important;
+}
+
+@keyframes rotateBackground {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

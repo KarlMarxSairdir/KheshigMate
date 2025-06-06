@@ -3,45 +3,75 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Giriş Yap - Kaşıkmate</title>
-    <meta name="description" content="Kaşıkmate Video Konferans Uygulaması - Giriş">    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=1.0.2">
+    <title>Giriş Yap - KheshigMate</title>
+    <meta name="description" content="KheshigMate Orta Asya Video Konferans Platformu - Giriş">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
+    <style>
+        .input-group {
+            position: relative !important;
+            margin-bottom: 20px !important;
+        }
+        .input-group i {
+            position: absolute !important;
+            left: 16px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            color: #666 !important;
+            z-index: 999 !important;
+            font-size: 16px !important;
+            pointer-events: none !important;
+        }
+        .input-group input {
+            width: 100% !important;
+            padding: 14px 16px 14px 48px !important;
+            border: 2px solid rgba(149, 165, 166, 0.3) !important;
+            border-radius: 8px !important;
+            font-size: 1rem !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            height: 48px !important;
+            box-sizing: border-box !important;
+            display: block !important;
+        }
+        .input-group input:focus + i {
+            color: #e67e22 !important;
+        }
+    </style>
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
 <body class="login-page">
     <div class="login-container">
         <div class="login-header">
-            <div class="logo">Kaşıkmate</div>
-            <p class="tagline">Video Konferans ve İşbirliği Platformu</p>
+            <div class="logo">KheshigMate</div>
+            <p class="tagline">Orta Asya Video Konferans ve İşbirliği Platformu</p>
         </div>
         
         <div class="auth-box">
-            <h2>Giriş Yap</h2>
+            <h2>Kheshig'e Giriş</h2>
             <% if (locals.error) { %>
                 <div class="auth-error"><%= error %></div>
             <% } %>
-            <form action="/login" method="POST">
-                <div class="input-group">
+            <form action="/login" method="POST">                <div class="input-group">
+                    <input type="email" id="email" name="email" placeholder="E-posta adresiniz" required>
                     <i class="fas fa-envelope"></i>
-                    <input type="email" id="email" name="email" placeholder="E-posta" required>
                 </div>
                 <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="Şifreniz" required>
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="Şifre" required>
                 </div>
-                <button type="submit" class="primary-btn">
+                <button type="submit" class="auth-submit">
                     <i class="fas fa-sign-in-alt"></i>
-                    Giriş Yap
+                    Kheshig'e Giriş
                 </button>
             </form>
-            <div class="auth-switch">
-                Hesabınız yok mu? <a href="/register" class="link">Kayıt Olun</a>
+            <div class="auth-links">
+                Hesabınız yok mu? <a href="/register">Elite birliğe katılın</a>
             </div>
         </div>
         
         <div class="login-footer">
-            <p>&copy; <%= new Date().getFullYear() %> Kaşıkmate. Tüm hakları saklıdır.</p>
+            <p>&copy; <%= new Date().getFullYear() %> KheshigMate. Tüm hakları saklıdır.</p>
         </div>
     </div>
 </body>

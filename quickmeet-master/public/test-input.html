@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <title>Input Test</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 400px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-info {
+            background: #e3f2fd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Input Icon Test</h2>
+        
+        <div class="debug-info">
+            Test 1: Normal input-group (ikon sonra)
+        </div>
+        <div class="input-group">
+            <input type="email" placeholder="E-posta adresiniz" style="border: 2px dashed red;">
+            <i class="fas fa-envelope" style="background: yellow; width: 20px; height: 20px;"></i>
+        </div>
+
+        <div class="debug-info">
+            Test 2: Alternatif CSS ile
+        </div>
+        <div class="input-group-alt">
+            <input type="email" placeholder="E-posta adresiniz">
+            <i class="fas fa-envelope"></i>
+        </div>
+        
+        <div class="debug-info">
+            Test 3: Flexbox yaklaşımı
+        </div>
+        <div class="input-group-flex">
+            <i class="fas fa-envelope"></i>
+            <input type="email" placeholder="E-posta adresiniz">
+        </div>
+    </div>
+
+    <style>
+        /* Test için alternatif CSS */
+        .input-group-alt {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .input-group-alt input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            height: 48px;
+            box-sizing: border-box;
+        }
+        
+        .input-group-alt i {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            color: #666;
+            font-size: 16px;
+            line-height: 16px;
+        }
+
+        /* Flexbox yaklaşımı */
+        .input-group-flex {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .input-group-flex i {
+            position: absolute;
+            left: 16px;
+            z-index: 10;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .input-group-flex input {
+            flex: 1;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            height: 48px;
+            box-sizing: border-box;
+        }
+    </style>
+</body>
+</html>

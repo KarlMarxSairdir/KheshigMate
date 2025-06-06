@@ -2,10 +2,11 @@
   "name": "socket-project",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
-  "scripts": {
+  "main": "server.js",  "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build-css": "sass public/css/style.scss public/css/style.css",
+    "watch-css": "sass --watch public/css/style.scss:public/css/style.css"
   },
   "keywords": [],
   "author": "",
@@ -25,5 +26,8 @@
     "socket.io": "^4.7.5",
     "uuid": "^8.3.0",
     "webrtc-adapter": "^7.7.0"
+  },
+  "devDependencies": {
+    "sass": "^1.89.1"
   }
 }

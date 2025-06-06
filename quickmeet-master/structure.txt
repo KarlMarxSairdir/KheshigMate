@@ -8,6 +8,8 @@
   |-- User.js
 |-- public
   |-- css
+    |-- style-backup.css
+    |-- style-new.css
     |-- style.css
     |-- style.css.map
     |-- style.scss
@@ -30,6 +32,7 @@
 |-- .gitignore
 |-- cert.pem
 |-- debug-login.js
+|-- debug-member-add.js
 |-- expressApp.js
 |-- FAZ1_DURUM_RAPORU.md
 |-- FAZ1_FINAL_RAPOR.md
@@ -43,3 +46,4 @@
 |-- structure.txt
 |-- TEKNIK_DOKUMANTASYON.md
 |-- test-db.js
+|-- test-mongodb.js

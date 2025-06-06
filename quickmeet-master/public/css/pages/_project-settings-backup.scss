@@ -1,0 +1,636 @@
+// Project Settings Page - Modern Orta Asya Theme
+
+// Settings container
+.settings-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-xl);
+}
+
+// Settings hero section
+.settings-hero {
+    background: var(--gradient-steppe);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xxl);
+    margin-bottom: var(--space-xxl);
+    text-align: center;
+    border: 3px solid rgba(212, 175, 55, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="settings-pattern" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M7.5 0L15 7.5L7.5 15L0 7.5Z" fill="none" stroke="rgba(253,246,227,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23settings-pattern)"/></svg>');
+        opacity: 0.3;
+        z-index: 1;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--kheshig-navy);
+        margin-bottom: var(--space-lg);
+        font-family: var(--font-serif);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-md);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        
+        i {
+            color: var(--kheshig-gold);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+    }
+
+.settings-hero .hero-title i {
+    color: var(--kheshig-gold) !important;
+    font-size: 2.5rem !important;
+}
+
+.settings-hero .hero-subtitle {
+    font-size: 1.3rem !important;
+    opacity: 0.9 !important;
+    line-height: 1.6 !important;
+    font-weight: 400 !important;
+}
+
+// Settings grid
+.settings-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)) !important;
+    gap: var(--space-xl) !important;
+    margin-bottom: var(--space-xxl) !important;
+}
+
+// Settings cards
+.settings-card {
+    background: rgba(253, 246, 227, 0.95) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-lg) !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.settings-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--kheshig-bronze) !important;
+}
+
+.settings-card.full-width {
+    grid-column: 1 / -1 !important;
+}
+
+// Card headers
+.card-header {
+    background: var(--gradient-secondary) !important;
+    padding: var(--space-lg) !important;
+    border-bottom: 2px solid var(--kheshig-bronze) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    color: var(--kheshig-cream) !important;
+}
+
+.card-header h3 {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-sm) !important;
+    font-family: var(--font-serif) !important;
+}
+
+.card-header i {
+    color: var(--kheshig-gold) !important;
+    font-size: 1.1rem !important;
+}
+
+// Card content
+.card-content {
+    padding: var(--space-xl) !important;
+}
+
+// Info rows for project details
+.info-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: var(--space-md) 0 !important;
+    border-bottom: 1px solid rgba(149, 165, 166, 0.2) !important;
+    margin-bottom: var(--space-md) !important;
+}
+
+.info-row:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+}
+
+.info-row label {
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.95rem !important;
+    min-width: 120px !important;
+}
+
+.info-row span {
+    color: var(--kheshig-sage) !important;
+    font-size: 0.9rem !important;
+    text-align: right !important;
+    flex: 1 !important;
+}
+
+// Members section
+.member-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--space-md) !important;
+}
+
+.member-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: var(--space-md) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid rgba(212, 175, 55, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: var(--kheshig-bronze) !important;
+}
+
+.member-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-md) !important;
+}
+
+.member-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    background: var(--gradient-primary) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--kheshig-cream) !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+}
+
+.member-details {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.member-name {
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.95rem !important;
+}
+
+.member-role {
+    font-size: 0.8rem !important;
+    color: var(--kheshig-sage) !important;
+    font-style: italic !important;
+}
+
+.member-actions {
+    display: flex !important;
+    gap: var(--space-sm) !important;
+}
+
+// Quick actions section
+.quick-actions {
+    display: flex !important;
+    gap: var(--space-lg) !important;
+    flex-wrap: wrap !important;
+}
+
+.action-btn {
+    flex: 1 !important;
+    min-width: 140px !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    border-radius: var(--radius-md) !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--space-sm) !important;
+    transition: all 0.3s ease !important;
+    text-align: center !important;
+    border: 2px solid transparent !important;
+    font-size: 0.9rem !important;
+}
+
+.action-btn.primary {
+    background: var(--gradient-primary) !important;
+    color: var(--kheshig-cream) !important;
+    border-color: var(--kheshig-bronze) !important;
+}
+
+.action-btn.primary:hover {
+    background: var(--kheshig-navy) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.action-btn.secondary {
+    background: var(--kheshig-sage) !important;
+    color: white !important;
+    border-color: var(--kheshig-sage) !important;
+}
+
+.action-btn.secondary:hover {
+    background: var(--kheshig-navy) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+// Input groups for forms
+.input-group {
+    margin-bottom: var(--space-lg) !important;
+}
+
+.input-group label {
+    display: block !important;
+    margin-bottom: var(--space-sm) !important;
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.95rem !important;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+    width: 100% !important;
+    padding: var(--space-md) !important;
+    border: 2px solid rgba(149, 165, 166, 0.3) !important;
+    border-radius: var(--radius-md) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.input-group input:focus,
+.input-group textarea:focus,
+.input-group select:focus {
+    outline: none !important;
+    border-color: var(--kheshig-gold) !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1) !important;
+}
+
+.input-group textarea {
+    resize: vertical !important;
+    min-height: 100px !important;
+}
+
+// Button groups
+.button-group {
+    display: flex !important;
+    gap: var(--space-md) !important;
+    justify-content: flex-end !important;
+    margin-top: var(--space-xl) !important;
+}
+
+// Status badges
+.status-badge {
+    padding: var(--space-sm) var(--space-md) !important;
+    border-radius: var(--radius-full) !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.status-badge.active {
+    background: var(--success-light) !important;
+    color: var(--success) !important;
+}
+
+.status-badge.inactive {
+    background: var(--warning-light) !important;
+    color: var(--warning) !important;
+}
+
+.status-badge.owner {
+    background: var(--kheshig-gold) !important;
+    color: var(--kheshig-navy) !important;
+}
+
+.status-badge.member {
+    background: var(--kheshig-sage) !important;
+    color: white !important;
+}
+
+// Danger zone
+.danger-zone {
+    border: 2px solid var(--error) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: var(--space-xl) !important;
+    background: rgba(231, 76, 60, 0.05) !important;
+    margin-top: var(--space-xxl) !important;
+}
+
+.danger-zone h3 {
+    color: var(--error) !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+    margin-bottom: var(--space-lg) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-sm) !important;
+}
+
+.danger-zone p {
+    color: var(--kheshig-sage) !important;
+    margin-bottom: var(--space-lg) !important;
+    line-height: 1.5 !important;
+}
+
+// Role badges
+.role-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    margin-left: var(--space-sm) !important;
+}
+
+.role-badge.owner {
+    background: var(--gradient-gold) !important;
+    color: var(--kheshig-navy) !important;
+}
+
+.role-badge.editor {
+    background: var(--kheshig-sage) !important;
+    color: white !important;
+}
+
+// Member email styling
+.member-email {
+    font-size: 0.8rem !important;
+    color: var(--kheshig-bronze) !important;
+    font-style: italic !important;
+}
+
+// Skill tags
+.member-skills {
+    display: flex !important;
+    gap: 0.25rem !important;
+    flex-wrap: wrap !important;
+    margin-top: 0.25rem !important;
+}
+
+.skill-tag {
+    background: rgba(212, 175, 55, 0.1) !important;
+    color: var(--kheshig-bronze) !important;
+    padding: 0.1rem 0.4rem !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+}
+
+// Breadcrumb styling
+.breadcrumb {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-sm) !important;
+    color: var(--kheshig-bronze) !important;
+    font-weight: 600 !important;
+}
+
+.breadcrumb a {
+    color: var(--kheshig-bronze) !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+}
+
+.breadcrumb a:hover {
+    color: var(--kheshig-gold) !important;
+}
+
+.breadcrumb-separator {
+    color: var(--kheshig-sage) !important;
+    font-weight: 400 !important;
+}
+
+.breadcrumb i {
+    color: var(--kheshig-gold) !important;
+}
+
+// Status message
+.status-message {
+    margin-top: var(--space-md) !important;
+    padding: var(--space-md) !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    
+    &.success {
+        background: rgba(46, 204, 113, 0.1) !important;
+        color: var(--success) !important;
+        border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    }
+    
+    &.error {
+        background: rgba(231, 76, 60, 0.1) !important;
+        color: var(--error) !important;
+        border: 1px solid rgba(231, 76, 60, 0.3) !important;
+    }
+}
+
+// Member count badge
+.member-count {
+    background: var(--kheshig-gold) !important;
+    color: var(--kheshig-navy) !important;
+    padding: 0.3rem 0.6rem !important;
+    border-radius: var(--radius-full) !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+}
+
+// Form styling improvements
+.member-form {
+    margin: 0 !important;
+}
+
+.input-group label {
+    margin-bottom: var(--space-sm) !important;
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    display: block !important;
+}
+
+.input-group input {
+    margin-bottom: var(--space-md) !important;
+}
+
+// Text warning color fix
+.text-warning {
+    color: var(--kheshig-gold) !important;
+}
+
+// Animation for glow effect
+@keyframes glow {
+    0% {
+        text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+    }
+    100% {
+        text-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 0 30px rgba(212, 175, 55, 0.4);
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .settings-container {
+        padding: var(--space-lg) !important;
+    }
+    
+    .settings-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-lg) !important;
+    }
+    
+    .settings-hero {
+        padding: var(--space-xl) !important;
+    }
+    
+    .settings-hero .hero-title {
+        font-size: 2rem !important;
+        flex-direction: column !important;
+        gap: var(--space-sm) !important;
+    }
+    
+    .settings-hero .hero-title i {
+        font-size: 2rem !important;
+    }
+    
+    .card-content {
+        padding: var(--space-lg) !important;
+    }
+    
+    .info-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--space-sm) !important;
+    }
+    
+    .info-row label {
+        min-width: auto !important;
+    }
+    
+    .info-row span {
+        text-align: left !important;
+    }
+    
+    .member-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--space-md) !important;
+    }
+    
+    .member-actions {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
+    
+    .quick-actions {
+        flex-direction: column !important;
+    }
+    
+    .action-btn {
+        min-width: auto !important;
+    }
+    
+    .button-group {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-hero .hero-title {
+        font-size: 1.6rem !important;
+    }
+    
+    .card-header {
+        padding: var(--space-md) !important;
+    }
+    
+    .card-content {
+        padding: var(--space-md) !important;
+    }
+    
+    .member-info {
+        gap: var(--space-sm) !important;
+    }
+    
+    .member-avatar {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 1rem !important;
+    }
+    
+    .action-btn {
+        padding: var(--space-sm) var(--space-md) !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+// Animation effects
+@media (prefers-reduced-motion: no-preference) {
+    .settings-card {
+        animation: fadeInUp 0.6s ease-out !important;
+    }
+    
+    .settings-card:nth-child(1) { animation-delay: 0.1s !important; }
+    .settings-card:nth-child(2) { animation-delay: 0.2s !important; }
+    .settings-card:nth-child(3) { animation-delay: 0.3s !important; }
+    .settings-card:nth-child(4) { animation-delay: 0.4s !important; }
+    
+    .member-item {
+        animation: slideInLeft 0.4s ease-out !important;
+    }
+    
+    .member-item:nth-child(1) { animation-delay: 0.1s !important; }
+    .member-item:nth-child(2) { animation-delay: 0.2s !important; }
+    .member-item:nth-child(3) { animation-delay: 0.3s !important; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

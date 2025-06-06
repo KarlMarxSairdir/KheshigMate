@@ -1,0 +1,387 @@
+// Button components
+
+// Primary button styles
+.createroom-butt {
+    width: 100%;
+    margin-top: 60px;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: $nicegreen;
+    color: white;
+    text-align: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    border: 2px solid $nicegreen;
+    transition: 0.3s;
+
+    &:hover {
+        background-color: white;
+        border: 2px solid $nicegreen;
+        color: $nicegreen;
+        cursor: pointer;
+    }
+
+    &:focus {
+        outline: none;
+    }
+}
+
+.createroom-clicked {
+    width: 100%;
+    margin-top: 60px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: white;
+    border: 2px solid $nicegreen;
+    color: $nicegreen;
+
+    &:focus {
+        outline: none;
+    }
+}
+
+// Modern button styles (Orta Asya theme)
+.modern-primary-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--space-sm) !important;
+    padding: var(--space-md) var(--space-xl) !important;
+    background: var(--gradient-gold) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-lg) !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.modern-primary-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-lg) !important;
+    background: linear-gradient(135deg, var(--kheshig-bronze) 0%, var(--kheshig-gold) 100%) !important;
+}
+
+.modern-secondary-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--space-sm) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    background: rgba(212, 175, 55, 0.1) !important;
+    color: var(--kheshig-bronze) !important;
+    border: 2px solid var(--kheshig-bronze) !important;
+    border-radius: var(--radius-lg) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+}
+
+.modern-secondary-btn:hover {
+    background: var(--kheshig-bronze) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+// Control buttons for room
+.control-btn {
+    width: 60px;
+    height: 60px;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--kheshig-cream);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.control-btn.active {
+    background: var(--gradient-gold);
+    border-color: var(--kheshig-bronze);
+    color: white;
+}
+
+.control-btn.danger {
+    background: rgba(231, 76, 60, 0.8);
+    border-color: var(--error);
+}
+
+.control-btn.danger:hover {
+    background: var(--error);
+}
+
+// Audio/Video control buttons
+.audio {
+    background-color: $nicegreen;
+    text-align: center;
+    color: white;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        background-color: $black;
+    }
+}
+
+.noaudio {
+    background-color: #b12c2c;
+    text-align: center;
+    color: white;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        background-color: $black;
+    }
+}
+
+.novideo {
+    background-color: $nicegreen;
+    text-align: center;
+    margin-left: 10px;
+    color: white;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        background-color: $black;
+    }
+}
+
+.screenshare {
+    background-color: #d8d8d8;
+    text-align: center;
+    margin-left: 10px;
+    color: $black;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+    transition: color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        color: white;
+        background-color: $black;
+    }
+}
+
+.board-icon {
+    background-color: #d8d8d8;
+    text-align: center;
+    color: $black;
+    margin-left: 10px;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+    transition: color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        color: white;
+        background-color: $black;
+    }
+}
+
+.cutcall {
+    background-color: #cc4e4e;
+    text-align: center;
+    margin-left: 10px;
+    color: white;
+    padding: 10px;
+    height: 40px;
+    width: 40px;
+    border-radius: 100px;
+    transition: background-color 0.3s;
+
+    &:hover {
+        cursor: pointer;
+        background-color: $black;
+    }
+}
+
+// Copy code button
+.copycode-button {
+    padding: 10px 0;
+    width: 100px;
+    text-align: center;
+    color: white;
+    background-color: $nicegreen;
+    border: none;
+    font-weight: bold;
+    outline: none;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+
+    &:hover {
+        cursor: pointer;
+    }
+
+    &:focus {
+        outline: none;
+    }
+}
+
+// Continue name button
+.continue-name {
+    border: none;
+    margin: 0 auto;
+    margin-top: 30px;
+    color: #ffffff;
+    font-weight: bold;
+    background-color: $nicegreen;
+    padding: 12px 20px;
+    border-radius: 10px;
+    transition: opacity 0.5s;
+
+    &:hover {
+        opacity: 0.8;
+        cursor: pointer;
+    }
+
+    &:focus {
+        outline: 0;
+    }
+}
+
+// Chat send button
+.chat-send {
+    height: 36px;
+    padding: 5px 20px;
+    border: none;
+    background-color: white;
+    color: $nicegreen;
+    font-weight: bold;
+    font-size: 0.85rem;
+    border-radius: 2px;
+    transition: background-color 0.5s;
+
+    &:hover {
+        color: $blue;
+        cursor: pointer;
+        background-color: rgb(243, 243, 243);
+    }
+
+    &:focus {
+        outline: none;
+    }
+}
+
+// Primary auth button
+.primary-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
+}
+
+.primary-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+// Secondary button
+.secondary-btn {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.secondary-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+// Auth submit button
+.auth-submit {
+    width: 100%;
+    background: var(--gradient-gold);
+    color: white;
+    padding: var(--space-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: var(--space-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+// Copy code button in room
+.copy-code-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--kheshig-cream);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.copy-code-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

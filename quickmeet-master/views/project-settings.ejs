@@ -2,22 +2,24 @@
 <html lang="tr">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Kaşıkmate - Proje Ayarları</title>
-    <meta name="description" content="Kaşıkmate Proje Ayarları">    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=1.0.3">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">    <title>KheshigMate - Proje Ayarları</title>
+    <meta name="description" content="KheshigMate Orta Asya Proje Yönetimi - Proje Ayarları">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
 <body class="modern-dashboard-page">
     <!-- Modern Dashboard Header -->
     <header class="modern-dashboard-header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="dashboard-logo">Kaşıkmate</div>
+        <div class="header-content">            <div class="header-left">
+                <div class="dashboard-logo">
+                    <i class="fas fa-horse-head"></i>
+                    KheshigMate
+                </div>
                 <div class="breadcrumb">
                     <i class="fas fa-home"></i>
-                    <a href="/dashboard">Dashboard</a>
+                    <a href="/dashboard">Kheshig Merkezi</a>
                     <span class="breadcrumb-separator">/</span>
                     <i class="fas fa-cog"></i>
                     <span><%= project.name %> Ayarları</span>
@@ -27,10 +29,9 @@
                 <div class="user-profile">
                     <div class="user-avatar">
                         <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="user-details">
-                        <span class="username"><%= user ? user.username : 'Kullanıcı' %></span>
-                        <span class="user-role">Proje Sahibi</span>
+                    </div>                    <div class="user-details">
+                        <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
+                        <span class="user-role">Elite Proje Sahibi</span>
                     </div>
                 </div>
                 <button id="logout-btn" class="modern-logout-btn">
@@ -44,69 +45,101 @@
     <!-- Modern Settings Main Content -->
     <main class="modern-dashboard-main">
         <div class="settings-container">
-            <div class="settings-hero">
-                <div class="hero-content">
+            <div class="settings-hero">                <div class="hero-content">
                     <h1 class="hero-title">
-                        <i class="fas fa-cog"></i>
-                        Proje Ayarları
+                        <i class="fas fa-horse-head"></i>
+                        Proje Komutanlığı
                     </h1>
                     <p class="hero-subtitle">
-                        <strong><%= project.name %></strong> projesini yönetin
+                        <strong><%= project.name %></strong> projesini elite Kheshig komutanı olarak yönetin
                     </p>
                 </div>
-            </div>
-
-            <div class="settings-grid">
+            </div>            <div class="settings-grid">
                 <!-- Proje Bilgileri Kartı -->
-                <div class="settings-card">
+                <div class="settings-card project-info-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-info-circle"></i> Proje Bilgileri</h3>
+                        <div class="header-icon">
+                            <i class="fas fa-scroll"></i>
+                        </div>
+                        <div class="header-text">
+                            <h3>Proje Kronik Bilgileri</h3>
+                            <p>Temel proje detayları ve durum bilgileri</p>
+                        </div>
                     </div>
                     <div class="card-content">
-                        <div class="info-row">
-                            <label>Proje Adı:</label>
-                            <span><%= project.name %></span>
-                        </div>
-                        <div class="info-row">
-                            <label>Açıklama:</label>
-                            <span><%= project.description || 'Açıklama bulunmuyor' %></span>
-                        </div>
-                        <div class="info-row">
-                            <label>Oluşturulma:</label>
-                            <span><%= new Date(project.createdAt).toLocaleDateString('tr-TR') %></span>
-                        </div>
-                        <div class="info-row">
-                            <label>Proje Sahibi:</label>
-                            <span>
-                                <i class="fas fa-crown text-warning"></i>
-                                <%= project.owner.username %>
-                            </span>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-tag"></i>
+                                    Proje Adı
+                                </div>
+                                <div class="info-value"><%= project.name %></div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-align-left"></i>
+                                    Açıklama
+                                </div>
+                                <div class="info-value"><%= project.description || 'Henüz proje hikaayesi yazılmamış' %></div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Kuruluş Tarihi
+                                </div>
+                                <div class="info-value"><%= new Date(project.createdAt).toLocaleDateString('tr-TR') %></div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-crown"></i>
+                                    Elite Komutan
+                                </div>
+                                <div class="info-value">
+                                    <span class="owner-badge">
+                                        <i class="fas fa-horse-head"></i>
+                                        <%= project.owner.username %>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Üye Ekleme Kartı -->
-                <div class="settings-card">
+                <div class="settings-card add-member-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-user-plus"></i> Yeni Üye Ekle</h3>
+                        <div class="header-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="header-text">
+                            <h3>Yeni Savaşçı Dahil Et</h3>
+                            <p>Orduya elite savaşçı ekleyin</p>
+                        </div>
                     </div>
                     <div class="card-content">
                         <form id="add-member-form" class="member-form">
                             <div class="form-group">
-                                <label for="member-username">Kullanıcı Adı:</label>
-                                <div class="input-group">
+                                <label for="member-username">
+                                    <i class="fas fa-user"></i>
+                                    Elite Savaşçı Adı
+                                </label>
+                                <div class="input-wrapper">
                                     <input 
                                         type="text" 
                                         id="member-username" 
                                         name="username" 
-                                        placeholder="Eklemek istediğiniz kullanıcının adını girin"
+                                        placeholder="Orduya katılacak savaşçının adını girin"
                                         required
                                     >
-                                    <button type="submit" class="btn-add-member">
-                                        <i class="fas fa-plus"></i>
-                                        Ekle
-                                    </button>
+                                    <div class="input-highlight"></div>
                                 </div>
+                                <button type="submit" class="premium-btn primary btn-add-member">
+                                    <span class="btn-content">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <span>Orduya Dahil Et</span>
+                                    </span>
+                                    <div class="btn-glow"></div>
+                                </button>
                             </div>
                         </form>
                         <div id="member-status" class="status-message"></div>
@@ -114,53 +147,82 @@
                 </div>
 
                 <!-- Mevcut Üyeler Kartı -->
-                <div class="settings-card full-width">
+                <div class="settings-card members-list-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-users"></i> Proje Üyeleri</h3>
-                        <span class="member-count"><%= project.members.length %> üye</span>
+                        <div class="header-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="header-text">
+                            <h3>Elite Kheshig Ordusu</h3>
+                            <p>Mevcut proje üyeleri ve rolleri</p>
+                        </div>
+                        <div class="header-badge">
+                            <span class="member-count">
+                                <i class="fas fa-shield-alt"></i>
+                                <%= project.members.length %> savaşçı
+                            </span>
+                        </div>
                     </div>
                     <div class="card-content">
-                        <div class="members-list" id="members-list">
+                        <div class="members-grid" id="members-list">
                             <% project.members.forEach(member => { %>
-                                <div class="member-item" data-user-id="<%= member.user._id %>">
-                                    <div class="member-info">
+                                <div class="member-card" data-user-id="<%= member.user._id %>">
+                                    <div class="member-avatar-section">
                                         <div class="member-avatar">
                                             <i class="fas fa-user-circle"></i>
+                                            <% if (member.role === 'owner') { %>
+                                                <div class="avatar-crown">
+                                                    <i class="fas fa-crown"></i>
+                                                </div>
+                                            <% } %>
                                         </div>
-                                        <div class="member-details">
-                                            <div class="member-name">
-                                                <%= member.user.username %>
+                                    </div>
+                                    <div class="member-info-section">
+                                        <div class="member-primary">
+                                            <h4 class="member-name"><%= member.user.username %></h4>
+                                            <div class="member-role">
                                                 <% if (member.role === 'owner') { %>
                                                     <span class="role-badge owner">
                                                         <i class="fas fa-crown"></i>
-                                                        Sahip
+                                                        Komutan
                                                     </span>
                                                 <% } else if (member.role === 'editor') { %>
                                                     <span class="role-badge editor">
-                                                        <i class="fas fa-edit"></i>
-                                                        Editör
+                                                        <i class="fas fa-shield-alt"></i>
+                                                        Elite Savaşçı
                                                     </span>
                                                 <% } %>
                                             </div>
-                                            <div class="member-email"><%= member.user.email %></div>
+                                        </div>
+                                        <div class="member-secondary">
+                                            <div class="member-email">
+                                                <i class="fas fa-envelope"></i>
+                                                <%= member.user.email %>
+                                            </div>
                                             <% if (member.user.skills && member.user.skills.length > 0) { %>
                                                 <div class="member-skills">
                                                     <% member.user.skills.forEach(skill => { %>
-                                                        <span class="skill-tag"><%= skill %></span>
+                                                        <span class="skill-tag">
+                                                            <i class="fas fa-star"></i>
+                                                            <%= skill %>
+                                                        </span>
                                                     <% }); %>
                                                 </div>
                                             <% } %>
                                         </div>
                                     </div>
-                                    <div class="member-actions">
+                                    <div class="member-actions-section">
                                         <% if (member.role !== 'owner') { %>
                                             <button 
-                                                class="btn-remove-member" 
+                                                class="premium-btn danger btn-remove-member" 
                                                 data-user-id="<%= member.user._id %>"
                                                 data-username="<%= member.user.username %>"
                                             >
-                                                <i class="fas fa-trash"></i>
-                                                Çıkar
+                                                <span class="btn-content">
+                                                    <i class="fas fa-user-times"></i>
+                                                    <span>Ordudan Çıkar</span>
+                                                </span>
+                                                <div class="btn-glow"></div>
                                             </button>
                                         <% } %>
                                     </div>
@@ -171,20 +233,46 @@
                 </div>
 
                 <!-- Hızlı Eylemler Kartı -->
-                <div class="settings-card">
+                <div class="settings-card quick-actions-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-bolt"></i> Hızlı Eylemler</h3>
+                        <div class="header-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="header-text">
+                            <h3>Hızlı Komutlar</h3>
+                            <p>Sık kullanılan işlemler ve navigasyon</p>
+                        </div>
                     </div>
                     <div class="card-content">
-                        <div class="quick-actions">
-                            <a href="/room/<%= project._id %>" class="action-btn primary">
-                                <i class="fas fa-video"></i>
-                                <span>Odaya Git</span>
+                        <div class="actions-grid">
+                            <a href="/room/<%= project._id %>" class="premium-btn primary large">
+                                <span class="btn-content">
+                                    <i class="fas fa-video"></i>
+                                    <span>Savaş Alanına Git</span>
+                                </span>
+                                <div class="btn-glow"></div>
                             </a>
-                            <a href="/dashboard" class="action-btn secondary">
-                                <i class="fas fa-arrow-left"></i>
-                                <span>Dashboard'a Dön</span>
+                            <a href="/dashboard" class="premium-btn secondary large">
+                                <span class="btn-content">
+                                    <i class="fas fa-horse-head"></i>
+                                    <span>Kheshig Merkezine Dön</span>
+                                </span>
+                                <div class="btn-glow"></div>
                             </a>
+                            <button class="premium-btn accent large" onclick="window.print()">
+                                <span class="btn-content">
+                                    <i class="fas fa-print"></i>
+                                    <span>Proje Raporunu Yazdır</span>
+                                </span>
+                                <div class="btn-glow"></div>
+                            </button>
+                            <button class="premium-btn info large" onclick="exportProjectData()">
+                                <span class="btn-content">
+                                    <i class="fas fa-download"></i>
+                                    <span>Proje Verilerini İndir</span>
+                                </span>
+                                <div class="btn-glow"></div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -193,8 +281,25 @@
     </main>
 
     <!-- JavaScript -->
-    <script src="/js/project-settings.js"></script>
-    <script>
+    <script src="/js/project-settings.js"></script>    <script>
+        // Export project data functionality
+        function exportProjectData() {
+            const projectData = {
+                name: '<%= project.name %>',
+                description: '<%= project.description || "" %>',
+                createdAt: '<%= project.createdAt %>',                owner: '<%= project.owner.username %>',
+                memberCount: '<%= project.members.length %>'
+            };
+            
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = projectData.name + '_proje_verileri.json';
+            link.click();
+        }
+
         // Logout functionality
         document.getElementById('logout-btn').addEventListener('click', async function() {
             try {

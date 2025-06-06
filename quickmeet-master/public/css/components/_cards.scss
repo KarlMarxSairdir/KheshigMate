@@ -1,0 +1,358 @@
+// Card components
+
+// Modern glass card style (Orta Asya theme)
+.glass-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+    padding: var(--space-xl) !important;
+    box-shadow: var(--shadow-xl) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.glass-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 4px !important;
+    background: var(--gradient-gold) !important;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--kheshig-gold) !important;
+}
+
+// Settings cards
+.settings-card {
+    background: rgba(253, 246, 227, 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: var(--shadow-lg) !important;
+    overflow: hidden !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+}
+
+.settings-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--kheshig-gold) !important;
+}
+
+.settings-card.full-width {
+    grid-column: 1 / -1 !important;
+}
+
+// Card headers
+.card-header {
+    background: var(--gradient-steppe) !important;
+    padding: var(--space-xl) !important;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.2) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.card-header h3 {
+    margin: 0 !important;
+    font-size: 1.4rem !important;
+    color: var(--kheshig-navy) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-md) !important;
+    font-family: var(--font-serif) !important;
+    font-weight: 600 !important;
+}
+
+// Card icons
+.card-icon {
+    width: 60px !important;
+    height: 60px !important;
+    color: var(--kheshig-cream) !important;
+    background: var(--gradient-primary) !important;
+    box-shadow: var(--shadow-lg) !important;
+    transition: all 0.3s ease !important;
+    border-radius: var(--radius-lg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.5rem !important;
+}
+
+.card-icon:hover {
+    transform: scale(1.1) rotateY(180deg) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+.create-icon {
+    background: var(--gradient-gold) !important;
+}
+
+.projects-icon {
+    background: linear-gradient(135deg, var(--kheshig-sage) 0%, var(--kheshig-navy) 100%) !important;
+}
+
+// Card content
+.card-content {
+    padding: var(--space-xl) !important;
+}
+
+.card-icon-header h2 {
+    font-size: 1.9rem !important;
+    color: var(--kheshig-navy) !important;
+    margin-bottom: var(--space-sm) !important;
+    font-weight: 700 !important;
+    font-family: var(--font-serif) !important;
+}
+
+.card-icon-header p {
+    color: var(--kheshig-sage) !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: var(--space-lg) !important;
+}
+
+// Project cards
+.project-card {
+    background: rgba(253, 246, 227, 0.95) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 2px solid rgba(212, 175, 55, 0.2) !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+    box-shadow: var(--shadow-md) !important;
+    position: relative !important;
+}
+
+.project-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--kheshig-gold) !important;
+}
+
+.project-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 4px !important;
+    background: var(--gradient-gold) !important;
+}
+
+// Project icon in cards
+.project-icon {
+    width: 60px !important;
+    height: 60px !important;
+    background: var(--gradient-primary) !important;
+    color: var(--kheshig-cream) !important;
+    border-radius: var(--radius-lg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.5rem !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+// Project status badge
+.project-status .status-badge {
+    background: var(--gradient-gold) !important;
+    color: white !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: var(--radius-xl) !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.status-badge.owner {
+    background: var(--gradient-gold) !important;
+}
+
+.status-badge.member {
+    background: linear-gradient(135deg, var(--success), #229954) !important;
+}
+
+.status-badge.inactive {
+    background: linear-gradient(135deg, var(--error), #c0392b) !important;
+}
+
+// Project info
+.project-info h3 {
+    font-size: 1.4rem !important;
+    color: var(--kheshig-navy) !important;
+    margin-bottom: var(--space-sm) !important;
+    font-weight: 700 !important;
+    font-family: var(--font-serif) !important;
+}
+
+.project-info p {
+    color: var(--kheshig-sage) !important;
+    margin-bottom: var(--space-lg) !important;
+    line-height: 1.5 !important;
+    font-size: 0.9rem !important;
+}
+
+// Project meta information
+.project-meta {
+    display: flex !important;
+    gap: var(--space-lg) !important;
+    margin-bottom: var(--space-lg) !important;
+}
+
+.meta-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    font-size: 0.8rem !important;
+    color: var(--kheshig-sage) !important;
+}
+
+.meta-item i {
+    color: var(--kheshig-bronze) !important;
+}
+
+// Info rows
+.info-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: var(--space-md) 0 !important;
+    border-bottom: 1px solid rgba(149, 165, 166, 0.1) !important;
+}
+
+.info-row:last-child {
+    border-bottom: none !important;
+}
+
+.info-label {
+    font-weight: 600 !important;
+    color: var(--kheshig-navy) !important;
+    font-size: 0.9rem !important;
+}
+
+.info-value {
+    color: var(--kheshig-sage) !important;
+    font-size: 0.9rem !important;
+}
+
+// Member count badge
+.member-count {
+    background: var(--kheshig-gold) !important;
+    color: white !important;
+    padding: var(--space-sm) var(--space-md) !important;
+    border-radius: var(--radius-lg) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+// Note cards
+.note-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.note-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.note-date {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.note-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.note-action-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.edit-note-btn {
+    background: linear-gradient(135deg, #3498db, #5dade2);
+    color: white;
+}
+
+.delete-note-btn {
+    background: linear-gradient(135deg, #e74c3c, #ec7063);
+    color: white;
+}
+
+.note-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.note-content {
+    color: #333;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+// Stat items
+.stat-item {
+    background: rgba(253, 246, 227, 0.15) !important;
+    padding: var(--space-lg) !important;
+    border-radius: var(--radius-lg) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 2px solid rgba(253, 246, 227, 0.2) !important;
+    min-width: 140px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.stat-item:hover {
+    transform: translateY(-5px) !important;
+    background: rgba(253, 246, 227, 0.25) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.stat-number {
+    font-size: 2.8rem !important;
+    font-weight: 900 !important;
+    color: var(--kheshig-bronze) !important;
+    margin-bottom: var(--space-xs) !important;
+    line-height: 1 !important;
+}
+
+.stat-label {
+    font-size: 0.9rem !important;
+    color: var(--kheshig-sage) !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}

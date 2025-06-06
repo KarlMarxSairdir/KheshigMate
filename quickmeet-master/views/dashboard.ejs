@@ -3,20 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Kaşıkmate - Dashboard</title>
-    <meta name="description" content="Kaşıkmate Proje Yönetimi Dashboard">    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=1.0.3">
+    <title>KheshigMate - Dashboard</title>
+    <meta name="description" content="KheshigMate Orta Asya Proje Yönetimi Dashboard">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
-<body class="modern-dashboard-page">    <!-- Modern Dashboard Header -->
+<body class="modern-dashboard-page">
+    <!-- Modern Dashboard Header -->
     <header class="modern-dashboard-header">
         <div class="header-content">
             <div class="header-left">
-                <div class="dashboard-logo">Kaşıkmate</div>
+                <div class="dashboard-logo">KheshigMate</div>
                 <div class="breadcrumb">
                     <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
+                    <span>Kheshig Merkezi</span>
                 </div>
             </div>
             <div class="header-right">
@@ -25,8 +27,8 @@
                         <i class="fas fa-user-circle"></i>
                     </div>
                     <div class="user-details">
-                        <span class="username"><%= user ? user.username : 'Kullanıcı' %></span>
-                        <span class="user-role">Proje Yöneticisi</span>
+                        <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
+                        <span class="user-role">Elite Haberleşme Uzmanı</span>
                     </div>
                 </div>
                 <button id="logout-btn" class="modern-logout-btn">
@@ -40,11 +42,11 @@
         <div class="dashboard-hero">
             <div class="hero-content">
                 <h1 class="hero-title">
-                    <i class="fas fa-rocket"></i>
-                    Hoş Geldiniz!
+                    <i class="fas fa-horse-head"></i>
+                    Bozkıra Hoş Geldiniz!
                 </h1>
                 <p class="hero-subtitle">
-                    Projelerinizi yönetin, ekibinizle işbirliği yapın ve başarıya ulaşın
+                    Projelerinizi yönetin, elite ekibinizle işbirliği yapın ve Orta Asya bozkırlarında başarıya ulaşın
                 </p>
                 <div class="hero-stats">
                     <div class="stat-item">
@@ -149,9 +151,8 @@
                                                 <span class="status-badge active">Aktif</span>
                                             <% } %>
                                         </div>
-                                    </div>
-                                    <div class="project-info">
-                                        <h3><%= project.name %></h3>
+                                    </div>                                    <div class="project-info">
+                                        <h3 class="project-title"><%= project.name %></h3>
                                         <p><%= project.description || 'Açıklama eklenmemiş' %></p>
                                         <div class="project-meta">
                                             <span class="meta-item">
@@ -163,7 +164,7 @@
                                                 <%= project.members ? project.members.length : 1 %> Üye
                                             </span>
                                         </div>
-                                    </div>                                    <div class="project-actions">                                        <a href="/room/<%= project._id %>" class="modern-primary-btn join-btn">
+                                    </div><div class="project-actions">                                        <a href="/room/<%= project._id %>" class="modern-primary-btn join-btn">
                                             <i class="fas fa-video"></i>
                                             <span>Katıl</span>
                                         </a>                                        
@@ -196,8 +197,7 @@
                         <button class="modern-secondary-btn" onclick="document.getElementById('project-name').focus()">
                             <i class="fas fa-plus"></i>
                             <span>İlk Projenizi Oluşturun</span>
-                        </button>
-                    </div>
+                        </button>                    </div>
                 </div>
             </div>
         </div>

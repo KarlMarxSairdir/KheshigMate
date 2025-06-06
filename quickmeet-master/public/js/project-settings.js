@@ -77,11 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Confirm removal
             if (!confirm(`${username} kullanıcısını projeden çıkarmak istediğinizden emin misiniz?`)) {
                 return;
-            }
-
-            // Show loading state
-            removeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Çıkarılıyor...';
-            removeBtn.disabled = true;            try {
+            }            // Show loading state
+            const originalBtnContent = removeBtn.innerHTML;
+            removeBtn.innerHTML = '<span class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>Çıkarılıyor...</span></span><div class="btn-glow"></div>';
+            removeBtn.disabled = true;try {
                 console.log('🔍 Removing member with ID:', userId);
                 console.log('🔍 DELETE URL:', `/projects/${projectId}/members/${userId}`);
                 
@@ -91,31 +90,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 console.log('📡 DELETE Response status:', response.status);
                 const data = await response.json();
-                console.log('📦 DELETE Response data:', data);
-
-                if (response.ok) {
+                console.log('📦 DELETE Response data:', data);                if (response.ok) {
                     showStatus(data.message, 'success');
                     
-                    // Remove member from UI
-                    const memberItem = removeBtn.closest('.member-item');
-                    memberItem.remove();
+                    // Remove member from UI - Updated for new HTML structure
+                    const memberCard = removeBtn.closest('.member-card');
+                    if (memberCard) {
+                        memberCard.remove();
+                    } else {
+                        console.warn('Member card not found, trying fallback selector');
+                        // Fallback: try to find by data attribute
+                        const userId = removeBtn.getAttribute('data-user-id');
+                        const memberElement = document.querySelector(`[data-user-id="${userId}"]`);
+                        if (memberElement) {
+                            memberElement.remove();
+                        }
+                    }
                     
                     // Update member count
                     updateMemberCount();
-                    
-                } else {
+                      } else {
                     console.error('❌ DELETE Server error:', data);
                     showStatus(data.message || 'Üye çıkarılırken hata oluştu', 'error');
                     // Reset button state
-                    removeBtn.innerHTML = '<i class="fas fa-trash"></i> Çıkar';
+                    removeBtn.innerHTML = originalBtnContent;
                     removeBtn.disabled = false;
-                }
-
-            } catch (error) {
+                }            } catch (error) {
                 console.error('Remove member error:', error);
                 showStatus('Sunucu hatası oluştu', 'error');
                 // Reset button state
-                removeBtn.innerHTML = '<i class="fas fa-trash"></i> Çıkar';
+                removeBtn.innerHTML = originalBtnContent;
                 removeBtn.disabled = false;
             }
         }
@@ -134,39 +138,52 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             memberStatus.style.display = 'none';
         }, 5000);
-    }
-
-    function addMemberToUI(member) {
+    }    function addMemberToUI(member) {
         const memberHTML = `
-            <div class="member-item" data-user-id="${member.user._id}">
-                <div class="member-info">
+            <div class="member-card" data-user-id="${member.user._id}">
+                <div class="member-avatar-section">
                     <div class="member-avatar">
                         <i class="fas fa-user-circle"></i>
                     </div>
-                    <div class="member-details">
-                        <div class="member-name">
-                            ${member.user.username}
+                </div>
+                <div class="member-info-section">
+                    <div class="member-primary">
+                        <h4 class="member-name">${member.user.username}</h4>
+                        <div class="member-role">
                             <span class="role-badge editor">
-                                <i class="fas fa-edit"></i>
-                                Editör
+                                <i class="fas fa-shield-alt"></i>
+                                Elite Savaşçı
                             </span>
                         </div>
-                        <div class="member-email">${member.user.email}</div>
+                    </div>
+                    <div class="member-secondary">
+                        <div class="member-email">
+                            <i class="fas fa-envelope"></i>
+                            ${member.user.email}
+                        </div>
                         ${member.user.skills && member.user.skills.length > 0 ? `
                             <div class="member-skills">
-                                ${member.user.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                                ${member.user.skills.map(skill => `
+                                    <span class="skill-tag">
+                                        <i class="fas fa-star"></i>
+                                        ${skill}
+                                    </span>
+                                `).join('')}
                             </div>
                         ` : ''}
                     </div>
                 </div>
-                <div class="member-actions">
+                <div class="member-actions-section">
                     <button 
-                        class="btn-remove-member" 
+                        class="premium-btn danger btn-remove-member" 
                         data-user-id="${member.user._id}"
                         data-username="${member.user.username}"
                     >
-                        <i class="fas fa-trash"></i>
-                        Çıkar
+                        <span class="btn-content">
+                            <i class="fas fa-user-times"></i>
+                            <span>Ordudan Çıkar</span>
+                        </span>
+                        <div class="btn-glow"></div>
                     </button>
                 </div>
             </div>

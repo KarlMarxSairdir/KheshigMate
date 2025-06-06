@@ -1,0 +1,72 @@
+// Variables - Orta Asya (Central Asian) Theme with Kheshig Colors
+// Kheshig - Elite Mongol/Turkish guard unit colors
+
+// Legacy Variables (for gradual migration)
+$blue: #2980b9;
+$blue0: #3498db;
+$blue-1: #74b9ff;
+$white: #ecf0f1;
+$nicegreen: #4ecca3;
+$black: #393e46;
+$spacemono: "Space Mono", monospace;
+$opensans: "Open Sans", sans-serif;
+
+// Modern CSS Custom Properties - Orta Asya Theme
+:root {
+  /* Core Kheshig Colors - Central Asian Inspiration */
+  --kheshig-navy: #2C3E50;        /* Deep blue of the eternal sky */
+  --kheshig-gold: #D4AF37;        /* Golden steppe sunset */
+  --kheshig-bronze: #CD7F32;      /* Bronze horseman equipment */
+  --kheshig-sage: #95A5A6;        /* Sage green of the steppes */
+  --kheshig-cream: #FDF6E3;       /* Yurt felt color */
+  
+  /* Semantic Colors */
+  --primary: var(--kheshig-navy);
+  --secondary: var(--kheshig-gold);
+  --accent: var(--kheshig-bronze);
+  --muted: var(--kheshig-sage);
+  --background: var(--kheshig-cream);
+  
+  /* Status Colors */
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --info: #3498db;
+  
+  /* Gradient Variations */
+  --gradient-primary: linear-gradient(135deg, var(--kheshig-navy) 0%, #34495e 100%);
+  --gradient-gold: linear-gradient(135deg, var(--kheshig-gold) 0%, var(--kheshig-bronze) 100%);
+  --gradient-steppe: linear-gradient(135deg, var(--kheshig-cream) 0%, #f4f1e8 100%);
+  
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Crimson Text', Georgia, serif;
+  
+  /* Spacing System */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-xxl: 3rem;     /* 48px */
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 24px;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(44, 62, 80, 0.1);
+  --shadow-md: 0 4px 8px rgba(44, 62, 80, 0.15);
+  --shadow-lg: 0 8px 16px rgba(44, 62, 80, 0.2);
+  --shadow-xl: 0 12px 24px rgba(44, 62, 80, 0.25);
+}
+
+// Font Imports
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
