@@ -8,11 +8,30 @@
   |-- User.js
 |-- public
   |-- css
+    |-- base
+      |-- _global.scss
+      |-- _variables.scss
+    |-- components
+      |-- _buttons.scss
+      |-- _cards.scss
+      |-- _forms.scss
+      |-- _navbar.scss
+    |-- pages
+      |-- _dashboard.scss
+      |-- _landing.scss
+      |-- _login-register.scss
+      |-- _project-settings-backup.scss
+      |-- _project-settings-new.scss
+      |-- _project-settings.scss
+      |-- _room-backup.scss
+      |-- _room-modern.scss
+      |-- _room.scss
     |-- style-backup.css
     |-- style-new.css
     |-- style.css
     |-- style.css.map
     |-- style.scss
+    |-- style.scss.backup
   |-- js
     |-- auth.js
     |-- dashboard.js
@@ -22,6 +41,7 @@
     |-- room_backup.js
     |-- room_fixed.js
     |-- room_new.js
+  |-- test-input.html
 |-- views
   |-- dashboard.ejs
   |-- index.ejs
@@ -33,10 +53,14 @@
 |-- cert.pem
 |-- debug-login.js
 |-- debug-member-add.js
+|-- debug-user-identity.js
 |-- expressApp.js
 |-- FAZ1_DURUM_RAPORU.md
 |-- FAZ1_FINAL_RAPOR.md
 |-- FAZ1_YAPLACAKLAR.md
+|-- FAZ2_BASLANGIC_RAPORU.md
+|-- FAZ2_DETAYLI_PLAN.md
+|-- FAZ2_HAFTA1_GOREVLER.md
 |-- key.pem
 |-- LICENSE
 |-- package-lock.json
@@ -46,4 +70,5 @@
 |-- structure.txt
 |-- TEKNIK_DOKUMANTASYON.md
 |-- test-db.js
+|-- test-mongo-connection.js
 |-- test-mongodb.js

@@ -50,6 +50,7 @@ socket.on('project-users-list', (usersInRoom) => {
 let tabs, tabContents;
 let currentEditingNoteId = null;
 let addNoteBtn, noteEditor, saveNoteBtn, cancelNoteBtn, noteContent, notesList;
+let currentProjectData = null; // Proje ve kullanıcı bilgilerini saklar
 
 async function loadNotes() {
     if (!ROOM_ID) return;
@@ -57,6 +58,7 @@ async function loadNotes() {
         const response = await fetch(`/projects/${ROOM_ID}/notes`, { credentials: 'include' });
         const data = await response.json();
         if (response.ok) {
+            currentProjectData = data; // Proje bilgilerini kaydet
             renderNotes(data.notes);
         } else {
             console.error('Notlar yüklenemedi:', data.message);
@@ -82,16 +84,25 @@ function renderNotes(notes) {
     notes.forEach(note => {
         const noteEl = document.createElement('div');
         noteEl.className = 'note-item';
+        
+        // Yetki kontrolü
+        const canEdit = currentProjectData && (currentProjectData.currentUser.isOwner || currentProjectData.currentUser.isMember);
+        const canDelete = currentProjectData && (currentProjectData.currentUser.isOwner || note.user._id === currentProjectData.currentUser._id);
+        
         noteEl.innerHTML = `
             <div class="note-header">
+                <div class="note-author">
+                    <i class="fas fa-user"></i>
+                    <span>${note.user.username}</span>
+                </div>
                 <div class="note-date">${new Date(note.createdAt).toLocaleDateString()}</div>
                 <div class="note-actions">
-                    <button class="note-action-btn edit-note-btn" onclick="editNote('${note._id}', \`${escapeAttributeForJS(note.content)}\`)" title="Düzenle">
+                    ${canEdit ? `<button class="note-action-btn edit-note-btn" onclick="editNote('${note._id}', \`${escapeAttributeForJS(note.content)}\`)" title="Düzenle">
                         <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="note-action-btn delete-note-btn" onclick="deleteNote('${note._id}')" title="Sil">
+                    </button>` : ''}
+                    ${canDelete ? `<button class="note-action-btn delete-note-btn" onclick="deleteNote('${note._id}')" title="Sil">
                         <i class="fas fa-trash"></i>
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>
             <div class="note-content">${escapeHTML(note.content)}</div>

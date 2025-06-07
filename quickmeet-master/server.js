@@ -65,7 +65,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     secret: 'kasikmate-secret-key',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // HTTP için false, HTTPS için true
+        maxAge: 24 * 60 * 60 * 1000 // 24 saat
+    }
 }));
 
 // Passport middleware (MOVED UP)
@@ -238,11 +242,43 @@ app.get('/projects', ensureAuthenticated, async (req, res) => {
 app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
     try {
         const projectId = req.params.projectId;
+        const userId = req.user._id;
+        
+        // Proje bilgilerini al
+        const project = await Project.findById(projectId)
+            .populate('owner', 'username email _id')
+            .populate('members.user', 'username email _id');
+        
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+        
+        // Kullanıcının proje üyesi olup olmadığını kontrol et
+        const isOwner = project.owner._id.toString() === userId.toString();
+        const isMember = project.members.some(member => member.user._id.toString() === userId.toString());
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ message: 'Bu projeye erişim izniniz yok.' });
+        }
+        
         const notes = await ProjectNote.find({ project: projectId })
             .populate('user', 'username email _id') 
             .sort({ createdAt: -1 }); 
 
-        res.json({ notes });
+        res.json({ 
+            notes,
+            project: {
+                _id: project._id,
+                name: project.name,
+                owner: project.owner,
+                members: project.members
+            },
+            currentUser: {
+                _id: userId,
+                isOwner,
+                isMember
+            }
+        });
     } catch (err) {
         console.error(`Error fetching notes for project ${req.params.projectId}:`, err);
         res.status(500).json({ message: 'Notlar alınırken sunucu hatası oluştu.', error: err.message });
@@ -250,8 +286,7 @@ app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
 });
 
 // Create a new note for a project
-app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
-    try {
+app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {    try {
         const projectId = req.params.projectId;
         const { content } = req.body;
         const userId = req.user._id;
@@ -298,13 +333,23 @@ app.put('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req, r
         if (!note) {
             return res.status(404).json({ message: 'Not bulunamadı.' });
         }
-
-        if (note.user.toString() !== userId.toString()) {
-            return res.status(403).json({ message: 'Bu notu düzenleme yetkiniz yok.' });
-        }
         
         if (note.project.toString() !== projectId) {
              return res.status(400).json({ message: 'Not bu projeye ait değil.' });
+        }
+
+        // YENİ YETKI KURALI: Tüm proje üyeleri herhangi bir notu düzenleyebilir
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+
+        // Kullanıcının proje üyesi olup olmadığını kontrol et
+        const isOwner = project.owner.toString() === userId.toString();
+        const isMember = project.members.some(member => member.user.toString() === userId.toString());
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ message: 'Bu notu düzenlemek için proje üyesi olmalısınız.' });
         }
 
         note.content = content.trim();
@@ -333,12 +378,21 @@ app.delete('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req
             return res.status(404).json({ message: 'Not bulunamadı.' });
         }
 
-        if (note.user.toString() !== userId.toString()) {
-             return res.status(403).json({ message: 'Bu notu silme yetkiniz yok.' });
-        }
-
         if (note.project.toString() !== projectId) {
             return res.status(400).json({ message: 'Not bu projeye ait değil.' });
+        }
+
+        // YENİ YETKI KURALI: Sadece proje sahibi veya notu oluşturan kişi silebilir
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+
+        const isProjectOwner = project.owner.toString() === userId.toString();
+        const isNoteCreator = note.user.toString() === userId.toString();
+        
+        if (!isProjectOwner && !isNoteCreator) {
+            return res.status(403).json({ message: 'Bu notu sadece proje sahibi veya notu oluşturan kişi silebilir.' });
         }
 
         await ProjectNote.findByIdAndDelete(noteId);
@@ -611,15 +665,11 @@ app.use(passport.session());
 // Passport local strategy
 passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
     try {
-        console.log('🔍 Login attempt for email:', email);
         const user = await User.findOne({ email });
-        console.log('👤 User found:', user ? user.username : 'No user found');
         
         if (!user) return done(null, false, { message: 'Kullanıcı bulunamadı.' });
         
-        console.log('🔐 Comparing password...');
         const isMatch = await user.comparePassword(password);
-        console.log('🔓 Password match result:', isMatch);
         
         if (!isMatch) return done(null, false, { message: 'Şifre hatalı.' });
         return done(null, user);
@@ -872,6 +922,33 @@ app.get('/debug/users', ensureAuthenticated, async (req, res) => {
         res.json({
             count: users.length,
             users: users
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Debug endpoint to show current user info
+app.get('/debug/current-user', ensureAuthenticated, async (req, res) => {
+    try {
+        res.json({
+            isAuthenticated: req.isAuthenticated(),
+            user: req.user,
+            sessionID: req.sessionID,
+            session: req.session
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Debug endpoint to check user by username
+app.get('/debug/user/:username', ensureAuthenticated, async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username });
+        res.json({
+            found: !!user,
+            user: user
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

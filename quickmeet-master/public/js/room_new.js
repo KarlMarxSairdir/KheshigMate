@@ -94,6 +94,7 @@ tabs.forEach(tab => {
 
 // --- NOT YÖNETİMİ ---
 let currentEditingNoteId = null;
+let currentProjectData = null; // Proje ve kullanıcı bilgilerini saklar
 
 const addNoteBtn = document.getElementById('add-note-btn');
 const noteEditor = document.getElementById('note-editor');
@@ -133,10 +134,13 @@ saveNoteBtn.onclick = async () => {
 async function loadNotes() {
     if (!projectId) return;
     try {
-        const response = await fetch(`/projects/${projectId}/notes`);
+        const response = await fetch(`/projects/${projectId}/notes`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (response.ok) {
+            currentProjectData = data; // Proje bilgilerini kaydet
             renderNotes(data.notes);
         }
     } catch (err) {
@@ -145,10 +149,28 @@ async function loadNotes() {
 }
 
 function renderNotes(notes) {
+    if (!notesList) return;
     notesList.innerHTML = '';
+    
+    if (!notes || notes.length === 0) {
+        notesList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-sticky-note"></i>
+                <h3>Henüz Not Yok</h3>
+                <p>İlk notunuzu eklemek için "Yeni Not Ekle" butonuna tıklayın.</p>
+            </div>
+        `;
+        return;
+    }
+    
     notes.forEach(note => {
         const noteEl = document.createElement('div');
         noteEl.className = 'note-item';
+        
+        // Yetki kontrolü
+        const canEdit = currentProjectData && (currentProjectData.currentUser.isOwner || currentProjectData.currentUser.isMember);
+        const canDelete = currentProjectData && (currentProjectData.currentUser.isOwner || note.user._id === currentProjectData.currentUser._id);
+        
         noteEl.innerHTML = `
             <div class="note-item-header">
                 <span class="note-author">${note.user.username}</span>
@@ -156,8 +178,8 @@ function renderNotes(notes) {
             </div>
             <div class="note-preview">${note.content.substring(0, 100)}${note.content.length > 100 ? '...' : ''}</div>
             <div class="note-actions">
-                <button class="note-action-btn edit" onclick="editNote('${note._id}', '${note.content.replace(/'/g, "\\'")}')">Düzenle</button>
-                <button class="note-action-btn delete" onclick="deleteNote('${note._id}')">Sil</button>
+                ${canEdit ? `<button class="note-action-btn edit" onclick="editNote('${note._id}', '${note.content.replace(/'/g, "\\'")}')">Düzenle</button>` : ''}
+                ${canDelete ? `<button class="note-action-btn delete" onclick="deleteNote('${note._id}')">Sil</button>` : ''}
             </div>
         `;
         notesList.appendChild(noteEl);
@@ -168,7 +190,8 @@ async function createNote(content) {
     const response = await fetch(`/projects/${projectId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
     
     if (!response.ok) {
@@ -181,7 +204,8 @@ async function updateNote(noteId, content) {
     const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
     
     if (!response.ok) {
@@ -195,11 +219,15 @@ async function deleteNote(noteId) {
     
     try {
         const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (response.ok) {
             loadNotes();
+        } else {
+            const error = await response.json();
+            alert('Not silme hatası: ' + (error.message || 'Bilinmeyen hata'));
         }
     } catch (err) {
         alert('Not silme hatası: ' + err.message);
