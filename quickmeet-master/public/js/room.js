@@ -9,9 +9,16 @@ const roomId = ROOM_ID; // Alias for clarity, using global ROOM_ID
 const userName = USER_USERNAME; // Alias for clarity, using global USER_USERNAME
 const userId = USER_ID; // Alias for clarity, using global USER_ID
 
-// DOM elementleri - DOMContentLoaded içinde tanımlanacak
-let myvideo, chatRoom, sendButton, messageField, videoContainer;
-let videoButt, audioButt, cutCall, screenShareButt, whiteboardButt;
+const myvideo = document.querySelector("#vd1");
+const chatRoom = document.querySelector('.chat-messages');
+const sendButton = document.querySelector('.chat-send-btn');
+const messageField = document.querySelector('.chat-input-modern');
+const videoContainer = document.querySelector('#vcont');
+const videoButt = document.querySelector('.video-btn');
+const audioButt = document.querySelector('.audio-btn');
+const cutCall = document.querySelector('.disconnect-btn');
+const screenShareButt = document.querySelector('.screenshare-btn');
+const whiteboardButt = document.querySelector('.whiteboard-btn');
 let userMap = {}; // Kullanıcı ID'lerini ve adlarını eşleştirmek için
 
 // Kullanıcı bilgileri doğrudan EJS'den gelen global değişkenlerden alınır.
@@ -45,11 +52,72 @@ socket.on('project-users-list', (usersInRoom) => {
     }
 });
 
-// --- TAB SİSTEMİ ve NOT YÖNETİMİ ---
-// DOM elementleri - DOMContentLoaded içinde tanımlanacak
-let tabs, tabContents;
+// --- TAB SİSTEMİ ---
+const tabs = document.querySelectorAll('.sidebar-tab');
+const tabContents = document.querySelectorAll('.tab-panel');
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        
+        tab.classList.add('active');
+        const targetTab = tab.getAttribute('data-tab');
+        const targetContent = document.getElementById(`${targetTab}-tab`);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+        
+        if (targetTab === 'notes') {
+            loadNotes();
+        } else if (targetTab === 'attendees') {
+            loadAttendees();
+        }
+    });
+});
+    
+
+// --- NOT YÖNETİMİ ---
 let currentEditingNoteId = null;
-let addNoteBtn, noteEditor, saveNoteBtn, cancelNoteBtn, noteContent, notesList;
+const addNoteBtn = document.getElementById('add-note-btn');
+const noteEditor = document.getElementById('note-editor');
+const saveNoteBtn = document.getElementById('save-note-btn');
+const cancelNoteBtn = document.getElementById('cancel-note-btn');
+const noteContent = document.getElementById('note-content');
+const notesList = document.getElementById('notes-list');
+
+if (addNoteBtn) {
+    addNoteBtn.onclick = () => {
+        currentEditingNoteId = null;
+        noteContent.value = '';
+        noteEditor.style.display = 'flex';
+    };
+}
+
+if (cancelNoteBtn) {
+    cancelNoteBtn.onclick = () => {
+        noteEditor.style.display = 'none';
+        currentEditingNoteId = null;
+    };
+}
+
+if (saveNoteBtn) {
+    saveNoteBtn.onclick = async () => {
+        const content = noteContent.value.trim();
+        if (!content) return;
+        try {
+            if (currentEditingNoteId) {
+                await updateNote(currentEditingNoteId, content);
+            } else {
+                await createNote(content);
+            }
+            noteEditor.style.display = 'none';
+            loadNotes();
+        } catch (err) {
+            alert('Not kaydetme hatası: ' + err.message);
+        }
+    };
+}
 
 async function loadNotes() {
     if (!ROOM_ID) return;
@@ -188,9 +256,11 @@ function loadAttendees() {
             <div class="attendee-status">Çevrimiçi</div>
         </div>
     `;
-    attendeesList.appendChild(myAttendee);    let otherAttendeesFound = false;
+    attendeesList.appendChild(myAttendee);
+
+    let otherAttendeesFound = false;
     for (const peerId in userMap) {
-        if (Object.prototype.hasOwnProperty.call(userMap, peerId) && peerId !== USER_ID) {
+        if (userMap.hasOwnProperty(peerId) && peerId !== USER_ID) {
             otherAttendeesFound = true;
             const username = userMap[peerId];
             const attendeeEl = document.createElement('div');
@@ -226,10 +296,13 @@ function loadAttendees() {
 }
 
 //whiteboard js start
-// Canvas elementleri - DOMContentLoaded içinde tanımlanacak
-let whiteboardSection, canvas, ctx;
+const whiteboardSection = document.querySelector('.whiteboard-section');
+const canvas = document.querySelector("#whiteboard");
+const ctx = canvas.getContext('2d');
 
 let boardVisible = false;
+whiteboardSection.style.display = 'none';
+
 let isDrawing = 0;
 let x = 0;
 let y = 0;
@@ -244,36 +317,55 @@ function fitToContainer(canvasElement) { // Parametre adı düzeltildi
     canvasElement.height = canvasElement.offsetHeight;
 }
 
+fitToContainer(canvas);
+
+socket.on('getCanvas', url => {
+    if (!url) {
+        console.log('Canvas URL yok, temiz canvas.');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
+        return;
+    }
+    let img = new Image();
+    img.onload = function() { 
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        ctx.drawImage(img, 0, 0);
+        console.log('Canvas yüklendi (URL ile)');
+    };
+    img.onerror = function() {
+        console.error('Canvas resmi yüklenemedi:', url);
+    };
+    img.src = url;
+});
+
 function setColor(newcolor) {
     color = newcolor;
     drawsize = 3;
-    console.log('Canvas renk değiştirildi:', newcolor);
 }
 
 function setEraser() {
     color = "white"; 
     drawsize = 10;
-    console.log('Silgi modu aktif edildi');
 }
+
+window.onresize = function() { 
+    fitToContainer(canvas);
+    socket.emit('getCanvas'); // Yeniden boyutlandırmada canvası tekrar iste
+};
 
 function clearBoard() {
     if (window.confirm('Tahtayı temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
-        if (ctx && canvas) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            socket.emit('store canvas', canvas.toDataURL()); 
-            socket.emit('clearBoard'); 
-            console.log('Canvas temizlendi');
-        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        socket.emit('store canvas', canvas.toDataURL()); 
+        socket.emit('clearBoard'); 
     }
 }
 
-// Global fonksiyonları window objesine ekle (HTML onclick eventleri için)
-window.setColor = setColor;
-window.setEraser = setEraser;
-window.clearBoard = clearBoard;
+socket.on('clearBoard', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    console.log('Beyaz tahta uzak bir kullanıcı tarafından temizlendi.');
+});
 
 function draw(newx, newy, oldx, oldy) {
-    if (!ctx) return; // Safety check
     ctx.strokeStyle = color;
     ctx.lineWidth = drawsize;
     ctx.beginPath();
@@ -284,7 +376,6 @@ function draw(newx, newy, oldx, oldy) {
 }
 
 function drawRemote(newx, newy, oldx, oldy, remoteColor, remoteSize) {
-    if (!ctx) return; // Safety check
     ctx.strokeStyle = remoteColor;
     ctx.lineWidth = remoteSize;
     ctx.beginPath();
@@ -293,6 +384,54 @@ function drawRemote(newx, newy, oldx, oldy, remoteColor, remoteSize) {
     ctx.stroke();
     ctx.closePath();
 }
+
+canvas.addEventListener('mousedown', e => {
+    x = e.offsetX;
+    y = e.offsetY;
+    isDrawing = 1;
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (isDrawing) {
+        draw(e.offsetX, e.offsetY, x, y);
+        socket.emit('project draw', ROOM_ID, { // USER_ID sunucu tarafında socket'ten alınacak
+            newX: e.offsetX, newY: e.offsetY, 
+            prevX: x, prevY: y, 
+            color: color, size: drawsize 
+        });
+        x = e.offsetX;
+        y = e.offsetY;
+    }
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (isDrawing) {
+        isDrawing = 0;
+        socket.emit('store canvas', canvas.toDataURL()); 
+    }
+});
+
+socket.on('project draw', (eventData) => {
+    // eventData = { user: emittingUserId, data: { newX, newY, prevX, prevY, color, size } }
+    if (eventData.user !== USER_ID) { 
+        console.log('Uzak çizim alındı:', eventData);
+        drawRemote(eventData.data.newX, eventData.data.newY, eventData.data.prevX, eventData.data.prevY, eventData.data.color, eventData.data.size);
+    }
+});
+
+socket.on('canvasUpdate', url => { 
+    console.log("'canvasUpdate' eventi alındı. URL:", url ? 'Mevcut' : 'Yok');
+    if (url) {
+        let img = new Image();
+        img.onload = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = url;
+    } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
+    }
+});
 //whiteboard js end
 
 // PeerJS başlatma fonksiyonu
@@ -447,7 +586,8 @@ function callExistingPeers() {
         return;
     }
     console.log("Mevcut peerler aranıyor (userMap):", userMap);
-    for (const peerIdToCall in userMap) {        if (Object.prototype.hasOwnProperty.call(userMap, peerIdToCall) && peerIdToCall !== USER_ID) {
+    for (const peerIdToCall in userMap) {
+        if (userMap.hasOwnProperty(peerIdToCall) && peerIdToCall !== USER_ID) {
             // Zaten bir bağlantı var mı kontrol et (isteğe bağlı, peer.connections üzerinden)
             if (!peer.connections[peerIdToCall] || peer.connections[peerIdToCall].length === 0) {
                  callPeer(peerIdToCall, userMap[peerIdToCall]);
@@ -733,9 +873,11 @@ async function startScreenSharing() {
             originalVideoTrack = localStream.getVideoTracks()[0].clone(); // Klonla ki orijinali etkilenmesin
         } else {
             originalVideoTrack = null; // Kamera kapalıysa veya yoksa
-        }        // Mevcut video track'lerini değiştir (tüm peer bağlantıları için)
+        }
+
+        // Mevcut video track'lerini değiştir (tüm peer bağlantıları için)
         for (const peerId in peer.connections) {
-            if (Object.prototype.hasOwnProperty.call(peer.connections, peerId)) {
+            if (peer.connections.hasOwnProperty(peerId)) {
                 peer.connections[peerId].forEach(connection => {
                     const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
                     if (sender) {
@@ -797,7 +939,8 @@ async function stopScreenSharing(stoppedByBrowser = false) {
         if (originalVideoTrack) {
             localStream.addTrack(originalVideoTrack); // Saklanan kamera track'ini ekle
             
-            for (const peerId in peer.connections) {                if (Object.prototype.hasOwnProperty.call(peer.connections, peerId)) {
+            for (const peerId in peer.connections) {
+                if (peer.connections.hasOwnProperty(peerId)) {
                     peer.connections[peerId].forEach(connection => {
                         const sender = connection.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
                         if (sender) {
@@ -836,11 +979,29 @@ async function stopScreenSharing(stoppedByBrowser = false) {
 }
 
 
+if (whiteboardButt) {
+    whiteboardButt.addEventListener('click', () => {
+        boardVisible = !boardVisible;
+        whiteboardSection.style.display = boardVisible ? 'flex' : 'none';
+        
+        // Whiteboard icon'u güncelle
+        const icon = whiteboardButt.querySelector('i');
+        if (icon) {
+            icon.className = boardVisible ? 'fas fa-video' : 'fas fa-chalkboard';
+        }
+        
+        if (boardVisible) {
+            fitToContainer(canvas);
+            socket.emit('getCanvas'); 
+        }
+    });
+}
+
 socket.on('project chat history', (messages) => {
     if (!chatRoom) return;
     chatRoom.innerHTML = ''; 
     messages.forEach(msg => { // Fixed: Added parentheses around msg
-        appendMessage(msg.user.username, msg.message, msg.createdAt, msg.user._id === USER_ID); // Fixed: USER_ID instead of userId
+        appendMessage(msg.user.username, msg.message, msg.createdAt, msg.user._id === userId); // Changed USER_ID to userId
     });
     console.log('Proje chat geçmişi yüklendi.', messages.length, 'mesaj');
     chatRoom.scrollTop = chatRoom.scrollHeight; // Mesajlar yüklendikten sonra en alta kaydır
@@ -904,317 +1065,8 @@ window.addEventListener('beforeunload', () => {
 
 // DOM hazır olduğunda odayı başlat
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('CLIENT: DOM fully loaded and parsed. Initializing DOM elements...');
-    
-    // DOM elementlerini tanımla
-    myvideo = document.querySelector("#vd1");
-    chatRoom = document.querySelector('.chat-messages');
-    sendButton = document.querySelector('.chat-send-btn');
-    messageField = document.querySelector('.chat-input-modern');
-    videoContainer = document.querySelector('#vcont');
-    videoButt = document.querySelector('.video-btn');
-    audioButt = document.querySelector('.audio-btn');
-    cutCall = document.querySelector('.disconnect-btn');
-    screenShareButt = document.querySelector('.screenshare-btn');
-    whiteboardButt = document.querySelector('.whiteboard-btn');
-    
-    // Canvas elementlerini tanımla
-    whiteboardSection = document.querySelector('.whiteboard-section');
-    canvas = document.querySelector("#whiteboard");
-    if (canvas) {
-        ctx = canvas.getContext('2d');
-        whiteboardSection.style.display = 'none';
-        
-        // Canvas boyutunu ayarla
-        fitToContainer(canvas);
-        
-        // Canvas event listener'larını ekle
-        canvas.addEventListener('mousedown', e => {
-            x = e.offsetX;
-            y = e.offsetY;
-            isDrawing = 1;
-        });
-
-        canvas.addEventListener('mousemove', e => {
-            if (isDrawing) {
-                draw(e.offsetX, e.offsetY, x, y);
-                socket.emit('project draw', ROOM_ID, {
-                    newX: e.offsetX, newY: e.offsetY, 
-                    prevX: x, prevY: y, 
-                    color: color, size: drawsize 
-                });
-                x = e.offsetX;
-                y = e.offsetY;
-            }
-        });        canvas.addEventListener('mouseup', e => {
-            if (isDrawing) {
-                isDrawing = 0;
-                socket.emit('store canvas', canvas.toDataURL()); 
-            }
-        });
-        
-        // Canvas ile ilgili socket event listener'larını ekle
-        socket.on('getCanvas', url => {
-            if (!url) {
-                console.log('Canvas URL yok, temiz canvas.');
-                if (ctx && canvas) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
-                }
-                return;
-            }
-            let img = new Image();
-            img.onload = function() { 
-                if (ctx && canvas) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-                    ctx.drawImage(img, 0, 0);
-                    console.log('Canvas yüklendi (URL ile)');
-                }
-            };
-            img.onerror = function() {
-                console.error('Canvas resmi yüklenemedi:', url);
-            };
-            img.src = url;
-        });
-
-        socket.on('project draw', (eventData) => {
-            // eventData = { user: emittingUserId, data: { newX, newY, prevX, prevY, color, size } }
-            if (eventData.user !== USER_ID) { 
-                console.log('Uzak çizim alındı:', eventData);
-                drawRemote(eventData.data.newX, eventData.data.newY, eventData.data.prevX, eventData.data.prevY, eventData.data.color, eventData.data.size);
-            }
-        });
-
-        socket.on('canvasUpdate', url => { 
-            console.log("'canvasUpdate' eventi alındı. URL:", url ? 'Mevcut' : 'Yok');
-            if (url && ctx && canvas) {
-                let img = new Image();
-                img.onload = function() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = url;
-            } else if (!url && ctx && canvas) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // URL yoksa temizle
-            }
-        });
-
-        socket.on('clearBoard', () => {
-            if (ctx && canvas) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                console.log('Beyaz tahta uzak bir kullanıcı tarafından temizlendi.');
-            }
-        });
-        
-        console.log('Canvas elementleri başarıyla başlatıldı');
-    } else {
-        console.error('Canvas elementi bulunamadı!');
-    }
-    
-    // Tab sistemi elementlerini tanımla
-    tabs = document.querySelectorAll('.sidebar-tab');
-    tabContents = document.querySelectorAll('.tab-panel');
-    
-    // Tab event listener'larını ekle
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            
-            tab.classList.add('active');
-            const targetTab = tab.getAttribute('data-tab');
-            const targetContent = document.getElementById(`${targetTab}-tab`);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
-            
-            if (targetTab === 'notes') {
-                loadNotes();
-            } else if (targetTab === 'attendees') {
-                loadAttendees();
-            }
-        });
-    });
-    
-    // Not yönetimi elementlerini tanımla
-    addNoteBtn = document.getElementById('add-note-btn');
-    noteEditor = document.getElementById('note-editor');
-    saveNoteBtn = document.getElementById('save-note-btn');
-    cancelNoteBtn = document.getElementById('cancel-note-btn');
-    noteContent = document.getElementById('note-content');
-    notesList = document.getElementById('notes-list');
-    
-    // Not event listener'larını ekle
-    if (addNoteBtn) {
-        addNoteBtn.onclick = () => {
-            currentEditingNoteId = null;
-            noteContent.value = '';
-            noteEditor.style.display = 'flex';
-        };
-    }
-
-    if (cancelNoteBtn) {
-        cancelNoteBtn.onclick = () => {
-            noteEditor.style.display = 'none';
-            currentEditingNoteId = null;
-        };
-    }
-
-    if (saveNoteBtn) {
-        saveNoteBtn.onclick = async () => {
-            const content = noteContent.value.trim();
-            if (!content) return;
-            try {
-                if (currentEditingNoteId) {
-                    await updateNote(currentEditingNoteId, content);
-                } else {
-                    await createNote(content);
-                }
-                noteEditor.style.display = 'none';
-                loadNotes();
-            } catch (err) {
-                alert('Not kaydetme hatası: ' + err.message);
-            }
-        };
-    }    // Whiteboard button event listener'ını ekle
-    if (whiteboardButt) {
-        whiteboardButt.addEventListener('click', () => {
-            boardVisible = !boardVisible;
-            
-            // Whiteboard section'ını aç/kapat (artık video container içinde)
-            whiteboardSection.style.display = boardVisible ? 'flex' : 'none';
-            
-            // Whiteboard icon'u güncelle
-            const icon = whiteboardButt.querySelector('i');
-            if (icon) {
-                icon.className = boardVisible ? 'fas fa-video' : 'fas fa-chalkboard';
-            }
-            
-            // Whiteboard açıldığında canvas'ı yeniden boyutlandır
-            if (boardVisible && canvas) {
-                setTimeout(() => {
-                    fitToContainer(canvas);
-                    socket.emit('getCanvas'); 
-                }, 100); // Kısa gecikme ile DOM'un güncellenmesini bekle
-            }
-        });
-    }
-
-    // Chat event listener'larını ekle
-    if (sendButton) {
-        sendButton.addEventListener('click', () => {
-            const msg = messageField.value;
-            if (msg.trim() === '') return;
-            socket.emit('project message', ROOM_ID, msg); 
-            messageField.value = '';
-        });
-    }
-
-    if (messageField) {
-        messageField.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                sendButton.click();
-            }
-        });
-    }
-
-    // Video kontrol event listener'larını ekle
-    if (audioButt) {
-        audioButt.addEventListener('click', () => {
-            isAudioOn = !isAudioOn;
-            audioButt.innerHTML = isAudioOn ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => track.enabled = isAudioOn);
-            }
-        });
-    }
-
-    if (videoButt) {
-        videoButt.addEventListener('click', () => {
-            isVideoOn = !isVideoOn;
-            videoButt.innerHTML = isVideoOn ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
-            if (localStream) {
-                localStream.getVideoTracks().forEach(track => track.enabled = isVideoOn);
-            }
-            const myVideoOffElement = document.getElementById('myvideooff');
-            if (myVideoOffElement) {
-                myVideoOffElement.style.display = isVideoOn ? 'none' : 'block';
-            }
-        });
-    }
-
-    if (cutCall) {
-        cutCall.addEventListener('click', () => {
-            if (peer) {
-                peer.destroy();
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            window.location.href = '/dashboard';
-        });
-    }    if (screenShareButt) {
-        screenShareButt.addEventListener('click', async () => {
-            if (isScreenSharing) {
-                await stopScreenSharing();
-            } else {
-                await startScreenSharing();
-            }
-        });
-    }
-    
-    // Window resize event listener'ını ekle
-    window.onresize = function() { 
-        if (canvas) {
-            fitToContainer(canvas);
-            socket.emit('getCanvas'); // Yeniden boyutlandırmada canvası tekrar iste
-        }
-    };
-    
-    console.log('DOM elementleri başarıyla tanımlandı ve event listener\'lar eklendi');
-    console.log('CLIENT: Calling initializeRoom...');
+    console.log('CLIENT: DOM fully loaded and parsed. Calling initializeRoom.');
     initializeRoom();
 });
 
 // initializeRoom(); // Bu satır yukarıdaki DOMContentLoaded ile değiştirildi.
-
-// Utility fonksiyonları
-function copyRoomId() {
-    const roomId = ROOM_ID;
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(roomId).then(() => {
-            console.log('Oda kodu kopyalandı:', roomId);
-            // Kısa bildirim göster
-            const btn = document.querySelector('.copy-code-btn');
-            if (btn) {
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-check';
-                    setTimeout(() => {
-                        icon.className = 'fas fa-copy';
-                    }, 2000);
-                }
-            }
-        }).catch(err => {
-            console.error('Oda kodu kopyalanamadı:', err);
-            alert('Oda Kodu: ' + roomId);
-        });
-    } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = roomId;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            console.log('Oda kodu kopyalandı (fallback):', roomId);
-        } catch (err) {
-            console.error('Kopyalama başarısız:', err);
-            alert('Oda Kodu: ' + roomId);
-        }
-        document.body.removeChild(textArea);
-    }
-}
-
-// Global fonksiyonları window objesine ekle
-window.copyRoomId = copyRoomId;

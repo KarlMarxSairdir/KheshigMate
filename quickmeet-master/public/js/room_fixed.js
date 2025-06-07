@@ -133,7 +133,9 @@ saveNoteBtn.onclick = async () => {
 async function loadNotes() {
     if (!projectId) return;
     try {
-        const response = await fetch(`/projects/${projectId}/notes`);
+        const response = await fetch(`/projects/${projectId}/notes`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (response.ok) {
@@ -168,7 +170,8 @@ async function createNote(content) {
     const response = await fetch(`/projects/${projectId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
     
     if (!response.ok) {
@@ -181,7 +184,8 @@ async function updateNote(noteId, content) {
     const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
+        credentials: 'include'
     });
     
     if (!response.ok) {
@@ -195,11 +199,15 @@ async function deleteNote(noteId) {
     
     try {
         const response = await fetch(`/projects/${projectId}/notes/${noteId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (response.ok) {
             loadNotes();
+        } else {
+            const error = await response.json();
+            alert('Not silme hatası: ' + (error.message || 'Bilinmeyen hata'));
         }
     } catch (err) {
         alert('Not silme hatası: ' + err.message);

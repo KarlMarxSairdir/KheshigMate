@@ -547,14 +547,17 @@
                     }
                 }
             }
-        }
-
-        // Notes tab
+        }        // Notes tab
         #notes-tab {
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0; // Remove top-level padding since we'll add it to individual sections
 
             .notes-header-modern {
-                margin-bottom: 20px;
+                flex-shrink: 0; // Sabit yükseklik için
+                padding: 20px;
+                border-bottom: 1px solid rgba(76, 89, 128, 0.1);
 
                 .add-note-btn-modern {
                     background: linear-gradient(135deg, #27ae60, #2ecc71);
@@ -579,6 +582,10 @@
             }
 
             .notes-list-modern {
+                flex: 1; // Kalan alanı kapla
+                overflow-y: auto; // Scroll edilebilir yap
+                padding: 20px;
+                min-height: 0; // Flexbox shrinking için gerekli
                 display: flex;
                 flex-direction: column;
                 gap: 15px;

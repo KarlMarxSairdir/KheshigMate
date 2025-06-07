@@ -610,7 +610,12 @@
 
 // Notes tab styles
 #notes-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
     .notes-header-modern {
+        flex-shrink: 0; // Sabit yükseklik için
         padding: var(--space-lg);
         border-bottom: 2px solid rgba(212, 175, 55, 0.2);
         background: rgba(255, 255, 255, 0.5);
@@ -638,9 +643,10 @@
     }
     
     .notes-list-modern {
-        flex: 1;
-        overflow-y: auto;
+        flex: 1; // Kalan alanı kapla
+        overflow-y: auto; // Scroll edilebilir yap
         padding: var(--space-lg);
+        min-height: 0; // Flexbox shrinking için gerekli
         
         .note-item {
             background: rgba(255, 255, 255, 0.8);

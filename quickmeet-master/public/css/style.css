@@ -3302,10 +3302,15 @@ navbar .logo {
   box-shadow: 0 5px 15px rgba(76, 89, 128, 0.3);
 }
 .sidebar-panel .sidebar-content #notes-tab {
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
 }
 .sidebar-panel .sidebar-content #notes-tab .notes-header-modern {
-  margin-bottom: 20px;
+  flex-shrink: 0;
+  padding: 20px;
+  border-bottom: 1px solid rgba(76, 89, 128, 0.1);
 }
 .sidebar-panel .sidebar-content #notes-tab .notes-header-modern .add-note-btn-modern {
   background: linear-gradient(135deg, #27ae60, #2ecc71);
@@ -3327,6 +3332,10 @@ navbar .logo {
   box-shadow: 0 8px 25px rgba(39, 174, 96, 0.3);
 }
 .sidebar-panel .sidebar-content #notes-tab .notes-list-modern {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 15px;
