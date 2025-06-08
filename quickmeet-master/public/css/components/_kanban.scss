@@ -265,6 +265,8 @@
 // Task Modal Styles - Use specific selector to override dashboard modal CSS
 #task-modal.modal {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
     position: fixed;
     top: 0;
     left: 0;
@@ -276,6 +278,8 @@
 
     &.show {
         display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         align-items: center;
         justify-content: center;
         animation: modalFadeIn 0.3s ease;

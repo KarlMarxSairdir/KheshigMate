@@ -8,11 +8,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/css/style.css?v=6.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
-    <!-- Oda ve kullanıcı bilgilerini JavaScript'e aktar -->
-    <script>
+    <!-- Oda ve kullanıcı bilgilerini JavaScript'e aktar -->    <script>
         const ROOM_ID = "<%= project._id %>";
         const USER_USERNAME = "<%= user.username %>";
         const USER_ID = "<%= user._id %>";
+        
+        // Global modal control function
+        window.forceCloseTaskModal = function() {
+            const modal = document.getElementById('task-modal');
+            if (modal) {
+                modal.style.display = 'none !important';
+                modal.style.visibility = 'hidden !important';
+                modal.style.opacity = '0 !important';
+                modal.classList.remove('show');
+                console.log('🔒 Task modal forcefully closed by global function');
+                return true;
+            }
+            return false;
+        };
+        
+        // Call it immediately
+        setTimeout(window.forceCloseTaskModal, 100);
+        setTimeout(window.forceCloseTaskModal, 500);
+        setTimeout(window.forceCloseTaskModal, 1000);
     </script>
 </head>
 
@@ -330,13 +348,30 @@
         }        // Kanban Board Initialization
         window.roomKanbanBoard = null;
         window.kanbanInitialized = false;
-        
-        // Wait for DOM to be ready
+          // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', function() {
+            // Immediately hide task modal on page load
+            const taskModal = document.getElementById('task-modal');
+            if (taskModal) {
+                taskModal.style.display = 'none';
+                taskModal.style.visibility = 'hidden';
+                taskModal.style.opacity = '0';
+                taskModal.classList.remove('show');
+                console.log('🔒 Task modal forcefully hidden on DOM ready');
+            }
+            
             // Only initialize kanban when tasks tab is clicked, not automatically
             const tasksTab = document.querySelector('[data-tab="tasks"]');
             if (tasksTab) {
                 tasksTab.addEventListener('click', () => {
+                    // Hide modal again before initializing kanban
+                    if (taskModal) {
+                        taskModal.style.display = 'none';
+                        taskModal.style.visibility = 'hidden';
+                        taskModal.style.opacity = '0';
+                        taskModal.classList.remove('show');
+                    }
+                    
                     // Only initialize once and when socket is ready
                     if (!window.kanbanInitialized && window.socket && window.KanbanBoard) {
                         try {
@@ -351,10 +386,8 @@
                 });
             }
         });
-    </script>
-
-    <!-- Task Modal -->
-    <div id="task-modal" class="modal">
+    </script>    <!-- Task Modal -->
+    <div id="task-modal" class="modal" style="display: none !important; visibility: hidden !important; opacity: 0 !important;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-title">Yeni Görev</h3>

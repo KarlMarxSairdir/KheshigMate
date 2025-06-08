@@ -13,8 +13,13 @@ class KanbanBoard {
         try {
             console.log('🚀 Initializing Kanban board for project:', this.projectId);
             
-            // Ensure modal is closed at startup
+            // Ensure modal is closed at startup and add multiple safeguards
             this.ensureModalClosed();
+            
+            // Additional safety - force hide modal multiple times
+            setTimeout(() => this.ensureModalClosed(), 100);
+            setTimeout(() => this.ensureModalClosed(), 500);
+            setTimeout(() => this.ensureModalClosed(), 1000);
             
             await this.loadTasks();
             await this.loadProjectMembers();
@@ -25,14 +30,17 @@ class KanbanBoard {
             console.error('❌ Kanban initialization error:', error);
             this.showError('Kanban tahtası yüklenirken hata oluştu');
         }
-    }
-
-    // Ensure modal is closed on initialization
+    }    // Ensure modal is closed on initialization
     ensureModalClosed() {
         const modal = document.getElementById('task-modal');
         if (modal) {
             modal.classList.remove('show');
-            console.log('🔒 Modal ensured closed on initialization');
+            modal.style.display = 'none'; // Force hide modal
+            modal.style.visibility = 'hidden'; // Additional safety
+            modal.style.opacity = '0'; // Additional safety
+            console.log('🔒 Modal ensured closed on initialization with multiple safeguards');
+        } else {
+            console.warn('⚠️ Task modal element not found during ensureModalClosed');
         }
     }
 
