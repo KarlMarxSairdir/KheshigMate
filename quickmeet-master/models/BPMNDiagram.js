@@ -25,10 +25,15 @@ const bpmnDiagramSchema = new mongoose.Schema({
     xmlData: {
         type: String,
         required: true
-    },
-    version: {
+    },    version: {
         type: Number,
         default: 1
+    },
+    category: {
+        type: String,
+        enum: ['general', 'approval', 'development', 'testing', 'deployment', 'other'],
+        default: 'general',
+        trim: true
     },
     isActive: {
         type: Boolean,

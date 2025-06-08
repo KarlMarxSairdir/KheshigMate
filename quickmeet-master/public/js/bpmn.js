@@ -3,8 +3,7 @@
  * Kaşıkmate Project - FAZ 2 BPMN Integration
  */
 
-class BPMNWorkflowManager {
-    constructor() {
+class BPMNWorkflowManager {    constructor() {
         this.modeler = null;
         this.currentDiagram = null;
         this.socket = null;
@@ -12,6 +11,7 @@ class BPMNWorkflowManager {
         this.userId = null;
         this.isInitialized = false;
         this.collaborationMode = true;
+        this.editingDiagramId = null;
         
         // BPMN default XML template
         this.defaultXML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -220,13 +220,16 @@ class BPMNWorkflowManager {
         document.getElementById('bpmn-create-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.submitCreateDiagram();
-        });
-          // ESC key to close modal
+        });        // ESC key to close modal
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                const modal = document.getElementById('bpmn-create-modal');
-                if (modal && modal.style.display === 'flex') {
+                const createModal = document.getElementById('bpmn-create-modal');
+                const editModal = document.getElementById('bpmn-edit-modal');
+                
+                if (createModal && createModal.style.display === 'flex') {
                     this.hideCreateDiagramModal();
+                } else if (editModal && editModal.style.display === 'flex') {
+                    this.hideEditDiagramModal();
                 }
             }
         });
@@ -234,6 +237,32 @@ class BPMNWorkflowManager {
         document.getElementById('bpmn-create-modal')?.addEventListener('click', (e) => {
             if (e.target.id === 'bpmn-create-modal') {
                 this.hideCreateDiagramModal();
+            }
+        });
+        
+        // Edit Modal Event Listeners
+        document.getElementById('close-bpmn-edit-modal')?.addEventListener('click', () => {
+            this.hideEditDiagramModal();
+        });
+        
+        document.getElementById('cancel-bpmn-edit-btn')?.addEventListener('click', () => {
+            this.hideEditDiagramModal();
+        });
+        
+        document.getElementById('update-bpmn-diagram-btn')?.addEventListener('click', () => {
+            this.submitEditDiagram();
+        });
+        
+        // Edit Modal form Enter key handling
+        document.getElementById('bpmn-edit-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitEditDiagram();
+        });
+        
+        // Edit Modal backdrop click to close
+        document.getElementById('bpmn-edit-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'bpmn-edit-modal') {
+                this.hideEditDiagramModal();
             }
         });
     }
@@ -286,10 +315,57 @@ class BPMNWorkflowManager {
         }
     }
     
-    async submitCreateDiagram() {
-        const nameInput = document.getElementById('bpmn-diagram-name');
-        const descriptionInput = document.getElementById('bpmn-diagram-description');
-        const categoryInput = document.getElementById('bpmn-diagram-category');
+    // ==================== EDIT DIAGRAM MODAL FUNCTIONS ====================
+    
+    async editDiagram(diagramId) {
+        try {
+            // Diyagram bilgilerini getir
+            const response = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const diagram = await response.json();
+            this.showEditDiagramModal(diagram);
+            
+        } catch (error) {
+            console.error('Error loading diagram for edit:', error);
+            this.updateStatus('Diyagram düzenleme için yüklenemedi: ' + error.message, 'error');
+        }
+    }
+    
+    showEditDiagramModal(diagram) {
+        const modal = document.getElementById('bpmn-edit-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            
+            // Form'u diyagram verileriyle doldur
+            document.getElementById('bpmn-edit-diagram-name').value = diagram.title || '';
+            document.getElementById('bpmn-edit-diagram-description').value = diagram.description || '';
+            document.getElementById('bpmn-edit-diagram-category').value = diagram.category || 'general';
+            
+            // Düzenlenen diyagram ID'sini sakla
+            this.editingDiagramId = diagram._id;
+            
+            // Focus isim alanına
+            setTimeout(() => {
+                document.getElementById('bpmn-edit-diagram-name').focus();
+            }, 100);
+        }
+    }
+    
+    hideEditDiagramModal() {
+        const modal = document.getElementById('bpmn-edit-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            this.editingDiagramId = null;
+        }
+    }
+    
+    async submitEditDiagram() {
+        const nameInput = document.getElementById('bpmn-edit-diagram-name');
+        const descriptionInput = document.getElementById('bpmn-edit-diagram-description');
+        const categoryInput = document.getElementById('bpmn-edit-diagram-category');
         
         const title = nameInput.value.trim();
         if (!title) {
@@ -301,37 +377,25 @@ class BPMNWorkflowManager {
         const description = descriptionInput.value.trim();
         const category = categoryInput.value;
         
+        if (!this.editingDiagramId) {
+            this.updateStatus('Düzenlenecek diyagram ID bulunamadı', 'error');
+            return;
+        }
+        
         try {
-            this.updateStatus('Yeni diyagram oluşturuluyor...');
-            this.hideCreateDiagramModal();
+            this.updateStatus('Diyagram güncelleniyor...');
+            this.hideEditDiagramModal();
             
-            // Yeni diyagram için complete ve geçerli XML
-            const processId = `Process_${Date.now()}`;
-            const newDiagramXML = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_${Date.now()}" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js" exporterVersion="17.7.1">
-  <bpmn:process id="${processId}" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1" />
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${processId}">
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
-        <dc:Bounds x="179" y="79" width="36" height="36" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>`;
-            
-            // Diyagramı veritabanına kaydet
-            const response = await fetch(`/projects/${this.projectId}/bpmn`, {
-                method: 'POST',
+            // Diyagram metadata'sını güncelle
+            const response = await fetch(`/projects/${this.projectId}/bpmn/${this.editingDiagramId}/metadata`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     title: title,
                     description: description,
-                    category: category,
-                    xmlData: newDiagramXML
+                    category: category
                 })
             });
 
@@ -339,49 +403,22 @@ class BPMNWorkflowManager {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const newDiagram = await response.json();
-            this.currentDiagram = newDiagram;
+            const updatedDiagram = await response.json();
             
-            // Ana editörü aç
-            this.openMainEditor();
+            // Eğer şu anda yüklü diyagram düzenleniyorsa, currentDiagram'ı güncelle
+            if (this.currentDiagram && this.currentDiagram._id === this.editingDiagramId) {
+                this.currentDiagram = updatedDiagram;
+                this.updateMainEditorButtons();
+            }
             
-            // Düzgün XML'i yükle
-            setTimeout(async () => {
-                try {
-                    const result = await this.modeler.importXML(newDiagramXML);
-                    console.log('New diagram XML imported successfully:', result);
-                    
-                    // Canvas'ı yeniden düzenle
-                    setTimeout(() => {
-                        this.resizeCanvas();
-                        this.forcePaletteVisibility();
-                        
-                        // Zoom to fit
-                        if (this.modeler.get) {
-                            const canvas = this.modeler.get('canvas');
-                            if (canvas && canvas.zoom) {
-                                canvas.zoom('fit-viewport');
-                            }
-                        }
-                    }, 300);
-                    
-                } catch (xmlError) {
-                    console.error('Error importing new diagram XML:', xmlError);
-                    this.updateStatus('XML yükleme hatası: ' + xmlError.message, 'error');
-                }
-            }, 500);
-            
-            this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
-            this.disableSaveButton(); // Zaten kaydedildi
-            this.enableExportButton(); // Export edilebilir
-            this.updateMainEditorButtons();
+            this.updateStatus(`Diyagram güncellendi: ${title}`);
             
             // Diyagram listesini yenile
             await this.loadDiagramList();
             
         } catch (error) {
-            console.error('Error creating new diagram:', error);
-            this.updateStatus('Diyagram oluşturulamadı: ' + error.message, 'error');
+            console.error('Error updating diagram:', error);
+            this.updateStatus('Diyagram güncellenemedi: ' + error.message, 'error');
         }
     }
     
@@ -456,19 +493,28 @@ class BPMNWorkflowManager {
         if (diagrams.length === 0) {
             listContainer.innerHTML = '<div class="no-diagrams">Henüz diyagram yok</div>';
             return;
-        }
-
-        diagrams.forEach(diagram => {
+        }        diagrams.forEach(diagram => {
+            console.log('Diagram data:', { 
+                title: diagram.title, 
+                category: diagram.category,
+                categoryDisplay: this.getCategoryDisplayName(diagram.category)
+            });
+            
             const diagramItem = document.createElement('div');
-            diagramItem.className = 'diagram-item';
-            diagramItem.innerHTML = `                <div class="diagram-info">
-                    <h5>${diagram.title}</h5>
+            diagramItem.className = 'diagram-item';            diagramItem.innerHTML = `
+                <div class="diagram-info">
+                    <div class="diagram-header">
+                        <h5>${diagram.title}</h5>
+                        <span class="diagram-category">${this.getCategoryDisplayName(diagram.category)}</span>
+                    </div>
                     <p>${diagram.description || 'Açıklama yok'}</p>
                     <small>Son güncelleme: ${diagram.updatedAt ? this.formatDate(diagram.updatedAt) : (diagram.createdAt ? this.formatDate(diagram.createdAt) : 'Bilinmiyor')}</small>
-                </div>
-                <div class="diagram-actions">
+                </div>                <div class="diagram-actions">
                     <button class="btn btn-sm btn-primary" onclick="bpmnManager.loadDiagram('${diagram._id}')">
                         <i class="fas fa-folder-open"></i> Yükle
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="bpmnManager.editDiagram('${diagram._id}')">
+                        <i class="fas fa-edit"></i> Düzenle
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="bpmnManager.deleteDiagram('${diagram._id}')">
                         <i class="fas fa-trash"></i>
@@ -889,8 +935,7 @@ class BPMNWorkflowManager {
             }, 100);
         }
     }
-    
-    updateMainEditorButtons() {
+      updateMainEditorButtons() {
         const saveBtn = document.getElementById('save-main-diagram-btn');
         const exportBtn = document.getElementById('export-main-diagram-btn');
         const currentNameSpan = document.getElementById('current-diagram-name');
@@ -898,7 +943,10 @@ class BPMNWorkflowManager {
         if (this.currentDiagram) {
             if (saveBtn) saveBtn.disabled = !this.hasUnsavedChanges;
             if (exportBtn) exportBtn.disabled = false;
-            if (currentNameSpan) currentNameSpan.textContent = this.currentDiagram.title;
+            if (currentNameSpan) {
+                const categoryText = this.getCategoryDisplayName(this.currentDiagram.category);
+                currentNameSpan.textContent = `${this.currentDiagram.title} (${categoryText})`;
+            }
         } else {
             if (saveBtn) saveBtn.disabled = true;
             if (exportBtn) exportBtn.disabled = false;
@@ -907,8 +955,7 @@ class BPMNWorkflowManager {
     }
     
     // ==================== HELPER METHODS ====================
-    
-    formatDate(dateString) {
+      formatDate(dateString) {
         try {
             if (!dateString) return 'Bilinmiyor';
             
@@ -929,6 +976,21 @@ class BPMNWorkflowManager {
             console.error('Date formatting error:', error);
             return 'Hatalı tarih';
         }
+    }    getCategoryDisplayName(category) {
+        console.log('getCategoryDisplayName called with:', category);
+        
+        const categoryMap = {
+            'general': 'Genel İş Akışı',
+            'approval': 'Onay Süreci',
+            'development': 'Geliştirme Süreci',
+            'testing': 'Test Süreci',
+            'deployment': 'Dağıtım Süreci',
+            'other': 'Diğer'
+        };
+        
+        const result = categoryMap[category] || 'Genel İş Akışı';
+        console.log('Category mapping result:', { input: category, output: result });
+        return result;
     }
     
     // ==================== ZOOM CONTROLS ====================

@@ -2879,6 +2879,31 @@ navbar .logo {
 .diagram-list-section .diagram-list .diagram-item .diagram-info {
   flex: 1;
 }
+.diagram-list-section .diagram-list .diagram-item .diagram-info .diagram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-xs);
+}
+.diagram-list-section .diagram-list .diagram-item .diagram-info .diagram-header h5 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  flex: 1;
+}
+.diagram-list-section .diagram-list .diagram-item .diagram-info .diagram-header .diagram-category {
+  background: linear-gradient(135deg, var(--kheshig-sage), var(--kheshig-gold));
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  white-space: nowrap;
+  margin-left: var(--space-sm);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
 .diagram-list-section .diagram-list .diagram-item .diagram-info h5 {
   margin: 0 0 var(--space-xs) 0;
   font-size: 0.95rem;
@@ -3316,10 +3341,10 @@ navbar .logo {
   animation: modalFadeIn 0.3s ease;
 }
 #bpmn-create-modal .modal-content {
-  background: #ffffff;
-  border-radius: 12px;
+  background: var(--background-primary);
+  border-radius: var(--border-radius-lg);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-primary);
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
@@ -3330,11 +3355,11 @@ navbar .logo {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
   background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-sage));
   color: white;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
 }
 #bpmn-create-modal .modal-content .modal-header h3 {
   margin: 0;

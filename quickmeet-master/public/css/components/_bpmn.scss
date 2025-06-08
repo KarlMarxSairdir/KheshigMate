@@ -572,9 +572,36 @@
             &:last-child {
                 border-bottom: none;
             }
-            
-            .diagram-info {
+              .diagram-info {
                 flex: 1;
+                
+                .diagram-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: var(--space-xs);
+                    
+                    h5 {
+                        margin: 0;
+                        font-size: 0.95rem;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                        line-height: 1.4;
+                        flex: 1;
+                    }
+                    
+                    .diagram-category {
+                        background: linear-gradient(135deg, var(--kheshig-sage), var(--kheshig-gold));
+                        color: white;
+                        font-size: 0.7rem;
+                        font-weight: 500;
+                        padding: 2px 8px;
+                        border-radius: var(--border-radius-sm);
+                        white-space: nowrap;
+                        margin-left: var(--space-sm);
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    }
+                }
                 
                 h5 {
                     margin: 0 0 var(--space-xs) 0;

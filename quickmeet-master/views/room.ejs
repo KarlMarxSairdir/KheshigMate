@@ -509,11 +509,56 @@
                     </select>
                 </div>
             </form>
-            
-            <div class="modal-actions">
+              <div class="modal-actions">
                 <button type="button" id="cancel-bpmn-create-btn" class="btn btn-secondary">İptal</button>
                 <button type="button" id="create-bpmn-diagram-btn" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Diyagram Oluştur
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BPMN Diagram Edit Modal -->
+    <div id="bpmn-edit-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Diyagram Düzenle</h3>
+                <button type="button" class="modal-close" id="close-bpmn-edit-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="bpmn-edit-form">
+                <div class="form-group">
+                    <label for="bpmn-edit-diagram-name">Diyagram Adı *</label>
+                    <input type="text" id="bpmn-edit-diagram-name" name="name" required 
+                           placeholder="Diyagram adını giriniz" maxlength="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="bpmn-edit-diagram-description">Açıklama</label>
+                    <textarea id="bpmn-edit-diagram-description" name="description" 
+                              placeholder="Diyagram açıklamasını giriniz (isteğe bağlı)" 
+                              rows="4" maxlength="500"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bpmn-edit-diagram-category">Kategori</label>
+                    <select id="bpmn-edit-diagram-category" name="category">
+                        <option value="general">Genel İş Akışı</option>
+                        <option value="approval">Onay Süreci</option>
+                        <option value="development">Geliştirme Süreci</option>
+                        <option value="testing">Test Süreci</option>
+                        <option value="deployment">Dağıtım Süreci</option>
+                        <option value="other">Diğer</option>
+                    </select>
+                </div>
+            </form>
+            
+            <div class="modal-actions">
+                <button type="button" id="cancel-bpmn-edit-btn" class="btn btn-secondary">İptal</button>
+                <button type="button" id="update-bpmn-diagram-btn" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Değişiklikleri Kaydet
                 </button>
             </div>
         </div>

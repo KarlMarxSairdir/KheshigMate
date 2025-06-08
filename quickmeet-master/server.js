@@ -1053,9 +1053,9 @@ app.get('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
 app.post('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId } = req.params;
-        const { title, description, xmlData, tags } = req.body;
+        const { title, description, xmlData, category, tags } = req.body;
         
-        console.log('📊 BPMN creation request:', { title, description, tags });
+        console.log('📊 BPMN creation request:', { title, description, category, tags });
         
         // Proje erişim kontrolü
         const project = await Project.findById(projectId);
@@ -1077,6 +1077,7 @@ app.post('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
             title,
             description,
             xmlData: xmlData || '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="true" /></bpmn:definitions>',
+            category: category || 'general',
             tags: Array.isArray(tags) ? tags : [],
             project: projectId,
             createdBy: req.user._id
@@ -1134,6 +1135,48 @@ app.put('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (req,
     } catch (error) {
         console.error('BPMN update error:', error);
         res.status(500).json({ error: 'BPMN diyagramı güncellenirken hata oluştu' });
+    }
+});
+
+// BPMN diyagramı metadata'sını güncelle (sadece title, description, category)
+app.put('/projects/:projectId/bpmn/:diagramId/metadata', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, diagramId } = req.params;
+        const { title, description, category } = req.body;
+        
+        console.log('📝 BPMN metadata update request:', { title, description, category });
+        
+        // Diyagram ve proje erişim kontrolü
+        const diagram = await BPMNDiagram.findById(diagramId);
+        if (!diagram || diagram.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Sadece metadata alanlarını güncelle
+        const updateData = {
+            title: title || diagram.title,
+            description: description !== undefined ? description : diagram.description,
+            category: category || diagram.category
+        };
+        
+        const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
+            .populate('createdBy', 'username email');
+        
+        console.log(`✅ BPMN diagram metadata updated: ${updatedDiagram.title} (${updatedDiagram.category})`);
+        res.json(updatedDiagram);
+    } catch (error) {
+        console.error('BPMN metadata update error:', error);
+        res.status(500).json({ error: 'BPMN diyagramı metadata güncellenirken hata oluştu' });
     }
 });
 
