@@ -1037,11 +1037,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            
-            if (targetTab === 'notes') {
+              if (targetTab === 'notes') {
                 loadNotes();
             } else if (targetTab === 'attendees') {
                 loadAttendees();
+            } else if (targetTab === 'tasks') {
+                // Initialize Kanban board when tasks tab is opened
+                if (!window.kanbanBoard) {
+                    console.log('🚀 Initializing Kanban board...');
+                    window.kanbanBoard = initKanbanBoard(ROOM_ID, socket);
+                }
             }
         });
     });

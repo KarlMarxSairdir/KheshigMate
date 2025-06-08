@@ -14,6 +14,7 @@ const Project = require('./models/Project');
 const ChatMessage = require('./models/ChatMessage');
 const DrawingData = require('./models/DrawingData'); // Added DrawingData model
 const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
+const Task = require('./models/Task'); // Added Task model
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
@@ -336,7 +337,38 @@ app.get('/projects', ensureAuthenticated, async (req, res) => {
         res.json({ projects }); // Projeleri { projects: [...] } formatında gönder
     } catch (err) {
         console.error('Error fetching projects:', err);
-        res.status(500).json({ message: 'Projeler alınırken sunucu hatası oluştu.', error: err.message });
+        res.status(500).json({ message: 'Projeler alınırken sunucu hatası oluştu.', error: err.message });    }
+});
+
+// Get single project details
+app.get('/projects/:projectId', ensureAuthenticated, async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        
+        // Proje bilgilerini al ve member bilgilerini populate et
+        const project = await Project.findById(projectId)
+            .populate('owner', 'username email _id')
+            .populate('members.user', 'username email _id skills');
+        
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+        
+        // Kullanıcının bu projeye erişim yetkisi var mı kontrol et
+        const isMember = project.members.some(member => 
+            member.user._id.toString() === req.user._id.toString()
+        );
+        
+        if (!isMember) {
+            return res.status(403).json({ message: 'Bu projeye erişim yetkiniz yok.' });
+        }
+        
+        console.log(`📋 Project details fetched: ${project.name} for user ${req.user.username}`);
+        res.json(project);
+        
+    } catch (err) {
+        console.error('Error fetching project details:', err);
+        res.status(500).json({ message: 'Proje bilgileri alınırken sunucu hatası oluştu.', error: err.message });
     }
 });
 
@@ -702,6 +734,240 @@ app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
     } catch (err) {
         console.error("Error rendering room:", err);
         res.status(500).send("Oda yüklenirken bir hata oluştu.");
+    }
+});
+
+// --- TASK API ROUTES ---
+
+// Yeni görev oluştur
+app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { title, description, priority, dueDate, requiredSkills } = req.body;
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        // Kullanıcının proje üyesi olup olmadığını kontrol et
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Yeni görev oluştur
+        const task = new Task({
+            title,
+            description,
+            priority,
+            dueDate: dueDate ? new Date(dueDate) : undefined,
+            requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : [],
+            project: projectId,
+            createdBy: req.user._id
+        });
+        
+        await task.save();
+        await task.populate(['assignedTo', 'createdBy'], 'username email');
+        
+        console.log(`✅ Task created: ${task.title} for project ${project.name}`);
+        res.status(201).json(task);
+    } catch (error) {
+        console.error('Task creation error:', error);
+        res.status(500).json({ error: 'Görev oluşturulurken hata oluştu' });
+    }
+});
+
+// Proje görevlerini listele
+app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Görevleri getir
+        const tasks = await Task.find({ project: projectId })
+            .populate('assignedTo', 'username email skills')
+            .populate('createdBy', 'username email')
+            .sort({ order: 1, createdAt: -1 });
+            
+        console.log(`📋 Found ${tasks.length} tasks for project ${project.name}`);
+        res.json(tasks);
+    } catch (error) {
+        console.error('Task listing error:', error);
+        res.status(500).json({ error: 'Görevler getirilirken hata oluştu' });
+    }
+});
+
+// Görevi güncelle
+app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, taskId } = req.params;
+        const { title, description, priority, dueDate, requiredSkills } = req.body;
+        
+        // Görev ve proje erişim kontrolü
+        const task = await Task.findById(taskId);
+        if (!task || task.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Görev bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Güncelle
+        const updatedTask = await Task.findByIdAndUpdate(taskId, {
+            title,
+            description,
+            priority,
+            dueDate: dueDate ? new Date(dueDate) : undefined,
+            requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : []
+        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email');
+        
+        console.log(`✅ Task updated: ${updatedTask.title}`);
+        res.json(updatedTask);
+    } catch (error) {
+        console.error('Task update error:', error);
+        res.status(500).json({ error: 'Görev güncellenirken hata oluştu' });
+    }
+});
+
+// Görevi sil
+app.delete('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, taskId } = req.params;
+        
+        // Görev ve proje erişim kontrolü
+        const task = await Task.findById(taskId);
+        if (!task || task.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Görev bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Silme işlemi
+        await Task.findByIdAndDelete(taskId);
+        
+        console.log(`✅ Task deleted: ${task.title}`);
+        res.json({ message: 'Görev başarıyla silindi' });
+    } catch (error) {
+        console.error('Task deletion error:', error);
+        res.status(500).json({ error: 'Görev silinirken hata oluştu' });
+    }
+});
+
+// Görev durumunu güncelle (Kanban sürükle-bırak için)
+app.put('/projects/:projectId/tasks/:taskId/status', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, taskId } = req.params;
+        const { status, order } = req.body;
+        
+        // Görev ve proje erişim kontrolü
+        const task = await Task.findById(taskId);
+        if (!task || task.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Görev bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Status güncelleme
+        const updatedTask = await Task.findByIdAndUpdate(taskId, {
+            status,
+            order: order || task.order
+        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email');
+        
+        console.log(`✅ Task status updated: ${updatedTask.title} -> ${status}`);
+        res.json(updatedTask);
+    } catch (error) {
+        console.error('Task status update error:', error);
+        res.status(500).json({ error: 'Görev durumu güncellenirken hata oluştu' });
+    }
+});
+
+// Görev ataması (skills matching için)
+app.put('/projects/:projectId/tasks/:taskId/assign', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, taskId } = req.params;
+        const { assignedTo } = req.body;
+        
+        // Görev ve proje erişim kontrolü
+        const task = await Task.findById(taskId);
+        if (!task || task.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Görev bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Atanacak kullanıcının proje üyesi olup olmadığını kontrol et
+        if (assignedTo) {
+            const assigneeIsOwner = project.owner.toString() === assignedTo;
+            const assigneeIsMember = project.members.some(member => 
+                member.user.toString() === assignedTo
+            );
+            
+            if (!assigneeIsOwner && !assigneeIsMember) {
+                return res.status(400).json({ error: 'Kullanıcı bu projenin üyesi değil' });
+            }
+        }
+        
+        // Atama işlemi
+        const updatedTask = await Task.findByIdAndUpdate(taskId, {
+            assignedTo: assignedTo || null
+        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email skills');
+        
+        console.log(`✅ Task assigned: ${updatedTask.title} -> ${updatedTask.assignedTo?.username || 'Unassigned'}`);
+        res.json(updatedTask);
+    } catch (error) {
+        console.error('Task assignment error:', error);
+        res.status(500).json({ error: 'Görev atanırken hata oluştu' });
     }
 });
 
