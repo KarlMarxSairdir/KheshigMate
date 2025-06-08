@@ -47,23 +47,35 @@ class BPMNWorkflowManager {
             console.error('BPMN initialization failed:', error);
             this.updateStatus('Editör başlatılamadı: ' + error.message, 'error');
         }
-    }
-
-    async initializeBPMNModeler() {
-        const container = document.getElementById('bpmn-canvas');
+    }    async initializeBPMNModeler() {
+        // Ana editör için canvas container'ı kullan
+        const container = document.getElementById('bpmn-main-canvas');
         if (!container) {
-            throw new Error('BPMN canvas container not found');
-        }
-
-        // Initialize BPMN.io modeler
-        this.modeler = new BpmnJS({
-            container: container,
-            width: '100%',
-            height: '500px',
-            keyboard: {
-                bindTo: window
+            console.warn('Main BPMN canvas container not found, trying fallback...');
+            const fallbackContainer = document.getElementById('bpmn-canvas');
+            if (!fallbackContainer) {
+                throw new Error('BPMN canvas container not found');
             }
-        });
+            // Initialize with fallback container
+            this.modeler = new BpmnJS({
+                container: fallbackContainer,
+                width: '100%',
+                height: '100%',
+                keyboard: {
+                    bindTo: window
+                }
+            });
+        } else {
+            // Initialize with main container
+            this.modeler = new BpmnJS({
+                container: container,
+                width: '100%',
+                height: '100%',
+                keyboard: {
+                    bindTo: window
+                }
+            });
+        }
 
         // Import default XML
         await this.modeler.importXML(this.defaultXML);
@@ -76,34 +88,78 @@ class BPMNWorkflowManager {
         this.modeler.on('selection.changed', (event) => {
             this.handleSelectionChange(event);
         });
-    }
+        
+        // Canvas boyutunu yeniden hesapla
+        setTimeout(() => {
+            if (this.modeler && this.modeler.get) {
+                const canvas = this.modeler.get('canvas');
+                if (canvas && canvas.resized) {
+                    canvas.resized();
+                }
+            }
+        }, 100);
+    }    setupEventListeners() {
+        // Sidebar control panel buttons
+        document.getElementById('open-bpmn-editor-btn')?.addEventListener('click', () => {
+            this.openMainEditor();
+        });
+        
+        document.getElementById('refresh-diagram-list')?.addEventListener('click', () => {
+            this.loadDiagramList();
+        });
 
-    setupEventListeners() {
-        // New diagram button
+        // New diagram button (both sidebar and main editor)
         document.getElementById('new-diagram-btn')?.addEventListener('click', () => {
             this.createNewDiagram();
         });
 
-        // Save diagram button
+        // Main editor control buttons
+        document.getElementById('save-main-diagram-btn')?.addEventListener('click', () => {
+            this.saveDiagram();
+        });
+
+        document.getElementById('export-main-diagram-btn')?.addEventListener('click', () => {
+            this.exportDiagram();
+        });
+        
+        document.getElementById('fullscreen-bpmn-btn')?.addEventListener('click', () => {
+            this.toggleFullscreen();
+        });
+        
+        document.getElementById('close-bpmn-editor-btn')?.addEventListener('click', () => {
+            this.closeMainEditor();
+        });
+
+        // Zoom controls
+        document.getElementById('zoom-in-btn')?.addEventListener('click', () => {
+            this.zoomIn();
+        });
+        
+        document.getElementById('zoom-out-btn')?.addEventListener('click', () => {
+            this.zoomOut();
+        });
+        
+        document.getElementById('zoom-fit-btn')?.addEventListener('click', () => {
+            this.zoomToFit();
+        });
+
+        // Legacy buttons (for backward compatibility)
         document.getElementById('save-diagram-btn')?.addEventListener('click', () => {
             this.saveDiagram();
         });
 
-        // Load diagram button
         document.getElementById('load-diagram-btn')?.addEventListener('click', () => {
             this.toggleDiagramList();
         });
 
-        // Export diagram button
         document.getElementById('export-diagram-btn')?.addEventListener('click', () => {
             this.exportDiagram();
         });
 
-        // Toggle diagram list
         document.getElementById('toggle-diagram-list')?.addEventListener('click', () => {
             this.toggleDiagramList();
         });
-    }    setupSocketListeners() {
+    }setupSocketListeners() {
         if (!this.socket) return;
 
         // Listen for real-time diagram changes
@@ -373,33 +429,49 @@ class BPMNWorkflowManager {
             statusElement.className = `status-text ${type}`;
         }
         console.log(`[BPMN Status] ${message}`);
-    }
-
-    enableSaveButton() {
+    }    enableSaveButton() {
         const saveBtn = document.getElementById('save-diagram-btn');
+        const mainSaveBtn = document.getElementById('save-main-diagram-btn');
         if (saveBtn) {
             saveBtn.disabled = false;
         }
+        if (mainSaveBtn) {
+            mainSaveBtn.disabled = false;
+        }
+        this.hasUnsavedChanges = true;
     }
 
     disableSaveButton() {
         const saveBtn = document.getElementById('save-diagram-btn');
+        const mainSaveBtn = document.getElementById('save-main-diagram-btn');
         if (saveBtn) {
             saveBtn.disabled = true;
         }
+        if (mainSaveBtn) {
+            mainSaveBtn.disabled = true;
+        }
+        this.hasUnsavedChanges = false;
     }
 
     enableExportButton() {
         const exportBtn = document.getElementById('export-diagram-btn');
+        const mainExportBtn = document.getElementById('export-main-diagram-btn');
         if (exportBtn) {
             exportBtn.disabled = false;
+        }
+        if (mainExportBtn) {
+            mainExportBtn.disabled = false;
         }
     }
 
     disableExportButton() {
         const exportBtn = document.getElementById('export-diagram-btn');
+        const mainExportBtn = document.getElementById('export-main-diagram-btn');
         if (exportBtn) {
             exportBtn.disabled = true;
+        }
+        if (mainExportBtn) {
+            mainExportBtn.disabled = true;
         }
     }
 
@@ -433,6 +505,106 @@ class BPMNWorkflowManager {
             this.modeler = null;
         }
         this.isInitialized = false;
+    }
+    
+    // ==================== MAIN EDITOR CONTROLS ====================
+    openMainEditor() {
+        const mainEditor = document.getElementById('bpmn-main-editor');
+        if (mainEditor) {
+            mainEditor.style.display = 'block';
+            
+            // Ana canvas'a modeler'ı taşı
+            const mainCanvas = document.getElementById('bpmn-main-canvas');
+            if (mainCanvas && this.modeler) {
+                // Yeni container'a modeler'ı yeniden attach et
+                this.modeler.attachTo(mainCanvas);
+                
+                // Canvas boyutunu yeniden hesapla
+                setTimeout(() => {
+                    if (this.modeler && this.modeler.get) {
+                        const canvas = this.modeler.get('canvas');
+                        if (canvas && canvas.resized) {
+                            canvas.resized();
+                        }
+                    }
+                }, 200);
+            }
+            
+            this.updateStatus('Ana editör açıldı');
+            this.updateMainEditorButtons();
+        }
+    }
+    
+    closeMainEditor() {
+        const mainEditor = document.getElementById('bpmn-main-editor');
+        if (mainEditor) {
+            mainEditor.style.display = 'none';
+            this.updateStatus('Ana editör kapatıldı');
+        }
+    }
+    
+    toggleFullscreen() {
+        const overlay = document.querySelector('.bpmn-editor-overlay');
+        if (overlay) {
+            overlay.classList.toggle('fullscreen-mode');
+            
+            // Canvas boyutunu yeniden hesapla
+            setTimeout(() => {
+                if (this.modeler && this.modeler.get) {
+                    const canvas = this.modeler.get('canvas');
+                    if (canvas && canvas.resized) {
+                        canvas.resized();
+                    }
+                }
+            }, 100);
+        }
+    }
+    
+    updateMainEditorButtons() {
+        const saveBtn = document.getElementById('save-main-diagram-btn');
+        const exportBtn = document.getElementById('export-main-diagram-btn');
+        const currentNameSpan = document.getElementById('current-diagram-name');
+        
+        if (this.currentDiagram) {
+            if (saveBtn) saveBtn.disabled = !this.hasUnsavedChanges;
+            if (exportBtn) exportBtn.disabled = false;
+            if (currentNameSpan) currentNameSpan.textContent = this.currentDiagram.title;
+        } else {
+            if (saveBtn) saveBtn.disabled = true;
+            if (exportBtn) exportBtn.disabled = false;
+            if (currentNameSpan) currentNameSpan.textContent = 'Yeni Diyagram';
+        }
+    }
+    
+    // ==================== ZOOM CONTROLS ====================
+    zoomIn() {
+        if (this.modeler && this.modeler.get) {
+            const zoomScroll = this.modeler.get('zoomScroll');
+            if (zoomScroll) {
+                zoomScroll.stepZoom(1);
+                this.updateStatus('Yakınlaştırıldı');
+            }
+        }
+    }
+    
+    zoomOut() {
+        if (this.modeler && this.modeler.get) {
+            const zoomScroll = this.modeler.get('zoomScroll');
+            if (zoomScroll) {
+                zoomScroll.stepZoom(-1);
+                this.updateStatus('Uzaklaştırıldı');
+            }
+        }
+    }
+    
+    zoomToFit() {
+        if (this.modeler && this.modeler.get) {
+            const canvas = this.modeler.get('canvas');
+            if (canvas && canvas.zoom) {
+                canvas.zoom('fit-viewport');
+                this.updateStatus('Diyagram ekrana sığdırıldı');
+            }
+        }
     }
 }
 

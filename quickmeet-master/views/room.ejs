@@ -80,8 +80,7 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Whiteboard overlay -->
+                  <!-- Whiteboard overlay -->
                 <div class="whiteboard-section">
                     <div class="whiteboard-container">
                         <canvas id="whiteboard" height="800" width="1200"></canvas>
@@ -109,6 +108,53 @@
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BPMN Workflow Editor Overlay -->
+                <div class="bpmn-main-editor" id="bpmn-main-editor" style="display: none;">
+                    <div class="bpmn-editor-overlay">
+                        <div class="bpmn-editor-header">
+                            <div class="bpmn-editor-title">
+                                <h3><i class="fas fa-project-diagram"></i> İş Akışı Editörü</h3>
+                                <span class="current-diagram-name" id="current-diagram-name">Yeni Diyagram</span>
+                            </div>
+                            <div class="bpmn-editor-controls">
+                                <button id="save-main-diagram-btn" class="btn btn-success" disabled>
+                                    <i class="fas fa-save"></i> Kaydet
+                                </button>
+                                <button id="export-main-diagram-btn" class="btn btn-info" disabled>
+                                    <i class="fas fa-download"></i> Dışa Aktar
+                                </button>
+                                <button id="fullscreen-bpmn-btn" class="btn btn-secondary">
+                                    <i class="fas fa-expand"></i> Tam Ekran
+                                </button>
+                                <button id="close-bpmn-editor-btn" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Kapat
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bpmn-main-canvas-container">
+                            <div class="bpmn-main-canvas" id="bpmn-main-canvas">
+                                <!-- BPMN.io editor will be rendered here -->
+                            </div>
+                        </div>
+                        
+                        <div class="bpmn-main-status" id="bpmn-main-status">
+                            <span class="status-text">Editör hazır</span>
+                            <div class="zoom-controls">
+                                <button id="zoom-in-btn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <button id="zoom-out-btn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <button id="zoom-fit-btn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -240,49 +286,33 @@
                                 </div>
                             </div>
                         </div>
-                    </div>                </div>
-
-                <!-- Workflow Tab Panel (BPMN.io Integration) -->
+                    </div>                </div>                <!-- Workflow Tab Panel (BPMN Control Panel) -->
                 <div class="tab-panel" id="workflow-tab">
-                    <div class="workflow-container">
-                        <div class="workflow-header">
+                    <div class="workflow-control-panel">
+                        <div class="workflow-control-header">
                             <div class="workflow-title">
-                                <h3><i class="fas fa-project-diagram"></i> İş Akışı Editörü</h3>
+                                <h3><i class="fas fa-project-diagram"></i> İş Akışı Yönetimi</h3>
                             </div>
-                            <div class="workflow-actions">
-                                <button id="new-diagram-btn" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Yeni Diyagram
-                                </button>
-                                <button id="save-diagram-btn" class="btn btn-success" disabled>
-                                    <i class="fas fa-save"></i> Kaydet
-                                </button>
-                                <button id="load-diagram-btn" class="btn btn-secondary">
-                                    <i class="fas fa-folder-open"></i> Yükle
-                                </button>
-                                <button id="export-diagram-btn" class="btn btn-info" disabled>
-                                    <i class="fas fa-download"></i> Dışa Aktar
-                                </button>
-                            </div>
+                        </div>
+                        
+                        <div class="workflow-control-actions">
+                            <button id="open-bpmn-editor-btn" class="btn btn-primary btn-lg">
+                                <i class="fas fa-edit"></i> Diyagram Editörünü Aç
+                            </button>
+                            <button id="new-diagram-btn" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Yeni Diyagram
+                            </button>
                         </div>
                         
                         <div class="diagram-list-section" id="diagram-list-section">
                             <div class="diagram-list-header">
-                                <h4>Mevcut Diyagramlar</h4>
-                                <button id="toggle-diagram-list" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-chevron-up"></i>
+                                <h4><i class="fas fa-folder-open"></i> Mevcut Diyagramlar</h4>
+                                <button id="refresh-diagram-list" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
                             <div class="diagram-list" id="diagram-list">
                                 <!-- Diagrams will be loaded here -->
-                            </div>
-                        </div>
-                        
-                        <div class="bpmn-editor-container">
-                            <div class="bpmn-canvas" id="bpmn-canvas">
-                                <!-- BPMN.io editor will be rendered here -->
-                            </div>
-                            <div class="bpmn-properties-panel" id="bpmn-properties-panel">
-                                <!-- Properties panel will be rendered here -->
                             </div>
                         </div>
                         

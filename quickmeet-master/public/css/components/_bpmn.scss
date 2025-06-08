@@ -4,6 +4,317 @@
 // Modern BPMN.io integration styles for KheshigMate project workflow editor
 // Responsive design with premium UI/UX patterns
 
+// ==================== MAIN BPMN EDITOR OVERLAY ====================
+.bpmn-main-editor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    
+    .bpmn-editor-overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        background: var(--background-primary);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-xl);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        
+        .bpmn-editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-lg);
+            background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-sage));
+            color: white;
+            border-bottom: 1px solid var(--border-subtle);
+            
+            .bpmn-editor-title {
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-xs);
+                
+                h3 {
+                    margin: 0;
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-md);
+                    
+                    i {
+                        color: var(--kheshig-gold);
+                        font-size: 1.2em;
+                    }
+                }
+                
+                .current-diagram-name {
+                    font-size: 0.9rem;
+                    opacity: 0.8;
+                    font-weight: 400;
+                }
+            }
+            
+            .bpmn-editor-controls {
+                display: flex;
+                gap: var(--space-sm);
+                flex-wrap: wrap;
+                
+                .btn {
+                    padding: var(--space-sm) var(--space-md);
+                    border-radius: var(--border-radius-md);
+                    border: none;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-xs);
+                    min-width: auto;
+                    
+                    &.btn-success {
+                        background: linear-gradient(135deg, #22c55e, #16a34a);
+                        color: white;
+                        
+                        &:hover:not(:disabled) {
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                        }
+                    }
+                    
+                    &.btn-info {
+                        background: linear-gradient(135deg, #06b6d4, #0891b2);
+                        color: white;
+                        
+                        &:hover:not(:disabled) {
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+                        }
+                    }
+                    
+                    &.btn-secondary {
+                        background: linear-gradient(135deg, #64748b, #475569);
+                        color: white;
+                        
+                        &:hover:not(:disabled) {
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+                        }
+                    }
+                    
+                    &.btn-danger {
+                        background: linear-gradient(135deg, #ef4444, #dc2626);
+                        color: white;
+                        
+                        &:hover:not(:disabled) {
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+                        }
+                    }
+                    
+                    &:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                        transform: none !important;
+                        box-shadow: none !important;
+                    }
+                }
+            }
+        }
+        
+        .bpmn-main-canvas-container {
+            flex: 1;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            
+            .bpmn-main-canvas {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                
+                // BPMN.io specific overrides for main editor
+                .djs-palette {
+                    background: var(--background-secondary) !important;
+                    border: 1px solid var(--border-primary) !important;
+                    border-radius: var(--border-radius-md) !important;
+                    box-shadow: var(--shadow-lg) !important;
+                    z-index: 100 !important;
+                    
+                    .djs-palette-entries {
+                        .entry {
+                            border-radius: var(--border-radius-sm) !important;
+                            transition: all 0.2s ease !important;
+                            
+                            &:hover {
+                                background: var(--background-hover) !important;
+                                transform: scale(1.05) !important;
+                            }
+                            
+                            &.highlighted {
+                                background: var(--kheshig-gold) !important;
+                                color: var(--kheshig-navy) !important;
+                            }
+                        }
+                    }
+                }
+                
+                .djs-context-pad {
+                    .djs-context-pad-group {
+                        background: var(--background-secondary) !important;
+                        border: 1px solid var(--border-primary) !important;
+                        border-radius: var(--border-radius-md) !important;
+                        box-shadow: var(--shadow-lg) !important;
+                        z-index: 99 !important;
+                        
+                        .entry {
+                            border-radius: var(--border-radius-sm) !important;
+                            transition: all 0.2s ease !important;
+                            
+                            &:hover {
+                                background: var(--kheshig-gold) !important;
+                                color: var(--kheshig-navy) !important;
+                                transform: scale(1.1) !important;
+                            }
+                        }
+                    }
+                }
+                
+                // Canvas sizing
+                .bjs-container {
+                    height: 100% !important;
+                    width: 100% !important;
+                }
+            }
+        }
+        
+        .bpmn-main-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--background-tertiary);
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.875rem;
+            
+            .status-text {
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+            
+            .zoom-controls {
+                display: flex;
+                gap: var(--space-xs);
+                
+                .btn {
+                    padding: var(--space-xs) var(--space-sm);
+                    border: 1px solid var(--border-primary);
+                    background: transparent;
+                    color: var(--text-secondary);
+                    border-radius: var(--border-radius-sm);
+                    transition: all 0.2s ease;
+                    font-size: 0.75rem;
+                    
+                    &:hover {
+                        background: var(--background-hover);
+                        color: var(--text-primary);
+                        border-color: var(--border-focus);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== WORKFLOW CONTROL PANEL ====================
+.workflow-control-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--background-primary);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    
+    .workflow-control-header {
+        padding: var(--space-lg);
+        background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-sage));
+        color: white;
+        border-bottom: 1px solid var(--border-subtle);
+        
+        .workflow-title {
+            h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: var(--space-md);
+                
+                i {
+                    color: var(--kheshig-gold);
+                    font-size: 1.1em;
+                }
+            }
+        }
+    }
+    
+    .workflow-control-actions {
+        padding: var(--space-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        border-bottom: 1px solid var(--border-subtle);
+        
+        .btn {
+            width: 100%;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--border-radius-md);
+            border: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            
+            &.btn-lg {
+                padding: var(--space-lg) var(--space-xl);
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            
+            &.btn-primary {
+                background: var(--gradient-gold);
+                color: var(--kheshig-navy);
+                
+                &:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4);
+                }
+            }
+            
+            &.btn-success {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: white;
+                
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                }
+            }
+        }
+    }
+}
+
 // ==================== BPMN CONTAINER LAYOUT ====================
 .workflow-container {
     display: flex;
@@ -286,12 +597,16 @@
     display: flex;
     background: var(--background-primary);
     overflow: hidden;
+    min-height: 80vh; // Minimum yükseklik ekledik
+    height: 100%;     // Tam yükseklik
     
     .bpmn-canvas {
         flex: 1;
         background: white;
         border-right: 1px solid var(--border-subtle);
         position: relative;
+        min-height: 80vh; // Canvas için minimum yükseklik
+        height: 100%;     // Tam yükseklik
         
         // BPMN.io specific overrides
         .djs-palette {
@@ -299,6 +614,7 @@
             border: 1px solid var(--border-primary) !important;
             border-radius: var(--border-radius-md) !important;
             box-shadow: var(--shadow-md) !important;
+            z-index: 100 !important; // Palette'in görünür olması için z-index eklendi
             
             .djs-palette-entries {
                 .entry {
@@ -324,6 +640,7 @@
                 border: 1px solid var(--border-primary) !important;
                 border-radius: var(--border-radius-md) !important;
                 box-shadow: var(--shadow-md) !important;
+                z-index: 99 !important; // Context pad z-index
                 
                 .entry {
                     border-radius: var(--border-radius-sm) !important;
@@ -340,12 +657,13 @@
         
         // Canvas sizing and fullscreen support
         .bjs-container {
-            height: 600px;
-            min-height: 600px;
+            height: 100% !important;     // Tam yükseklik
+            min-height: 80vh !important; // Minimum yükseklik
+            width: 100% !important;      // Tam genişlik
             
             @media (max-width: 768px) {
-                height: 450px;
-                min-height: 450px;
+                height: 70vh !important;
+                min-height: 70vh !important;
             }
         }
         
