@@ -105,7 +105,7 @@
 // Main container - Improved Grid layout
 .modern-room-container {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 3fr 2fr; // Video 60%, Kanban 40%
     height: calc(100vh - 80px);
     gap: 0;
     background: transparent;
@@ -878,7 +878,7 @@
 // Responsive design
 @media (max-width: 1200px) {
     .modern-room-container {
-        grid-template-columns: 1fr 350px;
+        grid-template-columns: 2fr 1fr; // Video 66%, Kanban 33% on medium screens
     }
 }
 

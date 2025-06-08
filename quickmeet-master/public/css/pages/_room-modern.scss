@@ -106,7 +106,7 @@
 // Modern room container with proper grid
 .modern-room-container {
     display: grid;
-    grid-template-columns: 1fr 400px; // Main content + fixed sidebar
+    grid-template-columns: 3fr 2fr; // Video 60%, Kanban 40%
     grid-template-rows: 1fr;
     height: calc(100vh - 80px); // Subtract header height
     gap: 0;
@@ -843,7 +843,7 @@
 // Responsive design
 @media (max-width: 1200px) {
     .modern-room-container {
-        grid-template-columns: 1fr 350px;
+        grid-template-columns: 2fr 1fr; // Video 66%, Kanban 33% on medium screens
     }
     
     .sidebar-tab span {

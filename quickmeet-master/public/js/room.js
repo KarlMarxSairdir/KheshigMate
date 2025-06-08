@@ -52,6 +52,9 @@ let currentEditingNoteId = null;
 let addNoteBtn, noteEditor, saveNoteBtn, cancelNoteBtn, noteContent, notesList;
 let currentProjectData = null; // Proje ve kullanıcı bilgilerini saklar
 
+// BPMN Manager entegrasyonu
+let bpmnInitialized = false;
+
 async function loadNotes() {
     if (!ROOM_ID) return;
     try {
@@ -1040,12 +1043,22 @@ document.addEventListener('DOMContentLoaded', () => {
               if (targetTab === 'notes') {
                 loadNotes();
             } else if (targetTab === 'attendees') {
-                loadAttendees();
-            } else if (targetTab === 'tasks') {
+                loadAttendees();            } else if (targetTab === 'tasks') {
                 // Initialize Kanban board when tasks tab is opened
                 if (!window.kanbanBoard) {
                     console.log('🚀 Initializing Kanban board...');
                     window.kanbanBoard = initKanbanBoard(ROOM_ID, socket);
+                }
+            } else if (targetTab === 'workflow') {
+                // Initialize BPMN workflow manager when workflow tab is opened
+                if (!bpmnInitialized && window.bpmnManager) {
+                    console.log('🚀 Initializing BPMN Workflow Manager...');
+                    window.bpmnManager.init(socket, ROOM_ID, USER_ID).then(() => {
+                        bpmnInitialized = true;
+                        console.log('✅ BPMN Workflow Manager initialized successfully');
+                    }).catch(error => {
+                        console.error('❌ BPMN initialization failed:', error);
+                    });
                 }
             }
         });

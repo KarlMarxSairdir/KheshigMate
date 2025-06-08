@@ -15,6 +15,7 @@ const ChatMessage = require('./models/ChatMessage');
 const DrawingData = require('./models/DrawingData'); // Added DrawingData model
 const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
 const Task = require('./models/Task'); // Added Task model
+const BPMNDiagram = require('./models/BPMNDiagram'); // Added BPMN model
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
@@ -743,7 +744,9 @@ app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
 app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId } = req.params;
-        const { title, description, priority, dueDate, requiredSkills } = req.body;
+        const { title, description, priority, assignedTo, dueDate, requiredSkills } = req.body;
+        
+        console.log('📝 Task creation request:', { title, description, priority, assignedTo, dueDate, requiredSkills });
         
         // Proje erişim kontrolü
         const project = await Project.findById(projectId);
@@ -761,11 +764,28 @@ app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => 
             return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
         
+        // AssignedTo kontrolü - eğer belirtilmişse geçerli kullanıcı olup olmadığını kontrol et
+        if (assignedTo) {
+            const assignedUser = await User.findById(assignedTo);
+            if (!assignedUser) {
+                return res.status(400).json({ error: 'Atanan kullanıcı bulunamadı' });
+            }
+            
+            // Atanan kullanıcının proje üyesi olup olmadığını kontrol et
+            const isAssignedUserMember = project.owner.toString() === assignedTo.toString() ||
+                project.members.some(member => member.user.toString() === assignedTo.toString());
+            
+            if (!isAssignedUserMember) {
+                return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil' });
+            }
+        }
+        
         // Yeni görev oluştur
         const task = new Task({
             title,
             description,
             priority,
+            assignedTo: assignedTo || undefined,
             dueDate: dueDate ? new Date(dueDate) : undefined,
             requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : [],
             project: projectId,
@@ -775,7 +795,7 @@ app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => 
         await task.save();
         await task.populate(['assignedTo', 'createdBy'], 'username email');
         
-        console.log(`✅ Task created: ${task.title} for project ${project.name}`);
+        console.log(`✅ Task created: ${task.title} for project ${project.name}, assigned to: ${task.assignedTo?.username || 'Atanmamış'}`);
         res.status(201).json(task);
     } catch (error) {
         console.error('Task creation error:', error);
@@ -821,7 +841,9 @@ app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
 app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId, taskId } = req.params;
-        const { title, description, priority, dueDate, requiredSkills } = req.body;
+        const { title, description, priority, assignedTo, dueDate, requiredSkills } = req.body;
+        
+        console.log('📝 Task update request:', { title, description, priority, assignedTo, dueDate, requiredSkills });
         
         // Görev ve proje erişim kontrolü
         const task = await Task.findById(taskId);
@@ -839,16 +861,33 @@ app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, r
             return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
         
+        // AssignedTo kontrolü - eğer belirtilmişse geçerli kullanıcı olup olmadığını kontrol et
+        if (assignedTo) {
+            const assignedUser = await User.findById(assignedTo);
+            if (!assignedUser) {
+                return res.status(400).json({ error: 'Atanan kullanıcı bulunamadı' });
+            }
+            
+            // Atanan kullanıcının proje üyesi olup olmadığını kontrol et
+            const isAssignedUserMember = project.owner.toString() === assignedTo.toString() ||
+                project.members.some(member => member.user.toString() === assignedTo.toString());
+            
+            if (!isAssignedUserMember) {
+                return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil' });
+            }
+        }
+        
         // Güncelle
         const updatedTask = await Task.findByIdAndUpdate(taskId, {
             title,
             description,
             priority,
+            assignedTo: assignedTo || undefined,
             dueDate: dueDate ? new Date(dueDate) : undefined,
             requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : []
         }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email');
         
-        console.log(`✅ Task updated: ${updatedTask.title}`);
+        console.log(`✅ Task updated: ${updatedTask.title}, assigned to: ${updatedTask.assignedTo?.username || 'Atanmamış'}`);
         res.json(updatedTask);
     } catch (error) {
         console.error('Task update error:', error);
@@ -964,10 +1003,194 @@ app.put('/projects/:projectId/tasks/:taskId/assign', ensureAuthenticated, async 
         }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email skills');
         
         console.log(`✅ Task assigned: ${updatedTask.title} -> ${updatedTask.assignedTo?.username || 'Unassigned'}`);
-        res.json(updatedTask);
-    } catch (error) {
+        res.json(updatedTask);    } catch (error) {
         console.error('Task assignment error:', error);
         res.status(500).json({ error: 'Görev atanırken hata oluştu' });
+    }
+});
+
+// --- BPMN Workflow API Routes ---
+
+// Proje BPMN diyagramlarını listele
+app.get('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // BPMN diyagramlarını getir
+        const diagrams = await BPMNDiagram.find({ project: projectId, isActive: true })
+            .populate('createdBy', 'username email')
+            .sort({ createdAt: -1 });
+        
+        console.log(`📊 Found ${diagrams.length} BPMN diagrams for project ${project.name}`);
+        res.json(diagrams);
+    } catch (error) {
+        console.error('BPMN listing error:', error);
+        res.status(500).json({ error: 'BPMN diyagramları getirilirken hata oluştu' });
+    }
+});
+
+// Yeni BPMN diyagramı oluştur
+app.post('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { title, description, xmlData, tags } = req.body;
+        
+        console.log('📊 BPMN creation request:', { title, description, tags });
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Yeni BPMN diyagramı oluştur
+        const diagram = new BPMNDiagram({
+            title,
+            description,
+            xmlData: xmlData || '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="true" /></bpmn:definitions>',
+            tags: Array.isArray(tags) ? tags : [],
+            project: projectId,
+            createdBy: req.user._id
+        });
+        
+        await diagram.save();
+        await diagram.populate('createdBy', 'username email');
+        
+        console.log(`✅ BPMN diagram created: ${diagram.title} for project ${project.name}`);
+        res.status(201).json(diagram);
+    } catch (error) {
+        console.error('BPMN creation error:', error);
+        res.status(500).json({ error: 'BPMN diyagramı oluşturulurken hata oluştu' });
+    }
+});
+
+// BPMN diyagramını güncelle
+app.put('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, diagramId } = req.params;
+        const { title, description, xmlData, tags } = req.body;
+        
+        console.log('📊 BPMN update request:', { title, description, tags });
+        
+        // Diyagram ve proje erişim kontrolü
+        const diagram = await BPMNDiagram.findById(diagramId);
+        if (!diagram || diagram.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Güncelleme
+        const updateData = {
+            title: title || diagram.title,
+            description: description !== undefined ? description : diagram.description,
+            xmlData: xmlData || diagram.xmlData,
+            tags: Array.isArray(tags) ? tags : diagram.tags,
+            version: diagram.version + 1
+        };
+        
+        const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
+            .populate('createdBy', 'username email');
+        
+        console.log(`✅ BPMN diagram updated: ${updatedDiagram.title} (v${updatedDiagram.version})`);
+        res.json(updatedDiagram);
+    } catch (error) {
+        console.error('BPMN update error:', error);
+        res.status(500).json({ error: 'BPMN diyagramı güncellenirken hata oluştu' });
+    }
+});
+
+// BPMN diyagramını sil
+app.delete('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, diagramId } = req.params;
+        
+        // Diyagram ve proje erişim kontrolü
+        const diagram = await BPMNDiagram.findById(diagramId);
+        if (!diagram || diagram.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Soft delete (isActive = false)
+        await BPMNDiagram.findByIdAndUpdate(diagramId, { isActive: false });
+        
+        console.log(`✅ BPMN diagram soft deleted: ${diagram.title}`);
+        res.json({ message: 'BPMN diyagramı başarıyla silindi' });
+    } catch (error) {
+        console.error('BPMN deletion error:', error);
+        res.status(500).json({ error: 'BPMN diyagramı silinirken hata oluştu' });
+    }
+});
+
+// Spesifik BPMN diyagramının XML verisini al
+app.get('/projects/:projectId/bpmn/:diagramId/xml', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, diagramId } = req.params;
+        
+        // Diyagram ve proje erişim kontrolü
+        const diagram = await BPMNDiagram.findById(diagramId);
+        if (!diagram || diagram.project.toString() !== projectId || !diagram.isActive) {
+            return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        console.log(`📊 BPMN XML requested: ${diagram.title}`);
+        res.set('Content-Type', 'application/xml');
+        res.send(diagram.xmlData);
+    } catch (error) {
+        console.error('BPMN XML fetch error:', error);
+        res.status(500).json({ error: 'BPMN XML verisi alınırken hata oluştu' });
     }
 });
 
@@ -1220,12 +1443,123 @@ function setupSocketHandlers(io) {
             } catch (err) {
                 console.error(`Error clearing board for project ${projectId}:`, err);
             }
-        });
-
-        socket.on('leave project', (projectId, userId) => {
+        });        socket.on('leave project', (projectId, userId) => {
             console.log(`leave project request: User ${userId} from project ${projectId}`);
             // This is mostly handled by disconnect, but can be a manual trigger.
             // Ensure it calls the same cleanup logic as disconnect if used.
+        });
+
+        // BPMN Workflow Collaboration Events
+        socket.on('bpmn:join-diagram', (diagramId, projectId) => {
+            console.log(`SERVER: User joined BPMN diagram ${diagramId} in project ${projectId}. Socket: ${socket.id}`);
+            socket.join(`bpmn:${diagramId}`);
+            
+            // Notify other users in the diagram that a new user joined
+            const userInfo = socketToUserMap[socket.id];
+            if (userInfo) {
+                socket.to(`bpmn:${diagramId}`).emit('bpmn:user-joined', {
+                    userId: userInfo.userId,
+                    userName: userInfo.userName,
+                    socketId: socket.id,
+                    diagramId
+                });
+            }
+        });
+
+        socket.on('bpmn:leave-diagram', (diagramId) => {
+            console.log(`SERVER: User left BPMN diagram ${diagramId}. Socket: ${socket.id}`);
+            socket.leave(`bpmn:${diagramId}`);
+            
+            // Notify other users in the diagram that the user left
+            const userInfo = socketToUserMap[socket.id];
+            if (userInfo) {
+                socket.to(`bpmn:${diagramId}`).emit('bpmn:user-left', {
+                    userId: userInfo.userId,
+                    userName: userInfo.userName,
+                    socketId: socket.id,
+                    diagramId
+                });
+            }
+        });
+
+        socket.on('bpmn:diagram-changed', async (diagramId, xmlData, changeInfo) => {
+            console.log(`SERVER: BPMN diagram ${diagramId} changed by ${socket.id}`);
+            
+            try {
+                // Save the updated diagram to database
+                await BPMNDiagram.findByIdAndUpdate(diagramId, { 
+                    xmlData,
+                    version: changeInfo.version || 1
+                });
+                
+                // Broadcast the change to other users in the diagram
+                const userInfo = socketToUserMap[socket.id];
+                socket.to(`bpmn:${diagramId}`).emit('bpmn:diagram-changed', {
+                    diagramId,
+                    xmlData,
+                    changeInfo,
+                    changedBy: userInfo ? {
+                        userId: userInfo.userId,
+                        userName: userInfo.userName
+                    } : null
+                });
+            } catch (error) {
+                console.error(`Error saving BPMN diagram ${diagramId}:`, error);
+                socket.emit('bpmn:error', { 
+                    message: 'Diyagram kaydedilirken hata oluştu',
+                    diagramId 
+                });
+            }
+        });
+
+        socket.on('bpmn:cursor-move', (diagramId, cursorData) => {
+            // Broadcast cursor movement to other users in the diagram
+            const userInfo = socketToUserMap[socket.id];
+            if (userInfo) {
+                socket.to(`bpmn:${diagramId}`).emit('bpmn:cursor-move', {
+                    userId: userInfo.userId,
+                    userName: userInfo.userName,
+                    socketId: socket.id,
+                    diagramId,
+                    x: cursorData.x,
+                    y: cursorData.y
+                });
+            }
+        });
+
+        socket.on('bpmn:selection-changed', (diagramId, selectedElements) => {
+            // Broadcast selection changes to other users in the diagram
+            const userInfo = socketToUserMap[socket.id];
+            if (userInfo) {
+                socket.to(`bpmn:${diagramId}`).emit('bpmn:selection-changed', {
+                    userId: userInfo.userId,
+                    userName: userInfo.userName,
+                    socketId: socket.id,
+                    diagramId,
+                    selectedElements
+                });
+            }
+        });
+
+        socket.on('bpmn:request-sync', (diagramId) => {
+            // Request current diagram state for synchronization
+            console.log(`SERVER: Sync requested for BPMN diagram ${diagramId} by ${socket.id}`);
+            
+            // Emit sync request to the first available user in the diagram room
+            socket.to(`bpmn:${diagramId}`).emit('bpmn:sync-request', {
+                diagramId,
+                requestedBy: socket.id
+            });
+        });
+
+        socket.on('bpmn:sync-response', (diagramId, xmlData, targetSocketId) => {
+            // Send sync response to specific user
+            console.log(`SERVER: Sync response for BPMN diagram ${diagramId} to ${targetSocketId}`);
+            
+            socket.to(targetSocketId).emit('bpmn:sync-response', {
+                diagramId,
+                xmlData
+            });
         });
 
         socket.on('disconnect', (reason) => {

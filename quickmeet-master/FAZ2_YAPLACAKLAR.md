@@ -24,12 +24,26 @@ Bu faz, Kaşıkmate projesini basit proje yönetiminden **gelişmiş görev yön
 
 ---
 
-### BÖLÜM 1: GÖREV YÖNETİMİ MODELİ VE TEMEL API'LER 🔧
+### BÖLÜM 1: KANBAN BOARD LAYOUT DÜZELTMELERİ ✅ (TAMAMLANDI)
+**Başlangıç:** 8 Haziran 2025  
+**Tamamlanma:** 8 Haziran 2025  
+**Durum:** %100 Tamamlandı
+
+#### Başarılı Çıktılar:
+- Grid layout oranları düzeltildi (Video %60 + Kanban %40)
+- Responsive breakpoint'ler optimize edildi
+- Kanban board padding/margin değerleri iyileştirildi
+- Horizontal scrolling sorunu çözüldü
+- CSS derlemesi tamamlandı
+
+---
+
+### BÖLÜM 2: GELİŞMİŞ GÖREV YÖNETİM SİSTEMİ 🔧 (SONRAKİ HEDEF)
 **Başlangıç:** 8 Haziran 2025  
 **Hedef Tamamlanma:** 10 Haziran 2025  
 **Tahmini Süre:** 2-3 gün
 
-#### 1.1 Task Modeli Oluşturma (`models/Task.js`)
+#### 2.1 Task Modeli Oluşturma (`models/Task.js`)
 ```javascript
 // Planlanmış Schema Yapısı:
 {
