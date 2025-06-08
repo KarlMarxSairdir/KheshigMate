@@ -290,11 +290,21 @@ class BPMNWorkflowManager {    constructor() {
     async createNewDiagram() {
         // Modal'ı göster
         this.showCreateDiagramModal();
-    }
-      showCreateDiagramModal() {
+    }      showCreateDiagramModal() {
+        console.log('🆕 showCreateDiagramModal called');
         const modal = document.getElementById('bpmn-create-modal');
+        console.log('🔍 Create Modal element found:', modal);
+        
         if (modal) {
+            console.log('🎨 Setting create modal display to flex...');
             modal.style.display = 'flex';
+            
+            // Verify modal is actually visible
+            const computedStyle = window.getComputedStyle(modal);
+            console.log('📊 Create Modal computed display:', computedStyle.display);
+            console.log('📊 Create Modal computed visibility:', computedStyle.visibility);
+            console.log('📊 Create Modal computed opacity:', computedStyle.opacity);
+            console.log('📊 Create Modal computed z-index:', computedStyle.zIndex);
             
             // Form'u temizle
             document.getElementById('bpmn-diagram-name').value = '';
@@ -305,6 +315,8 @@ class BPMNWorkflowManager {    constructor() {
             setTimeout(() => {
                 document.getElementById('bpmn-diagram-name').focus();
             }, 100);
+        } else {
+            console.error('❌ Create Modal element not found!');
         }
     }
     
@@ -339,12 +351,21 @@ class BPMNWorkflowManager {    constructor() {
             this.updateStatus('Diyagram düzenleme için yüklenemedi: ' + error.message, 'error');
         }
     }
-    
-    showEditDiagramModal(diagram) {
+      showEditDiagramModal(diagram) {
         console.log('🔧 showEditDiagramModal called with diagram:', diagram);
         const modal = document.getElementById('bpmn-edit-modal');
+        console.log('🔍 Modal element found:', modal);
+        
         if (modal) {
+            console.log('🎨 Setting modal display to flex...');
             modal.style.display = 'flex';
+            
+            // Verify modal is actually visible
+            const computedStyle = window.getComputedStyle(modal);
+            console.log('📊 Modal computed display:', computedStyle.display);
+            console.log('📊 Modal computed visibility:', computedStyle.visibility);
+            console.log('📊 Modal computed opacity:', computedStyle.opacity);
+            console.log('📊 Modal computed z-index:', computedStyle.zIndex);
             
             // Form'u diyagram verileriyle doldur
             document.getElementById('bpmn-edit-diagram-name').value = diagram.title || '';
@@ -359,6 +380,8 @@ class BPMNWorkflowManager {    constructor() {
             setTimeout(() => {
                 document.getElementById('bpmn-edit-diagram-name').focus();
             }, 100);
+        } else {
+            console.error('❌ Modal element not found!');
         }
     }
     

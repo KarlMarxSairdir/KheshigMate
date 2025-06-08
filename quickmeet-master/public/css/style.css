@@ -42,6 +42,21 @@
   --text-primary: #2C3E50;
   --text-secondary: #95A5A6;
   --text-muted: #6c757d;
+  
+  /* Background System */
+  --background-primary: #ffffff;
+  --background-secondary: #f8f9fa;
+  --background-hover: #e9ecef;
+  
+  /* Border System */
+  --border-primary: #dee2e6;
+  --border-secondary: #e9ecef;
+  --border-subtle: #f1f3f4;
+  
+  /* Border Radius System - Extended */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
   /* RGB Values for alpha compositing */
   --primary-rgb: 44, 62, 80;
   --danger-rgb: 231, 76, 60;
