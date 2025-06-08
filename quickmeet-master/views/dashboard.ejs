@@ -5,8 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>KheshigMate - Dashboard</title>
     <meta name="description" content="KheshigMate Orta Asya Proje Yönetimi Dashboard">
-    <meta name="viewport" content="width=device-width, initial-scale=1">    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
-    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">    <link rel="stylesheet" href="/css/style.css?v=6.0.0">    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
     <!-- Kullanıcı bilgilerini JavaScript'e aktar -->
     <script>
         const CURRENT_USER_ID = "<%= user._id %>";
@@ -26,21 +25,51 @@
                     <i class="fas fa-home"></i>
                     <span>Kheshig Merkezi</span>
                 </div>
-            </div>
-            <div class="header-right">
-                <div class="user-profile">
-                    <div class="user-avatar">
-                        <i class="fas fa-user-circle"></i>
+            </div>            <div class="header-right">                <!-- User Profile Dropdown -->
+                <div class="user-profile-dropdown">
+                    <div class="user-profile-trigger" id="userProfileTrigger">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
+                            <span class="user-role">Elite Haberleşme Uzmanı</span>
+                        </div>
+                        <div class="dropdown-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
-                    <div class="user-details">
-                        <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
-                        <span class="user-role">Elite Haberleşme Uzmanı</span>
+                    
+                    <!-- Dropdown Menu -->
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="dropdown-header">
+                            <div class="user-info">
+                                <div class="user-avatar-large">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="user-meta">
+                                    <h4><%= user ? user.username : 'Kheshig Üyesi' %></h4>
+                                    <p><%= user ? user.email : 'email@example.com' %></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                          <div class="dropdown-items">
+                            <a href="/profile" class="dropdown-item">
+                                <i class="fas fa-user-cog"></i>
+                                <span>Profil Ayarları</span>
+                            </a>
+                            <a href="/dashboard" class="dropdown-item active">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Dashboard</span>
+                            </a>                            <button type="button" class="dropdown-item logout-item" id="logoutButton">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Çıkış Yap</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <button id="logout-btn" class="modern-logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Çıkış</span>
-                </button>
             </div>
         </div>
     </header>    <!-- Modern Dashboard Main Content -->

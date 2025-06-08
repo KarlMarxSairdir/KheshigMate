@@ -19,19 +19,32 @@ $opensans: "Open Sans", sans-serif;
   --kheshig-bronze: #CD7F32;      /* Bronze horseman equipment */
   --kheshig-sage: #95A5A6;        /* Sage green of the steppes */
   --kheshig-cream: #FDF6E3;       /* Yurt felt color */
-  
-  /* Semantic Colors */
-  --primary: var(--kheshig-navy);
-  --secondary: var(--kheshig-gold);
-  --accent: var(--kheshig-bronze);
-  --muted: var(--kheshig-sage);
-  --background: var(--kheshig-cream);
-  
-  /* Status Colors */
+    /* Semantic Colors */
+  --primary: #2C3E50;
+  --secondary: #D4AF37;
+  --accent: #CD7F32;
+  --muted: #95A5A6;
+  --background: #FDF6E3;
+    /* Status Colors */
   --success: #27ae60;
   --warning: #f39c12;
   --error: #e74c3c;
+  --danger: #e74c3c;
   --info: #3498db;
+  
+  /* UI States */
+  --hover-background: #f8f9fa;
+  --active-background: #e9ecef;
+  --border-color: #dee2e6;
+  --card-background: #ffffff;
+  --text-primary: #2C3E50;
+  --text-secondary: #95A5A6;
+  --text-muted: #6c757d;
+  
+  /* RGB Values for alpha compositing */
+  --primary-rgb: 44, 62, 80;
+  --danger-rgb: 231, 76, 60;
+  --success-rgb: 39, 174, 96;
   
   /* Gradient Variations */
   --gradient-primary: linear-gradient(135deg, var(--kheshig-navy) 0%, #34495e 100%);

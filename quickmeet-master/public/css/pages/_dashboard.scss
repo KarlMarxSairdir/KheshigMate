@@ -214,22 +214,7 @@
     margin-bottom: var(--space-xxl);
 }
 
-// Modern Cards
-.modern-card {
-    background: rgba(253, 246, 227, 0.95);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl);
-    border: 3px solid rgba(212, 175, 55, 0.3);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
-    transition: all 0.3s ease;
-    
-    &:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
-        border-color: var(--kheshig-gold);
-    }
-}
+// Modern Cards - removed duplicate definition (exists in _cards.scss)
 
 .card-icon-header {
     display: flex;

@@ -187,7 +187,109 @@ app.get('/dashboard', ensureAuthenticated, async (req, res) => {
         });
     } catch (err) {
         console.error("Error rendering dashboard:", err);
-        res.status(500).send("Dashboard yüklenirken bir hata oluştu.");
+        res.status(500).send("Dashboard yüklenirken bir hata oluştu.");    }
+});
+
+// --- Profile Routes ---
+// GET /profile - Kullanıcı profil sayfası
+app.get('/profile', ensureAuthenticated, async (req, res) => {
+    try {
+        res.render('profile', { 
+            user: req.user,
+            success: req.query.success || null,
+            error: req.query.error || null
+        });
+    } catch (err) {
+        console.error("Error rendering profile:", err);
+        res.status(500).send("Profil sayfası yüklenirken bir hata oluştu.");
+    }
+});
+
+// POST /profile/details - Kullanıcı bilgilerini güncelle (username, email)
+app.post('/profile/details', ensureAuthenticated, async (req, res) => {
+    try {
+        const { username, email } = req.body;
+        
+        // Email zaten kullanımda mı kontrol et (mevcut kullanıcı hariç)
+        const existingUser = await User.findOne({ 
+            email: email, 
+            _id: { $ne: req.user._id } 
+        });
+        
+        if (existingUser) {
+            return res.redirect('/profile?error=' + encodeURIComponent('Bu e-posta adresi zaten kullanımda.'));
+        }
+        
+        // Kullanıcı bilgilerini güncelle
+        await User.findByIdAndUpdate(req.user._id, {
+            username: username.trim(),
+            email: email.trim()
+        });
+        
+        console.log(`✅ User details updated for ${req.user.username}`);
+        res.redirect('/profile?success=' + encodeURIComponent('Bilgileriniz başarıyla güncellendi.'));
+        
+    } catch (err) {
+        console.error('Profile update error:', err);
+        res.redirect('/profile?error=' + encodeURIComponent('Bilgiler güncellenirken bir hata oluştu.'));
+    }
+});
+
+// POST /profile/skills - Kullanıcı yeteneklerini güncelle
+app.post('/profile/skills', ensureAuthenticated, async (req, res) => {
+    try {
+        const { skills } = req.body;
+        
+        // Skills'i array'e çevir ve temizle
+        const skillsArray = skills ? skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0) : [];
+        
+        // Kullanıcı yeteneklerini güncelle
+        await User.findByIdAndUpdate(req.user._id, {
+            skills: skillsArray
+        });
+        
+        console.log(`✅ User skills updated for ${req.user.username}:`, skillsArray);
+        res.redirect('/profile?success=' + encodeURIComponent('Yetenekleriniz başarıyla güncellendi.'));
+        
+    } catch (err) {
+        console.error('Skills update error:', err);
+        res.redirect('/profile?error=' + encodeURIComponent('Yetenekler güncellenirken bir hata oluştu.'));
+    }
+});
+
+// POST /profile/change-password - Şifre değiştir
+app.post('/profile/change-password', ensureAuthenticated, async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        
+        // Yeni şifre kontrolü
+        if (newPassword !== confirmPassword) {
+            return res.redirect('/profile?error=' + encodeURIComponent('Yeni şifreler eşleşmiyor.'));
+        }
+        
+        if (newPassword.length < 6) {
+            return res.redirect('/profile?error=' + encodeURIComponent('Yeni şifre en az 6 karakter olmalıdır.'));
+        }
+        
+        // Mevcut kullanıcıyı çek
+        const user = await User.findById(req.user._id);
+        
+        // Mevcut şifreyi kontrol et
+        const isValidPassword = await user.comparePassword(currentPassword);
+        if (!isValidPassword) {
+            return res.redirect('/profile?error=' + encodeURIComponent('Mevcut şifre yanlış.'));
+        }
+        
+        // Yeni şifreyi kaydet
+        user.password = newPassword;
+        await user.save();
+        
+        console.log(`✅ Password changed for ${req.user.username}`);
+        res.redirect('/profile?success=' + encodeURIComponent('Şifreniz başarıyla değiştirildi.'));
+        
+    } catch (err) {
+        console.error('Password change error:', err);
+        res.redirect('/profile?error=' + encodeURIComponent('Şifre değiştirilirken bir hata oluştu.'));
     }
 });
 

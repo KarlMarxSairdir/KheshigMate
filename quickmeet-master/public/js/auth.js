@@ -1,7 +1,7 @@
 // Auth.js - Login ve Register işlemleri
 
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM elementleri
+    // DOM elementleri - Sadece login/register sayfalarında mevcut
     const loginBox = document.getElementById('login-box');
     const registerBox = document.getElementById('register-box');
     const showRegister = document.getElementById('show-register');
@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerForm = document.getElementById('register-form');
     const loginError = document.getElementById('login-error');
     const registerError = document.getElementById('register-error');
+
+    // Eğer login/register elementleri yoksa, bu sayfa auth sayfası değil
+    if (!loginBox || !registerBox || !showRegister || !showLogin) {
+        console.log('🚫 Auth elements not found - not an auth page');
+        return;
+    }
+
+    console.log('✅ Auth page detected, initializing...');
 
     // Form geçişleri
     showRegister.onclick = () => {

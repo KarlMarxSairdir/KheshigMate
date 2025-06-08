@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --kheshig-navy: #2C3E50;
+            --kheshig-gold: #D4AF37;
+            --kheshig-sage: #95A5A6;
+            --kheshig-cream: #FDF6E3;
+            --primary: var(--kheshig-navy);
+            --danger: #e74c3c;
+            --hover-background: #f8f9fa;
+            --border-color: #dee2e6;
+            --card-background: #ffffff;
+            --primary-rgb: 44, 62, 80;
+            --muted: var(--kheshig-sage);
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 50px;
+        }
+        
+        .user-profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .user-profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .user-profile-trigger:hover {
+            background: var(--hover-background);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--kheshig-navy) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .username {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--kheshig-navy);
+            margin-bottom: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-role {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .dropdown-arrow {
+            color: var(--muted);
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .user-profile-trigger.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .user-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            min-width: 280px;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .user-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        
+        .dropdown-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar-large {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--kheshig-navy) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .user-meta h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--kheshig-navy);
+        }
+        
+        .user-meta p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+        
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0;
+        }
+        
+        .dropdown-items {
+            padding: 0.5rem;
+        }
+        
+        .dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 8px !important;
+            text-decoration: none !important;
+            color: var(--kheshig-navy) !important;
+            font-size: 0.875rem !important;
+            font-weight: 500 !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer !important;
+            border: none !important;
+            background: none !important;
+            width: 100% !important;
+            text-align: left !important;
+            outline: none !important;
+            position: relative !important;
+            z-index: 10001 !important;
+            box-sizing: border-box !important;
+            pointer-events: auto !important;
+            user-select: none !important;
+        }
+        
+        .dropdown-item:hover {
+            background: var(--hover-background) !important;
+            color: var(--primary) !important;
+            transform: translateX(4px) !important;
+        }
+        
+        .dropdown-item:focus {
+            background: var(--hover-background) !important;
+            color: var(--primary) !important;
+            outline: 2px solid var(--primary) !important;
+            outline-offset: -2px !important;
+        }
+        
+        .dropdown-item:active {
+            background: var(--hover-background) !important;
+            transform: translateX(2px) !important;
+        }
+        
+        .dropdown-item.active {
+            background: rgba(var(--primary-rgb), 0.1) !important;
+            color: var(--primary) !important;
+            font-weight: 600 !important;
+        }
+        
+        .dropdown-item i {
+            width: 18px !important;
+            text-align: center !important;
+            font-size: 1rem !important;
+            color: inherit !important;
+            pointer-events: none !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .dropdown-item span {
+            flex: 1 !important;
+            pointer-events: none !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        
+        .dropdown-item.logout-item {
+            color: var(--danger) !important;
+        }
+        
+        .dropdown-item.logout-item:hover {
+            background: rgba(231, 76, 60, 0.1) !important;
+            color: var(--danger) !important;
+        }
+        
+        .dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: transparent;
+            display: none;
+        }
+        
+        .dropdown-overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dropdown Test</h1>
+    
+    <div class="user-profile-dropdown">
+        <div class="user-profile-trigger" onclick="toggleUserDropdown()">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-details">
+                <span class="username">deneme2</span>
+                <span class="user-role">Elite Haberleşme Uzmanı</span>
+            </div>
+            <div class="dropdown-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+        
+        <div class="user-dropdown-menu" id="userDropdownMenu">
+            <div class="dropdown-header">
+                <div class="user-info">
+                    <div class="user-avatar-large">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-meta">
+                        <h4>deneme2</h4>
+                        <p>deneme@gmail.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dropdown-divider"></div>
+            
+            <div class="dropdown-items">
+                <a href="/profile" class="dropdown-item" onclick="alert('Profil Ayarları tıklandı!')">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Profil Ayarları</span>
+                </a>
+                <a href="/dashboard" class="dropdown-item active" onclick="alert('Dashboard tıklandı!')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <button type="button" class="dropdown-item logout-item" onclick="alert('Çıkış Yap tıklandı!')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış Yap</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dropdown-overlay" onclick="closeUserDropdown()"></div>
+    
+    <script>
+        function toggleUserDropdown() {
+            console.log('Toggle dropdown çağrıldı');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            const trigger = document.querySelector('.user-profile-trigger');
+            const overlay = document.querySelector('.dropdown-overlay');
+            
+            if (dropdownMenu && trigger) {
+                const isOpen = dropdownMenu.classList.contains('show');
+                console.log('Dropdown durumu:', isOpen ? 'Açık' : 'Kapalı');
+                
+                if (isOpen) {
+                    closeUserDropdown();
+                } else {
+                    openUserDropdown();
+                }
+            }
+        }
+        
+        function openUserDropdown() {
+            console.log('Dropdown açılıyor...');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            const trigger = document.querySelector('.user-profile-trigger');
+            const overlay = document.querySelector('.dropdown-overlay');
+            
+            if (dropdownMenu && trigger) {
+                dropdownMenu.classList.add('show');
+                trigger.classList.add('active');
+                overlay.classList.add('show');
+            }
+        }
+        
+        function closeUserDropdown() {
+            console.log('Dropdown kapanıyor...');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            const trigger = document.querySelector('.user-profile-trigger');
+            const overlay = document.querySelector('.dropdown-overlay');
+            
+            if (dropdownMenu) {
+                dropdownMenu.classList.remove('show');
+            }
+            if (trigger) {
+                trigger.classList.remove('active');
+            }
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+        }
+        
+        // Test dropdown functionality on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Test sayfası yüklendi');
+            console.log('Dropdown elemanları:', {
+                menu: document.getElementById('userDropdownMenu'),
+                trigger: document.querySelector('.user-profile-trigger'),
+                items: document.querySelectorAll('.dropdown-item')
+            });
+        });
+    </script>
+</body>
+</html>

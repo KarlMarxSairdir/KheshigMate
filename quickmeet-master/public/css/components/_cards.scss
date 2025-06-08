@@ -63,7 +63,7 @@
 .card-header h3 {
     margin: 0 !important;
     font-size: 1.4rem !important;
-    color: var(--kheshig-navy) !important;
+    color: #2C3E50 !important;
     display: flex !important;
     align-items: center !important;
     gap: var(--space-md) !important;
@@ -188,14 +188,14 @@
 // Project info
 .project-info h3 {
     font-size: 1.4rem !important;
-    color: var(--kheshig-navy) !important;
+    color: #2C3E50 !important;
     margin-bottom: var(--space-sm) !important;
     font-weight: 700 !important;
     font-family: var(--font-serif) !important;
 }
 
 .project-info p {
-    color: var(--kheshig-sage) !important;
+    color: #95A5A6 !important;
     margin-bottom: var(--space-lg) !important;
     line-height: 1.5 !important;
     font-size: 0.9rem !important;
@@ -213,11 +213,11 @@
     align-items: center !important;
     gap: 0.25rem !important;
     font-size: 0.8rem !important;
-    color: var(--kheshig-sage) !important;
+    color: #95A5A6 !important;
 }
 
 .meta-item i {
-    color: var(--kheshig-bronze) !important;
+    color: #CD7F32 !important;
 }
 
 // Info rows
@@ -235,12 +235,12 @@
 
 .info-label {
     font-weight: 600 !important;
-    color: var(--kheshig-navy) !important;
+    color: #2C3E50 !important;
     font-size: 0.9rem !important;
 }
 
 .info-value {
-    color: var(--kheshig-sage) !important;
+    color: #95A5A6 !important;
     font-size: 0.9rem !important;
 }
 
@@ -355,4 +355,205 @@
     font-weight: 500 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
+}
+
+// Profile page specific styles
+.info-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--space-md) !important;
+}
+
+.info-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: var(--space-md) 0 !important;
+    border-bottom: 1px solid rgba(149, 165, 166, 0.1) !important;
+}
+
+.info-item:last-child {
+    border-bottom: none !important;
+}
+
+.info-label {
+    font-weight: 600 !important;
+    color: #2C3E50 !important;
+    font-size: 0.9rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.info-label i {
+    color: #CD7F32 !important;
+    width: 16px !important;
+}
+
+.info-value {
+    color: #95A5A6 !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+// Profile display areas
+.profile-display {
+    background: transparent !important;
+}
+
+// Skills grid
+.skills-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin-top: 1rem !important;
+}
+
+.skill-tag {
+    background: linear-gradient(135deg, #D4AF37 0%, #CD7F32 100%) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 20px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.skill-tag i {
+    font-size: 0.7rem !important;
+}
+
+// Empty state
+.empty-state {
+    text-align: center !important;
+    padding: 2rem !important;
+    color: #95A5A6 !important;
+}
+
+.empty-state i {
+    font-size: 2rem !important;
+    margin-bottom: 1rem !important;
+    color: #CD7F32 !important;
+}
+
+.empty-state p {
+    margin: 0.5rem 0 !important;
+    font-weight: 600 !important;
+    color: #2C3E50 !important;
+}
+
+.empty-state small {
+    font-size: 0.8rem !important;
+    color: #95A5A6 !important;
+}
+
+// Modern Card Base Style
+// Modern profile card styling
+.modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 2px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.modern-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #D4AF37 0%, #CD7F32 100%);
+}
+
+.modern-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    border-color: #D4AF37;
+}
+
+// Complete Modern card definition - Profile page compatibility
+.modern-card {
+    background: rgba(253, 246, 227, 0.95);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    border: 3px solid rgba(212, 175, 55, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.modern-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
+    border-color: var(--kheshig-gold);
+}
+
+// Dashboard grid for profile page
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+// Modern buttons
+.modern-primary-btn {
+    background: var(--gradient-gold);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.modern-primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+}
+
+.modern-secondary-btn {
+    background: rgba(149, 165, 166, 0.1);
+    border: 2px solid var(--kheshig-sage);
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    color: var(--kheshig-navy);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.modern-secondary-btn:hover {
+    background: var(--kheshig-sage);
+    color: white;
+    transform: translateY(-2px);
+}
+
+// Edit buttons
+.edit-btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
 }

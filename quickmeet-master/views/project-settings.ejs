@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">    <title>KheshigMate - Proje Ayarları</title>
     <meta name="description" content="KheshigMate Orta Asya Proje Yönetimi - Proje Ayarları">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/style.css?v=5.0.0">
+    <link rel="stylesheet" href="/css/style.css?v=6.0.0">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
 </head>
 
@@ -24,20 +24,53 @@
                     <i class="fas fa-cog"></i>
                     <span><%= project.name %> Ayarları</span>
                 </div>
-            </div>
-            <div class="header-right">
-                <div class="user-profile">
-                    <div class="user-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>                    <div class="user-details">
-                        <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
-                        <span class="user-role">Elite Proje Sahibi</span>
+            </div>            <div class="header-right">
+                <!-- User Profile Dropdown -->
+                <div class="user-profile-dropdown">
+                    <div class="user-profile-trigger" id="userProfileTrigger">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
+                            <span class="user-role">Elite Proje Sahibi</span>
+                        </div>
+                        <div class="dropdown-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Dropdown Menu -->
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="dropdown-header">
+                            <div class="user-info">
+                                <div class="user-avatar-large">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="user-meta">
+                                    <h4><%= user ? user.username : 'Kheshig Üyesi' %></h4>
+                                    <p><%= user ? user.email : 'email@example.com' %></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                          <div class="dropdown-items">
+                            <a href="/profile" class="dropdown-item">
+                                <i class="fas fa-user-cog"></i>
+                                <span>Profil Ayarları</span>
+                            </a>
+                            <a href="/dashboard" class="dropdown-item">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <button type="button" class="dropdown-item logout-item" id="logoutButton">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Çıkış Yap</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <button id="logout-btn" class="modern-logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Çıkış</span>
-                </button>
             </div>
         </div>
     </header>
@@ -314,11 +347,13 @@
                     window.location.href = '/';
                 } else {
                     console.error('Logout failed');
-                }
-            } catch (error) {
+                }        } catch (error) {
                 console.error('Logout error:', error);
             }
         });
     </script>
+    
+    <!-- Dashboard.js for dropdown functionality -->
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>

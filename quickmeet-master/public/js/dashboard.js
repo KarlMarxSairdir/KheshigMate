@@ -1,34 +1,57 @@
 // Dashboard.js - Proje yönetimi
 
+// Global variables
+var projectList, projectListLoading, projectListEmpty;
+var usernameDisplay, logoutBtn, createProjectForm, refreshProjectsBtn;
+var deleteModal, confirmDeleteBtn, cancelDeleteBtn, closeModalBtn;
+var currentDeleteId = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard script loaded');
     
-    // DOM elementleri - Debugging ile
-    var usernameDisplay = document.getElementById('username-display');
-    var logoutBtn = document.getElementById('logout-btn');
-    var createProjectForm = document.getElementById('create-project-form');
-    var projectList = document.getElementById('project-list');
-    var projectListLoading = document.getElementById('project-list-loading');
-    var projectListEmpty = document.getElementById('project-list-empty');
-    var refreshProjectsBtn = document.getElementById('refresh-projects');
-    
-    // Modal elementleri
-    var deleteModal = document.getElementById('delete-modal');
-    var confirmDeleteBtn = document.getElementById('confirm-delete');
-    var cancelDeleteBtn = document.getElementById('cancel-delete');
-    var closeModalBtn = deleteModal ? deleteModal.querySelector('.close') : null;
-
-    var currentDeleteId = null;
+    // DOM elementleri - Safe initialization
+    try {        usernameDisplay = document.getElementById('username-display');
+        logoutBtn = document.getElementById('logoutButton');
+        createProjectForm = document.getElementById('create-project-form');
+        projectList = document.getElementById('project-list');
+        projectListLoading = document.getElementById('project-list-loading');
+        projectListEmpty = document.getElementById('project-list-empty');
+        refreshProjectsBtn = document.getElementById('refresh-projects');
+        
+        console.log('📋 DOM Elements found:', {
+            projectList: !!projectList,
+            projectListLoading: !!projectListLoading,
+            projectListEmpty: !!projectListEmpty,
+            createProjectForm: !!createProjectForm
+        });
+        
+        // Modal elementleri
+        deleteModal = document.getElementById('delete-modal');
+        confirmDeleteBtn = document.getElementById('confirm-delete');
+        cancelDeleteBtn = document.getElementById('cancel-delete');
+        closeModalBtn = deleteModal ? deleteModal.querySelector('.close') : null;
+    } catch (error) {
+        console.error('❌ Error finding DOM elements:', error);
+    }
     
     // Element kontrolü
     console.log('🔍 Element check:');
     console.log('- logoutBtn:', logoutBtn);
-    console.log('- deleteModal:', deleteModal);
-    console.log('- confirmDeleteBtn:', confirmDeleteBtn);
+    console.log('- deleteModal:', deleteModal);    console.log('- confirmDeleteBtn:', confirmDeleteBtn);
     console.log('- projectList:', projectList);
 
+    // Sayfa kontrolü - dashboard sayfasında mı?
+    var isDashboardPage = document.getElementById('project-list') !== null;
+    console.log('📄 Page check - isDashboardPage:', isDashboardPage);
+
     // Sayfa yüklendiğinde auth kontrolü ve verileri yükle
-    init();    function init() {
+    // Sadece dashboard sayfasında project load işlemi yap
+    if (isDashboardPage) {
+        init();
+    } else {
+        // Diğer sayfalarda sadece auth check yap
+        checkAuth();
+    }function init() {
         checkAuth().then(function() {
             // Server-side render edilen projeler varsa, onları korumak için
             // sadece boş liste durumunda client-side yükleme yap
@@ -121,29 +144,34 @@ document.addEventListener('DOMContentLoaded', function() {
     window.onclick = function(event) {
         if (event.target === deleteModal) {
             closeModal();
-        }
-    };    // Çıkış işlemi
-    function logout() {
-        console.log('🚪 Logout function called');
-        // Sunucudaki /logout (POST) endpoint'ine istek gönder
-        fetch('/logout', { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-        }).then(function(response) {
-            console.log('📡 Logout response:', response.status);
-            // Başarılı çıkış veya hata durumunda da temizle ve yönlendir
-            localStorage.clear();
-            window.location.href = '/';
-        }).catch(function(error) {
-            console.error('❌ Logout error:', error);
-            // Hata olsa da localStorage'ı temizle ve yönlendir
-            localStorage.clear();
-            window.location.href = '/';
-        });
-    }    // Proje oluşturma
+        }    };
+
+// Çıkış işlemi - Global function
+function logout() {
+    console.log('🚪 Logout function called');
+    closeUserDropdown(); // Close dropdown first
+    
+    // Sunucudaki /logout (POST) endpoint'ine istek gönder
+    fetch('/logout', { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+    }).then(function(response) {
+        console.log('📡 Logout response:', response.status);
+        // Başarılı çıkış veya hata durumunda da temizle ve yönlendir
+        localStorage.clear();
+        window.location.href = '/';
+    }).catch(function(error) {
+        console.error('❌ Logout error:', error);
+        // Hata olsa da localStorage'ı temizle ve yönlendir
+        localStorage.clear();
+        window.location.href = '/';
+    });
+}
+
+    // Proje oluşturma
     function createProject(e) {
         e.preventDefault();
         
@@ -248,8 +276,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }    // Projeleri görüntüle
     function displayProjects(projects) {
-        if (!projectList || !projectListEmpty) {
-            console.error("projectList or projectListEmpty element not found in displayProjects");
+        // Element kontrolü - sadece dashboard sayfasında mevcut
+        if (!projectList) {
+            console.warn("⚠️ projectList element not found - likely not on dashboard page");
+            return;
+        }
+        
+        if (!projectListEmpty) {
+            console.warn("⚠️ projectListEmpty element not found - likely not on dashboard page");
             return;
         }
 
@@ -261,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         projectListEmpty.style.display = 'none';
-        projectList.style.display = 'block';        // Kullanıcı ID'sini global değişkenden al (server-side'dan gelir)
+        projectList.style.display = 'block';// Kullanıcı ID'sini global değişkenden al (server-side'dan gelir)
         var currentUserId = window.CURRENT_USER_ID || localStorage.getItem('userId');
         console.log('🔍 Current user ID:', currentUserId);
         console.log('🔍 Available global vars:', { 
@@ -508,4 +542,337 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // loadProjects fonksiyonunu global yap (refresh butonu için)
     window.loadProjects = loadProjects;
+});
+
+// =============================================================================
+// USER DROPDOWN FUNCTIONALITY
+// =============================================================================
+
+// Global function for dropdown toggle - Cleanup version
+function toggleUserDropdown() {
+    console.log('🔄 Toggling user dropdown...');
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    const trigger = document.querySelector('.user-profile-trigger');
+    
+    if (dropdownMenu && trigger) {
+        const isOpen = dropdownMenu.classList.contains('show');
+        console.log('📊 Current state:', isOpen ? 'Open' : 'Closed');
+        
+        if (isOpen) {
+            closeUserDropdown();
+        } else {
+            openUserDropdown();
+        }
+    } else {
+        console.error('❌ Dropdown elements not found in toggle');
+    }
+}
+
+function openUserDropdown() {
+    console.log('📂 Opening user dropdown...');
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    const trigger = document.querySelector('.user-profile-trigger');
+    const overlay = document.querySelector('.dropdown-overlay') || createDropdownOverlay();
+    
+    if (dropdownMenu && trigger) {
+        dropdownMenu.classList.add('show');
+        trigger.classList.add('active');
+        overlay.classList.add('show');
+        
+        // Ensure all dropdown items are clickable
+        const items = dropdownMenu.querySelectorAll('.dropdown-item');
+        items.forEach(item => {
+            item.style.pointerEvents = 'auto';
+            item.style.cursor = 'pointer';
+        });
+        
+        // Focus first item for accessibility
+        const firstItem = dropdownMenu.querySelector('.dropdown-item');
+        if (firstItem) {
+            setTimeout(() => firstItem.focus(), 100);
+        }
+        
+        console.log('✅ Dropdown opened successfully');
+    } else {
+        console.error('❌ Dropdown elements not found');
+    }
+}
+
+function closeUserDropdown() {
+    console.log('📁 Closing user dropdown...');
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    const trigger = document.querySelector('.user-profile-trigger');
+    const overlay = document.querySelector('.dropdown-overlay');
+    
+    if (dropdownMenu) {
+        dropdownMenu.classList.remove('show');
+    }
+    if (trigger) {
+        trigger.classList.remove('active');
+    }
+    if (overlay) {
+        overlay.classList.remove('show');
+    }
+    
+    console.log('✅ Dropdown closed successfully');
+}
+
+function createDropdownOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'dropdown-overlay';
+    overlay.addEventListener('click', closeUserDropdown);
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// Close dropdown when pressing Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeUserDropdown();
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.querySelector('.user-profile-dropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        closeUserDropdown();
+    }
+});
+
+// Prevent dropdown from closing when clicking inside, but allow item clicks
+document.addEventListener('click', function(e) {
+    const dropdownMenu = e.target.closest('.user-dropdown-menu');
+    const dropdownItem = e.target.closest('.dropdown-item');
+    
+    if (dropdownMenu && !dropdownItem) {
+        e.stopPropagation();
+    }
+    
+    // If clicking on a link item, allow navigation and close dropdown
+    if (dropdownItem && dropdownItem.tagName === 'A') {
+        closeUserDropdown();
+    }
+    
+    // If clicking on logout button, execute logout and close dropdown
+    if (dropdownItem && dropdownItem.classList.contains('logout-item')) {
+        closeUserDropdown();
+    }
+});
+
+// Initialize dropdown on page load - Clean version
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Initializing dropdown functionality...');
+    
+    // Create overlay element only once
+    if (!document.querySelector('.dropdown-overlay')) {
+        createDropdownOverlay();
+    }
+    
+    // Setup trigger button with debounce
+    const trigger = document.getElementById('userProfileTrigger');
+    if (trigger) {
+        console.log('✅ Trigger button found, adding event listener');
+        
+        // Remove existing listeners first
+        trigger.removeEventListener('click', handleTriggerClick);
+        
+        // Add single event listener
+        trigger.addEventListener('click', handleTriggerClick);
+        
+        // Ensure visual feedback
+        trigger.style.cursor = 'pointer';
+    } else {
+        console.error('❌ Trigger button NOT found');
+    }
+    
+    // Setup logout button
+    const logoutBtn = document.getElementById('logoutButton');
+    if (logoutBtn) {
+        console.log('✅ Logout button found, adding event listener');
+        
+        // Remove existing listeners first
+        logoutBtn.removeEventListener('click', handleLogoutClick);
+        
+        // Add single event listener
+        logoutBtn.addEventListener('click', handleLogoutClick);
+        
+        // Ensure visual feedback
+        logoutBtn.style.cursor = 'pointer';
+    } else {
+        console.error('❌ Logout button NOT found');
+    }
+    
+    // Setup all dropdown items
+    const dropdownItems = document.querySelectorAll('.dropdown-item');
+    dropdownItems.forEach((item, index) => {
+        console.log(`📝 Setting up item ${index}:`, item.textContent?.trim());
+        
+        // Ensure item is clickable
+        item.style.pointerEvents = 'auto';
+        item.style.cursor = 'pointer';
+        item.setAttribute('tabindex', '0');
+        
+        // Add keyboard navigation
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextItem = dropdownItems[index + 1];
+                if (nextItem) nextItem.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevItem = dropdownItems[index - 1];
+                if (prevItem) prevItem.focus();
+            }
+        });
+    });
+    
+    console.log('✅ Dropdown initialization complete');
+    console.log('📊 Found elements:', {
+        trigger: !!trigger,
+        logoutBtn: !!logoutBtn,
+        dropdownItems: dropdownItems.length
+    });
+});
+
+// Separate event handlers to prevent multiple attachments
+function handleTriggerClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🖱️ Trigger clicked');
+    toggleUserDropdown();
+}
+
+function handleLogoutClick(e) {
+    console.log('🚪 Logout button clicked');
+    e.preventDefault();
+    e.stopPropagation();
+    logout();
+}
+
+// ===========================================
+// USER DROPDOWN FUNCTIONALITY
+// ===========================================
+
+// Global dropdown variables
+var userDropdownMenu;
+var isDropdownOpen = false;
+
+// Initialize dropdown after DOM is loaded
+function initializeDropdown() {
+    console.log('🔄 Initializing dropdown functionality...');
+    
+    // Get dropdown elements
+    var userProfileTrigger = document.getElementById('userProfileTrigger');
+    userDropdownMenu = document.getElementById('userDropdownMenu');
+    var logoutButton = document.getElementById('logoutButton');
+    
+    console.log('🔍 Dropdown elements found:', {
+        trigger: !!userProfileTrigger,
+        menu: !!userDropdownMenu,
+        logoutButton: !!logoutButton
+    });
+    
+    // Attach trigger event
+    if (userProfileTrigger) {
+        userProfileTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Profile trigger clicked');
+            toggleUserDropdown();
+        });
+        
+        // Hover events
+        userProfileTrigger.addEventListener('mouseenter', function() {
+            if (!isDropdownOpen) {
+                openUserDropdown();
+            }
+        });
+    }
+    
+    // Attach logout event
+    if (logoutButton) {
+        logoutButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🚪 Logout clicked');
+            logout();
+        });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (isDropdownOpen && userDropdownMenu && !userDropdownMenu.contains(e.target) && !userProfileTrigger.contains(e.target)) {
+            closeUserDropdown();
+        }
+    });
+    
+    // Escape key to close
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && isDropdownOpen) {
+            closeUserDropdown();
+        }
+    });
+    
+    console.log('✅ Dropdown initialization complete');
+}
+
+// Toggle dropdown visibility
+function toggleUserDropdown() {
+    console.log('🔄 Toggle dropdown - Current state:', isDropdownOpen);
+    
+    if (isDropdownOpen) {
+        closeUserDropdown();
+    } else {
+        openUserDropdown();
+    }
+}
+
+// Open dropdown
+function openUserDropdown() {
+    console.log('📂 Opening user dropdown');
+    
+    if (!userDropdownMenu) {
+        console.error('❌ Dropdown menu element not found');
+        return;
+    }
+    
+    userDropdownMenu.style.display = 'block';
+    userDropdownMenu.classList.add('show');
+    isDropdownOpen = true;
+    
+    // Add accessibility
+    userDropdownMenu.setAttribute('aria-hidden', 'false');
+    
+    console.log('✅ Dropdown opened');
+}
+
+// Close dropdown
+function closeUserDropdown() {
+    console.log('📁 Closing user dropdown');
+    
+    if (!userDropdownMenu) {
+        console.error('❌ Dropdown menu element not found');
+        return;
+    }
+    
+    userDropdownMenu.style.display = 'none';
+    userDropdownMenu.classList.remove('show');
+    isDropdownOpen = false;
+    
+    // Add accessibility
+    userDropdownMenu.setAttribute('aria-hidden', 'true');
+    
+    console.log('✅ Dropdown closed');
+}
+
+// Enhanced DOMContentLoaded - include dropdown initialization
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Enhanced Dashboard script loaded');
+    
+    // Initialize dropdown functionality
+    setTimeout(initializeDropdown, 100); // Small delay to ensure DOM is ready
 });

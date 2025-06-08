@@ -27,6 +27,7 @@
 @import 'components/forms';
 @import 'components/cards';
 @import 'components/navbar';
+@import 'components/user-dropdown';
 
 // =============================================================================
 // PAGE-SPECIFIC STYLES (Dashboard, Room, Auth, Landing, Settings)
@@ -34,6 +35,7 @@
 @import 'pages/landing';
 @import 'pages/login-register';
 @import 'pages/dashboard';
+@import 'pages/profile';
 @import 'pages/room';
 @import 'pages/project-settings';
 
