@@ -103,29 +103,25 @@ class BPMNWorkflowManager {
         document.getElementById('toggle-diagram-list')?.addEventListener('click', () => {
             this.toggleDiagramList();
         });
-    }
-
-    setupSocketListeners() {
+    }    setupSocketListeners() {
         if (!this.socket) return;
 
         // Listen for real-time diagram changes
-        this.socket.on('bpmn-diagram-updated', (data) => {
-            if (data.diagramId === this.currentDiagram?.id && data.userId !== this.userId) {
+        this.socket.on('bpmn:diagram-changed', (data) => {
+            if (data.diagramId === this.currentDiagram?._id && data.changedBy?.userId !== this.userId) {
                 this.handleRemoteDiagramUpdate(data);
             }
         });
 
         // Listen for collaboration events
-        this.socket.on('bpmn-user-joined', (data) => {
-            this.addCollaborationIndicator(data.user);
+        this.socket.on('bpmn:user-joined', (data) => {
+            this.addCollaborationIndicator(data);
         });
 
-        this.socket.on('bpmn-user-left', (data) => {
+        this.socket.on('bpmn:user-left', (data) => {
             this.removeCollaborationIndicator(data.userId);
         });
-    }
-
-    async createNewDiagram() {
+    }async createNewDiagram() {
         const title = prompt('Diyagram başlığı girin:');
         if (!title) return;
 
@@ -134,13 +130,12 @@ class BPMNWorkflowManager {
         try {
             this.updateStatus('Yeni diyagram oluşturuluyor...');
             
-            const response = await fetch('/api/bpmn-diagrams', {
+            const response = await fetch(`/projects/${this.projectId}/bpmn`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    projectId: this.projectId,
                     title: title,
                     description: description,
                     xmlData: this.defaultXML
@@ -149,30 +144,21 @@ class BPMNWorkflowManager {
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const newDiagram = await response.json();
+            }            const newDiagram = await response.json();
             this.currentDiagram = newDiagram;
             
             await this.modeler.importXML(this.defaultXML);
             await this.loadDiagramList();
-            
-            this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
+              this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
             this.enableSaveButton();
-            
-            // Join diagram room for collaboration
-            this.socket?.emit('join-bpmn-diagram', {
-                diagramId: newDiagram.id,
-                projectId: this.projectId
-            });
+              // Join diagram room for collaboration
+            this.socket?.emit('bpmn:join-diagram', newDiagram._id, this.projectId);
             
         } catch (error) {
             console.error('Error creating new diagram:', error);
             this.updateStatus('Diyagram oluşturulamadı: ' + error.message, 'error');
         }
-    }
-
-    async saveDiagram() {
+    }    async saveDiagram() {
         if (!this.currentDiagram) {
             this.updateStatus('Kaydedilecek diyagram yok', 'error');
             return;
@@ -183,7 +169,7 @@ class BPMNWorkflowManager {
             
             const { xml } = await this.modeler.saveXML({ format: true });
             
-            const response = await fetch(`/api/bpmn-diagrams/${this.currentDiagram.id}`, {
+            const response = await fetch(`/projects/${this.projectId}/bpmn/${this.currentDiagram._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -202,24 +188,20 @@ class BPMNWorkflowManager {
             this.currentDiagram = updatedDiagram;
             
             this.updateStatus('Diyagram başarıyla kaydedildi');
-            
-            // Emit real-time update
-            this.socket?.emit('bpmn-diagram-update', {
-                diagramId: this.currentDiagram.id,
+              // Emit real-time update
+            this.socket?.emit('bpmn:diagram-changed', this.currentDiagram._id, xml, {
                 projectId: this.projectId,
-                xmlData: xml,
-                userId: this.userId
+                userId: this.userId,
+                version: this.currentDiagram.version || 1
             });
             
         } catch (error) {
             console.error('Error saving diagram:', error);
             this.updateStatus('Diyagram kaydedilemedi: ' + error.message, 'error');
         }
-    }
-
-    async loadDiagramList() {
+    }    async loadDiagramList() {
         try {
-            const response = await fetch(`/api/bpmn-diagrams?projectId=${this.projectId}`);
+            const response = await fetch(`/projects/${this.projectId}/bpmn`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -264,45 +246,38 @@ class BPMNWorkflowManager {
             `;
             listContainer.appendChild(diagramItem);
         });
-    }
-
-    async loadDiagram(diagramId) {
+    }    async loadDiagram(diagramId) {
         try {
             this.updateStatus('Diyagram yükleniyor...');
             
-            const response = await fetch(`/api/bpmn-diagrams/${diagramId}/xml`);
+            const response = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}/xml`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const diagram = await response.json();
-            this.currentDiagram = diagram;
+            const xmlData = await response.text(); // XML content as text
+            this.currentDiagram = { _id: diagramId, xmlData: xmlData };
             
-            await this.modeler.importXML(diagram.xmlData);
+            await this.modeler.importXML(xmlData);
             
-            this.updateStatus(`Diyagram yüklendi: ${diagram.title}`);
+            this.updateStatus(`Diyagram yüklendi`);
             this.enableSaveButton();
             this.enableExportButton();
             
             // Join diagram room for collaboration
-            this.socket?.emit('join-bpmn-diagram', {
-                diagramId: diagram._id,
-                projectId: this.projectId
-            });
+            this.socket?.emit('bpmn:join-diagram', diagramId, this.projectId);
             
         } catch (error) {
             console.error('Error loading diagram:', error);
             this.updateStatus('Diyagram yüklenemedi: ' + error.message, 'error');
         }
-    }
-
-    async deleteDiagram(diagramId) {
+    }    async deleteDiagram(diagramId) {
         if (!confirm('Bu diyagramı silmek istediğinizden emin misiniz?')) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/bpmn-diagrams/${diagramId}`, {
+            const response = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}`, {
                 method: 'DELETE'
             });
 
@@ -313,7 +288,7 @@ class BPMNWorkflowManager {
             await this.loadDiagramList();
             this.updateStatus('Diyagram silindi');
             
-            if (this.currentDiagram?.id === diagramId) {
+            if (this.currentDiagram?._id === diagramId) {
                 this.currentDiagram = null;
                 await this.modeler.importXML(this.defaultXML);
                 this.disableSaveButton();
