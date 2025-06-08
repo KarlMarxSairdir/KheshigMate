@@ -47,7 +47,9 @@ class BPMNWorkflowManager {
             console.error('BPMN initialization failed:', error);
             this.updateStatus('Editör başlatılamadı: ' + error.message, 'error');
         }
-    }    async initializeBPMNModeler() {
+    }
+    
+    async initializeBPMNModeler() {
         // Ana editör için canvas container'ı kullan
         const container = document.getElementById('bpmn-main-canvas');
         if (!container) {
@@ -139,7 +141,9 @@ class BPMNWorkflowManager {
                 console.warn('Could not access palette:', error);
             }
         }
-    }setupEventListeners() {
+    }
+    
+    setupEventListeners() {
         // Sidebar control panel buttons
         document.getElementById('open-bpmn-editor-btn')?.addEventListener('click', () => {
             this.openMainEditor();
@@ -195,12 +199,46 @@ class BPMNWorkflowManager {
 
         document.getElementById('export-diagram-btn')?.addEventListener('click', () => {
             this.exportDiagram();
-        });
-
-        document.getElementById('toggle-diagram-list')?.addEventListener('click', () => {
+        });        document.getElementById('toggle-diagram-list')?.addEventListener('click', () => {
             this.toggleDiagramList();
         });
-    }setupSocketListeners() {
+        
+        // BPMN Create Modal Event Listeners
+        document.getElementById('close-bpmn-create-modal')?.addEventListener('click', () => {
+            this.hideCreateDiagramModal();
+        });
+        
+        document.getElementById('cancel-bpmn-create-btn')?.addEventListener('click', () => {
+            this.hideCreateDiagramModal();
+        });
+        
+        document.getElementById('create-bpmn-diagram-btn')?.addEventListener('click', () => {
+            this.submitCreateDiagram();
+        });
+        
+        // Modal form Enter key handling
+        document.getElementById('bpmn-create-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitCreateDiagram();
+        });
+          // ESC key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('bpmn-create-modal');
+                if (modal && modal.style.display === 'flex') {
+                    this.hideCreateDiagramModal();
+                }
+            }
+        });
+          // Modal backdrop click to close
+        document.getElementById('bpmn-create-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'bpmn-create-modal') {
+                this.hideCreateDiagramModal();
+            }
+        });
+    }
+
+    setupSocketListeners() {
         if (!this.socket) return;
 
         // Listen for real-time diagram changes
@@ -218,21 +256,70 @@ class BPMNWorkflowManager {
         this.socket.on('bpmn:user-left', (data) => {
             this.removeCollaborationIndicator(data.userId);
         });
-    }    async createNewDiagram() {
-        // Kullanıcıdan diyagram bilgilerini al
-        const title = prompt('Diyagram başlığı girin:');
-        if (!title || title.trim() === '') {
-            this.updateStatus('Diyagram oluşturma iptal edildi');
+    }
+    
+    async createNewDiagram() {
+        // Modal'ı göster
+        this.showCreateDiagramModal();
+    }
+      showCreateDiagramModal() {
+        const modal = document.getElementById('bpmn-create-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            
+            // Form'u temizle
+            document.getElementById('bpmn-diagram-name').value = '';
+            document.getElementById('bpmn-diagram-description').value = '';
+            document.getElementById('bpmn-diagram-category').value = 'general';
+            
+            // Focus isim alanına
+            setTimeout(() => {
+                document.getElementById('bpmn-diagram-name').focus();
+            }, 100);
+        }
+    }
+    
+    hideCreateDiagramModal() {
+        const modal = document.getElementById('bpmn-create-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    async submitCreateDiagram() {
+        const nameInput = document.getElementById('bpmn-diagram-name');
+        const descriptionInput = document.getElementById('bpmn-diagram-description');
+        const categoryInput = document.getElementById('bpmn-diagram-category');
+        
+        const title = nameInput.value.trim();
+        if (!title) {
+            nameInput.focus();
+            this.updateStatus('Diyagram adı gereklidir', 'error');
             return;
         }
         
-        const description = prompt('Diyagram açıklaması (opsiyonel):') || '';
+        const description = descriptionInput.value.trim();
+        const category = categoryInput.value;
         
         try {
             this.updateStatus('Yeni diyagram oluşturuluyor...');
+            this.hideCreateDiagramModal();
             
-            // Yeni diyagram için varsayılan XML
-            const defaultXML = '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="true" /></bpmn:definitions>';
+            // Yeni diyagram için complete ve geçerli XML
+            const processId = `Process_${Date.now()}`;
+            const newDiagramXML = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_${Date.now()}" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js" exporterVersion="17.7.1">
+  <bpmn:process id="${processId}" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${processId}">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="79" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
             
             // Diyagramı veritabanına kaydet
             const response = await fetch(`/projects/${this.projectId}/bpmn`, {
@@ -241,9 +328,10 @@ class BPMNWorkflowManager {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim(),
-                    xmlData: defaultXML
+                    title: title,
+                    description: description,
+                    category: category,
+                    xmlData: newDiagramXML
                 })
             });
 
@@ -257,12 +345,35 @@ class BPMNWorkflowManager {
             // Ana editörü aç
             this.openMainEditor();
             
-            // Varsayılan XML'i yükle
-            await this.modeler.importXML(defaultXML);
+            // Düzgün XML'i yükle
+            setTimeout(async () => {
+                try {
+                    const result = await this.modeler.importXML(newDiagramXML);
+                    console.log('New diagram XML imported successfully:', result);
+                    
+                    // Canvas'ı yeniden düzenle
+                    setTimeout(() => {
+                        this.resizeCanvas();
+                        this.forcePaletteVisibility();
+                        
+                        // Zoom to fit
+                        if (this.modeler.get) {
+                            const canvas = this.modeler.get('canvas');
+                            if (canvas && canvas.zoom) {
+                                canvas.zoom('fit-viewport');
+                            }
+                        }
+                    }, 300);
+                    
+                } catch (xmlError) {
+                    console.error('Error importing new diagram XML:', xmlError);
+                    this.updateStatus('XML yükleme hatası: ' + xmlError.message, 'error');
+                }
+            }, 500);
             
             this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
             this.disableSaveButton(); // Zaten kaydedildi
-            this.disableExportButton(); // Henüz düzenlenmedi
+            this.enableExportButton(); // Export edilebilir
             this.updateMainEditorButtons();
             
             // Diyagram listesini yenile
@@ -272,7 +383,9 @@ class BPMNWorkflowManager {
             console.error('Error creating new diagram:', error);
             this.updateStatus('Diyagram oluşturulamadı: ' + error.message, 'error');
         }
-    }    async saveDiagram() {
+    }
+    
+    async saveDiagram() {
         try {
             this.updateStatus('Diyagram kaydediliyor...');
             
@@ -318,7 +431,9 @@ class BPMNWorkflowManager {
             console.error('Error saving diagram:', error);
             this.updateStatus('Diyagram kaydedilemedi: ' + error.message, 'error');
         }
-    }async loadDiagramList() {
+    }
+    
+    async loadDiagramList() {
         try {
             const response = await fetch(`/projects/${this.projectId}/bpmn`);
             if (!response.ok) {
@@ -365,7 +480,9 @@ class BPMNWorkflowManager {
             `;
             listContainer.appendChild(diagramItem);
         });
-    }    async loadDiagram(diagramId) {
+    }
+    
+    async loadDiagram(diagramId) {
         try {
             this.updateStatus('Diyagram yükleniyor...');
             
@@ -386,7 +503,26 @@ class BPMNWorkflowManager {
 
             const xmlData = await xmlResponse.text();
             
-            await this.modeler.importXML(xmlData);
+            // XML'i import et - error handling ile
+            try {
+                const result = await this.modeler.importXML(xmlData);
+                console.log('Diagram loaded successfully:', result);
+                
+                // Canvas'ı yeniden düzenle
+                setTimeout(() => {
+                    this.resizeCanvas();
+                    this.forcePaletteVisibility();
+                }, 300);
+                
+            } catch (xmlError) {
+                console.error('XML import error:', xmlError);
+                
+                // Eğer XML invalid ise, default XML ile yeniden dene
+                console.warn('Invalid XML detected, falling back to default...');
+                await this.modeler.importXML(this.defaultXML);
+                
+                this.updateStatus('Diyagram XML hatası nedeniyle varsayılan şablonla açıldı', 'warning');
+            }
             
             this.updateStatus(`Diyagram yüklendi: ${diagramData.title}`);
             this.disableSaveButton(); // Yükleme sonrası kaydetme butonu deaktif
@@ -406,7 +542,9 @@ class BPMNWorkflowManager {
             console.error('Error loading diagram:', error);
             this.updateStatus('Diyagram yüklenemedi: ' + error.message, 'error');
         }
-    }async deleteDiagram(diagramId) {
+    }
+    
+    async deleteDiagram(diagramId) {
         if (!confirm('Bu diyagramı silmek istediğinizden emin misiniz?')) {
             return;
         }
@@ -465,7 +603,9 @@ class BPMNWorkflowManager {
             console.error('Error exporting diagram:', error);
             this.updateStatus('Diyagram dışa aktarılamadı: ' + error.message, 'error');
         }
-    }    handleDiagramChange() {
+    }
+    
+    handleDiagramChange() {
         if (this.currentDiagram) {
             this.enableSaveButton();
             this.enableExportButton();
@@ -507,7 +647,9 @@ class BPMNWorkflowManager {
             statusElement.className = `status-text ${type}`;
         }
         console.log(`[BPMN Status] ${message}`);
-    }    enableSaveButton() {
+    }
+    
+    enableSaveButton() {
         const saveBtn = document.getElementById('save-diagram-btn');
         const mainSaveBtn = document.getElementById('save-main-diagram-btn');
         if (saveBtn) {
@@ -568,14 +710,43 @@ class BPMNWorkflowManager {
         `;
         
         indicatorsContainer.appendChild(indicator);
-    }    removeCollaborationIndicator(userId) {
+    }
+    
+    removeCollaborationIndicator(userId) {
         const indicator = document.getElementById(`collab-${userId}`);
         if (indicator) {
             indicator.remove();
         }
+    }    // ==================== CANVAS CONTROLS ====================
+    
+    resetModeler() {
+        try {
+            if (this.modeler) {
+                // Modeler'ı temizle
+                this.modeler.clear();
+                console.log('BPMN modeler cleared');
+                
+                // Default XML'i import et
+                setTimeout(async () => {
+                    try {
+                        await this.modeler.importXML(this.defaultXML);
+                        console.log('Default XML imported after reset');
+                        
+                        // Canvas ve palette'i yeniden ayarla
+                        setTimeout(() => {
+                            this.resizeCanvas();
+                            this.forcePaletteVisibility();
+                        }, 200);
+                        
+                    } catch (error) {
+                        console.error('Error importing default XML after reset:', error);
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error resetting modeler:', error);
+        }
     }
-
-    // ==================== CANVAS CONTROLS ====================
     
     resizeCanvas() {
         if (this.modeler && this.modeler.get) {
@@ -590,7 +761,8 @@ class BPMNWorkflowManager {
             }
         }
     }
-      ensurePaletteVisible() {
+    
+    ensurePaletteVisible() {
         if (this.modeler && this.modeler.get) {
             try {
                 const palette = this.modeler.get('palette');
@@ -657,7 +829,8 @@ class BPMNWorkflowManager {
     }
     
     // ==================== MAIN EDITOR CONTROLS ====================
-      openMainEditor() {
+    
+    openMainEditor() {
         const mainEditor = document.getElementById('bpmn-main-editor');
         if (mainEditor) {
             mainEditor.style.display = 'block';
