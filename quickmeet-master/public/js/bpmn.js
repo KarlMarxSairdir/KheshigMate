@@ -312,12 +312,18 @@ class BPMNWorkflowManager {    constructor() {
         const modal = document.getElementById('bpmn-create-modal');
         if (modal) {
             modal.style.display = 'none';
-        }
-    }
+        }    }
     
     // ==================== EDIT DIAGRAM MODAL FUNCTIONS ====================
-    
     async editDiagram(diagramId) {
+        console.log('🎯 editDiagram called with diagramId:', diagramId);
+        
+        if (!diagramId) {
+            console.error('❌ No diagram ID provided to editDiagram');
+            this.updateStatus('Diyagram ID bulunamadı', 'error');
+            return;
+        }
+        
         try {
             // Diyagram bilgilerini getir
             const response = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}`);
@@ -326,15 +332,16 @@ class BPMNWorkflowManager {    constructor() {
             }
             
             const diagram = await response.json();
+            console.log('📊 Received diagram data:', diagram);
             this.showEditDiagramModal(diagram);
-            
-        } catch (error) {
+              } catch (error) {
             console.error('Error loading diagram for edit:', error);
             this.updateStatus('Diyagram düzenleme için yüklenemedi: ' + error.message, 'error');
         }
     }
     
     showEditDiagramModal(diagram) {
+        console.log('🔧 showEditDiagramModal called with diagram:', diagram);
         const modal = document.getElementById('bpmn-edit-modal');
         if (modal) {
             modal.style.display = 'flex';
@@ -346,6 +353,7 @@ class BPMNWorkflowManager {    constructor() {
             
             // Düzenlenen diyagram ID'sini sakla
             this.editingDiagramId = diagram._id;
+            console.log('💾 editingDiagramId set to:', this.editingDiagramId);
             
             // Focus isim alanına
             setTimeout(() => {
@@ -359,10 +367,11 @@ class BPMNWorkflowManager {    constructor() {
         if (modal) {
             modal.style.display = 'none';
             this.editingDiagramId = null;
-        }
-    }
+        }    }
     
     async submitEditDiagram() {
+        console.log('🚀 submitEditDiagram called, editingDiagramId:', this.editingDiagramId);
+        
         const nameInput = document.getElementById('bpmn-edit-diagram-name');
         const descriptionInput = document.getElementById('bpmn-edit-diagram-description');
         const categoryInput = document.getElementById('bpmn-edit-diagram-category');
@@ -378,16 +387,20 @@ class BPMNWorkflowManager {    constructor() {
         const category = categoryInput.value;
         
         if (!this.editingDiagramId) {
+            console.error('❌ editingDiagramId is null or undefined');
             this.updateStatus('Düzenlenecek diyagram ID bulunamadı', 'error');
             return;
         }
         
-        try {
+        console.log('📝 Update data:', { title, description, category, editingDiagramId: this.editingDiagramId });
+          try {
             this.updateStatus('Diyagram güncelleniyor...');
-            this.hideEditDiagramModal();
             
             // Diyagram metadata'sını güncelle
-            const response = await fetch(`/projects/${this.projectId}/bpmn/${this.editingDiagramId}/metadata`, {
+            const url = `/projects/${this.projectId}/bpmn/${this.editingDiagramId}/metadata`;
+            console.log('🌐 API URL:', url);
+            
+            const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -410,8 +423,10 @@ class BPMNWorkflowManager {    constructor() {
                 this.currentDiagram = updatedDiagram;
                 this.updateMainEditorButtons();
             }
+              this.updateStatus(`Diyagram güncellendi: ${title}`);
             
-            this.updateStatus(`Diyagram güncellendi: ${title}`);
+            // Modal'ı kapat ve ID'yi temizle
+            this.hideEditDiagramModal();
             
             // Diyagram listesini yenile
             await this.loadDiagramList();

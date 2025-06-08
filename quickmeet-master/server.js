@@ -1144,15 +1144,34 @@ app.put('/projects/:projectId/bpmn/:diagramId/metadata', ensureAuthenticated, as
         const { projectId, diagramId } = req.params;
         const { title, description, category } = req.body;
         
-        console.log('📝 BPMN metadata update request:', { title, description, category });
+        console.log('📝 BPMN metadata update request:', { 
+            projectId, 
+            diagramId, 
+            title, 
+            description, 
+            category,
+            userId: req.user._id 
+        });
+        
+        // Validate diagram ID
+        if (!diagramId || diagramId === 'null' || diagramId === 'undefined') {
+            console.error('❌ Invalid diagram ID received:', diagramId);
+            return res.status(400).json({ error: 'Geçersiz diyagram ID' });
+        }
         
         // Diyagram ve proje erişim kontrolü
         const diagram = await BPMNDiagram.findById(diagramId);
         if (!diagram || diagram.project.toString() !== projectId) {
+            console.error('❌ Diagram not found or project mismatch:', { diagramId, projectId });
             return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
         }
         
         const project = await Project.findById(projectId);
+        if (!project) {
+            console.error('❌ Project not found:', projectId);
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
         const isOwner = project.owner.toString() === req.user._id.toString();
         const isMember = project.members.some(member => 
             member.user.toString() === req.user._id.toString()
