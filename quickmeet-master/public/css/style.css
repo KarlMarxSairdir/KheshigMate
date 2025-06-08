@@ -2518,23 +2518,57 @@ navbar .logo {
   position: relative;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette {
-  background: var(--background-secondary) !important;
-  border: 1px solid var(--border-primary) !important;
-  border-radius: var(--border-radius-md) !important;
-  box-shadow: var(--shadow-lg) !important;
-  z-index: 100 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: absolute !important;
+  top: 20px !important;
+  left: 20px !important;
+  background: #ffffff !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  z-index: 1000 !important;
+  width: auto !important;
+  min-width: 48px !important;
+  max-width: none !important;
+  height: auto !important;
+}
+.bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette.open {
+  display: block !important;
+}
+.bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette .djs-palette-entries {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette .djs-palette-entries .entry {
-  border-radius: var(--border-radius-sm) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  border-radius: 2px !important;
   transition: all 0.2s ease !important;
+  margin: 2px !important;
+  padding: 8px !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  width: 32px !important;
+  height: 32px !important;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette .djs-palette-entries .entry:hover {
-  background: var(--background-hover) !important;
+  background: #f5f5f5 !important;
+  border-color: #ccc !important;
   transform: scale(1.05) !important;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette .djs-palette-entries .entry.highlighted {
-  background: var(--kheshig-gold) !important;
-  color: var(--kheshig-navy) !important;
+  background: var(--kheshig-gold, #ffd700) !important;
+  color: var(--kheshig-navy, #2c3e50) !important;
+}
+.bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-palette .djs-palette-entries .entry::before {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .djs-context-pad .djs-context-pad-group {
   background: var(--background-secondary) !important;
@@ -2555,6 +2589,16 @@ navbar .logo {
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .bjs-container {
   height: 100% !important;
   width: 100% !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas .viewport {
+  height: 100% !important;
+  width: 100% !important;
+}
+.bpmn-main-editor .bpmn-editor-overlay .bpmn-main-canvas-container .bpmn-main-canvas svg {
+  width: 100% !important;
+  height: 100% !important;
 }
 .bpmn-main-editor .bpmn-editor-overlay .bpmn-main-status {
   display: flex;

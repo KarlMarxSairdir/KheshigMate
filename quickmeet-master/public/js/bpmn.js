@@ -56,31 +56,40 @@ class BPMNWorkflowManager {
             if (!fallbackContainer) {
                 throw new Error('BPMN canvas container not found');
             }
-            // Initialize with fallback container
+            // Initialize with fallback container - BpmnJS is the full modeler with palette
             this.modeler = new BpmnJS({
                 container: fallbackContainer,
-                width: '100%',
-                height: '100%',
                 keyboard: {
                     bindTo: window
                 }
             });
         } else {
-            // Initialize with main container
+            // Initialize with main container - BpmnJS is the full modeler with palette
             this.modeler = new BpmnJS({
                 container: container,
-                width: '100%',
-                height: '100%',
                 keyboard: {
                     bindTo: window
                 }
             });
         }
 
-        // Import default XML
-        await this.modeler.importXML(this.defaultXML);
+        console.log('BPMN Modeler initialized:', this.modeler);
         
-        // Setup modeler event listeners
+        // Import default XML
+        try {
+            const result = await this.modeler.importXML(this.defaultXML);
+            console.log('Default XML imported successfully:', result);
+            
+            // Force palette to be visible after import
+            setTimeout(() => {
+                this.forcePaletteVisibility();
+            }, 500);
+            
+        } catch (err) {
+            console.error('Error importing default XML:', err);
+            throw err;
+        }
+          // Setup modeler event listeners
         this.modeler.on('commandStack.changed', () => {
             this.handleDiagramChange();
         });
@@ -89,16 +98,48 @@ class BPMNWorkflowManager {
             this.handleSelectionChange(event);
         });
         
-        // Canvas boyutunu yeniden hesapla
+        // Force canvas resize and ensure palette is visible
         setTimeout(() => {
-            if (this.modeler && this.modeler.get) {
+            this.resizeCanvas();
+            this.ensurePaletteVisible();
+        }, 200);
+        
+        // Additional resize on window resize
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+        });
+    }
+
+    resizeCanvas() {
+        if (this.modeler && this.modeler.get) {
+            try {
                 const canvas = this.modeler.get('canvas');
                 if (canvas && canvas.resized) {
                     canvas.resized();
+                    console.log('Canvas resized successfully');
                 }
+            } catch (error) {
+                console.warn('Canvas resize failed:', error);
             }
-        }, 100);
-    }    setupEventListeners() {
+        }
+    }
+
+    ensurePaletteVisible() {
+        if (this.modeler && this.modeler.get) {
+            try {
+                const palette = this.modeler.get('palette');
+                if (palette) {
+                    // Force palette to be visible
+                    palette.open();
+                    console.log('Palette opened successfully');
+                } else {
+                    console.warn('Palette module not found');
+                }
+            } catch (error) {
+                console.warn('Could not access palette:', error);
+            }
+        }
+    }setupEventListeners() {
         // Sidebar control panel buttons
         document.getElementById('open-bpmn-editor-btn')?.addEventListener('click', () => {
             this.openMainEditor();
@@ -177,54 +218,72 @@ class BPMNWorkflowManager {
         this.socket.on('bpmn:user-left', (data) => {
             this.removeCollaborationIndicator(data.userId);
         });
-    }async createNewDiagram() {
+    }    async createNewDiagram() {
+        // Kullanıcıdan diyagram bilgilerini al
         const title = prompt('Diyagram başlığı girin:');
-        if (!title) return;
-
+        if (!title || title.trim() === '') {
+            this.updateStatus('Diyagram oluşturma iptal edildi');
+            return;
+        }
+        
         const description = prompt('Diyagram açıklaması (opsiyonel):') || '';
-
+        
         try {
             this.updateStatus('Yeni diyagram oluşturuluyor...');
             
+            // Yeni diyagram için varsayılan XML
+            const defaultXML = '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="true" /></bpmn:definitions>';
+            
+            // Diyagramı veritabanına kaydet
             const response = await fetch(`/projects/${this.projectId}/bpmn`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    title: title,
-                    description: description,
-                    xmlData: this.defaultXML
+                    title: title.trim(),
+                    description: description.trim(),
+                    xmlData: defaultXML
                 })
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }            const newDiagram = await response.json();
+            }
+
+            const newDiagram = await response.json();
             this.currentDiagram = newDiagram;
             
-            await this.modeler.importXML(this.defaultXML);
+            // Ana editörü aç
+            this.openMainEditor();
+            
+            // Varsayılan XML'i yükle
+            await this.modeler.importXML(defaultXML);
+            
+            this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
+            this.disableSaveButton(); // Zaten kaydedildi
+            this.disableExportButton(); // Henüz düzenlenmedi
+            this.updateMainEditorButtons();
+            
+            // Diyagram listesini yenile
             await this.loadDiagramList();
-              this.updateStatus(`Yeni diyagram oluşturuldu: ${title}`);
-            this.enableSaveButton();
-              // Join diagram room for collaboration
-            this.socket?.emit('bpmn:join-diagram', newDiagram._id, this.projectId);
             
         } catch (error) {
             console.error('Error creating new diagram:', error);
             this.updateStatus('Diyagram oluşturulamadı: ' + error.message, 'error');
         }
     }    async saveDiagram() {
-        if (!this.currentDiagram) {
-            this.updateStatus('Kaydedilecek diyagram yok', 'error');
-            return;
-        }
-
         try {
             this.updateStatus('Diyagram kaydediliyor...');
             
             const { xml } = await this.modeler.saveXML({ format: true });
             
+            if (!this.currentDiagram) {
+                this.updateStatus('Kaydedilecek diyagram yok', 'error');
+                return;
+            }
+            
+            // Mevcut diyagramı güncelle
             const response = await fetch(`/projects/${this.projectId}/bpmn/${this.currentDiagram._id}`, {
                 method: 'PUT',
                 headers: {
@@ -244,7 +303,11 @@ class BPMNWorkflowManager {
             this.currentDiagram = updatedDiagram;
             
             this.updateStatus('Diyagram başarıyla kaydedildi');
-              // Emit real-time update
+            this.updateMainEditorButtons();
+            this.disableSaveButton(); // Kaydetme sonrası buton deaktif
+            this.enableExportButton(); // Export etmeye hazır
+              
+            // Emit real-time update
             this.socket?.emit('bpmn:diagram-changed', this.currentDiagram._id, xml, {
                 projectId: this.projectId,
                 userId: this.userId,
@@ -255,7 +318,7 @@ class BPMNWorkflowManager {
             console.error('Error saving diagram:', error);
             this.updateStatus('Diyagram kaydedilemedi: ' + error.message, 'error');
         }
-    }    async loadDiagramList() {
+    }async loadDiagramList() {
         try {
             const response = await fetch(`/projects/${this.projectId}/bpmn`);
             if (!response.ok) {
@@ -306,19 +369,35 @@ class BPMNWorkflowManager {
         try {
             this.updateStatus('Diyagram yükleniyor...');
             
-            const response = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}/xml`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Önce diyagram bilgilerini al
+            const diagramResponse = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}`);
+            if (!diagramResponse.ok) {
+                throw new Error(`HTTP error! status: ${diagramResponse.status}`);
+            }
+            
+            const diagramData = await diagramResponse.json();
+            this.currentDiagram = diagramData;
+            
+            // XML verisini al ve yükle
+            const xmlResponse = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}/xml`);
+            if (!xmlResponse.ok) {
+                throw new Error(`HTTP error! status: ${xmlResponse.status}`);
             }
 
-            const xmlData = await response.text(); // XML content as text
-            this.currentDiagram = { _id: diagramId, xmlData: xmlData };
+            const xmlData = await xmlResponse.text();
             
             await this.modeler.importXML(xmlData);
             
-            this.updateStatus(`Diyagram yüklendi`);
-            this.enableSaveButton();
+            this.updateStatus(`Diyagram yüklendi: ${diagramData.title}`);
+            this.disableSaveButton(); // Yükleme sonrası kaydetme butonu deaktif
             this.enableExportButton();
+            this.updateMainEditorButtons();
+            
+            // Ana editörü aç (eğer kapalıysa)
+            const mainEditor = document.getElementById('bpmn-main-editor');
+            if (mainEditor && mainEditor.style.display === 'none') {
+                this.openMainEditor();
+            }
             
             // Join diagram room for collaboration
             this.socket?.emit('bpmn:join-diagram', diagramId, this.projectId);
@@ -327,7 +406,7 @@ class BPMNWorkflowManager {
             console.error('Error loading diagram:', error);
             this.updateStatus('Diyagram yüklenemedi: ' + error.message, 'error');
         }
-    }    async deleteDiagram(diagramId) {
+    }async deleteDiagram(diagramId) {
         if (!confirm('Bu diyagramı silmek istediğinizden emin misiniz?')) {
             return;
         }
@@ -386,12 +465,11 @@ class BPMNWorkflowManager {
             console.error('Error exporting diagram:', error);
             this.updateStatus('Diyagram dışa aktarılamadı: ' + error.message, 'error');
         }
-    }
-
-    handleDiagramChange() {
+    }    handleDiagramChange() {
         if (this.currentDiagram) {
             this.enableSaveButton();
             this.enableExportButton();
+            this.hasUnsavedChanges = true;
         }
     }
 
@@ -490,13 +568,84 @@ class BPMNWorkflowManager {
         `;
         
         indicatorsContainer.appendChild(indicator);
-    }
-
-    removeCollaborationIndicator(userId) {
+    }    removeCollaborationIndicator(userId) {
         const indicator = document.getElementById(`collab-${userId}`);
         if (indicator) {
             indicator.remove();
         }
+    }
+
+    // ==================== CANVAS CONTROLS ====================
+    
+    resizeCanvas() {
+        if (this.modeler && this.modeler.get) {
+            try {
+                const canvas = this.modeler.get('canvas');
+                if (canvas && canvas.resized) {
+                    canvas.resized();
+                    console.log('Canvas resized successfully');
+                }
+            } catch (error) {
+                console.warn('Error resizing canvas:', error);
+            }
+        }
+    }
+      ensurePaletteVisible() {
+        if (this.modeler && this.modeler.get) {
+            try {
+                const palette = this.modeler.get('palette');
+                if (palette) {
+                    palette.open();
+                    console.log('Palette opened successfully');
+                    
+                    // CSS ile de zorla görünür yapalım
+                    setTimeout(() => {
+                        this.forcePaletteVisibility();
+                    }, 100);
+                }
+            } catch (error) {
+                console.warn('Error ensuring palette visibility:', error);
+            }
+        }
+    }
+    
+    forcePaletteVisibility() {
+        // Palette elementini bul ve zorla görünür yap
+        const paletteElement = document.querySelector('.djs-palette');
+        if (paletteElement) {
+            paletteElement.style.display = 'block !important';
+            paletteElement.style.visibility = 'visible !important';
+            paletteElement.style.opacity = '1 !important';
+            paletteElement.style.position = 'absolute !important';
+            paletteElement.style.top = '20px !important';
+            paletteElement.style.left = '20px !important';
+            paletteElement.style.zIndex = '100 !important';
+            paletteElement.style.background = '#ffffff !important';
+            paletteElement.style.border = '1px solid #ccc !important';
+            paletteElement.style.borderRadius = '4px !important';
+            paletteElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15) !important';
+            paletteElement.style.padding = '5px !important';
+            
+            console.log('Palette forced visible with enhanced CSS');
+            
+            // Palette entries'leri de kontrol et
+            const paletteEntries = paletteElement.querySelectorAll('.entry');
+            paletteEntries.forEach(entry => {
+                entry.style.display = 'block !important';
+                entry.style.visibility = 'visible !important';
+                entry.style.opacity = '1 !important';
+                entry.style.margin = '2px !important';
+                entry.style.padding = '8px !important';
+                entry.style.cursor = 'pointer !important';
+                entry.style.borderRadius = '2px !important';
+                entry.style.transition = 'background-color 0.2s !important';
+            });
+            
+            return true;
+        }
+        
+        console.warn('Palette element not found in DOM');
+        return false;
     }
 
     destroy() {
@@ -508,7 +657,7 @@ class BPMNWorkflowManager {
     }
     
     // ==================== MAIN EDITOR CONTROLS ====================
-    openMainEditor() {
+      openMainEditor() {
         const mainEditor = document.getElementById('bpmn-main-editor');
         if (mainEditor) {
             mainEditor.style.display = 'block';
@@ -516,18 +665,29 @@ class BPMNWorkflowManager {
             // Ana canvas'a modeler'ı taşı
             const mainCanvas = document.getElementById('bpmn-main-canvas');
             if (mainCanvas && this.modeler) {
-                // Yeni container'a modeler'ı yeniden attach et
-                this.modeler.attachTo(mainCanvas);
-                
-                // Canvas boyutunu yeniden hesapla
-                setTimeout(() => {
-                    if (this.modeler && this.modeler.get) {
-                        const canvas = this.modeler.get('canvas');
-                        if (canvas && canvas.resized) {
-                            canvas.resized();
-                        }
-                    }
-                }, 200);
+                try {
+                    // Yeni container'a modeler'ı yeniden attach et
+                    this.modeler.attachTo(mainCanvas);
+                    console.log('BPMN modeler attached to main canvas');
+                    
+                    // Canvas boyutunu yeniden hesapla ve palette'i göster - birden fazla kez dene
+                    setTimeout(() => {
+                        this.resizeCanvas();
+                        this.ensurePaletteVisible();
+                        this.forcePaletteVisibility();
+                    }, 100);
+                    
+                    setTimeout(() => {
+                        this.forcePaletteVisibility();
+                    }, 500);
+                    
+                    setTimeout(() => {
+                        this.forcePaletteVisibility();
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Error attaching modeler to main canvas:', error);
+                }
             }
             
             this.updateStatus('Ana editör açıldı');

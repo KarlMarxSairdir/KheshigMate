@@ -1164,6 +1164,37 @@ app.delete('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (r
     }
 });
 
+// Spesifik BPMN diyagramını al (metadata)
+app.get('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, diagramId } = req.params;
+        
+        // Diyagram ve proje erişim kontrolü
+        const diagram = await BPMNDiagram.findById(diagramId)
+            .populate('createdBy', 'username email');
+            
+        if (!diagram || diagram.project.toString() !== projectId || !diagram.isActive) {
+            return res.status(404).json({ error: 'BPMN diyagramı bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        console.log(`📊 BPMN diagram requested: ${diagram.title}`);
+        res.json(diagram);
+    } catch (error) {
+        console.error('BPMN fetch error:', error);
+        res.status(500).json({ error: 'BPMN diyagramı alınırken hata oluştu' });
+    }
+});
+
 // Spesifik BPMN diyagramının XML verisini al
 app.get('/projects/:projectId/bpmn/:diagramId/xml', ensureAuthenticated, async (req, res) => {
     try {
