@@ -1030,13 +1030,18 @@ app.get('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
         if (!isOwner && !isMember) {
             return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
-        
-        // BPMN diyagramlarını getir
+          // BPMN diyagramlarını getir
         const diagrams = await BPMNDiagram.find({ project: projectId, isActive: true })
             .populate('createdBy', 'username email')
             .sort({ createdAt: -1 });
         
         console.log(`📊 Found ${diagrams.length} BPMN diagrams for project ${project.name}`);
+        console.log('📊 Sample diagram data:', diagrams[0] ? {
+            title: diagrams[0].title,
+            createdAt: diagrams[0].createdAt,
+            updatedAt: diagrams[0].updatedAt,
+            timestamps: diagrams[0].toObject()
+        } : 'No diagrams');
         res.json(diagrams);
     } catch (error) {
         console.error('BPMN listing error:', error);

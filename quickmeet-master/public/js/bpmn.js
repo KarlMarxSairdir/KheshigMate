@@ -395,16 +395,14 @@ class BPMNWorkflowManager {
                 this.updateStatus('Kaydedilecek diyagram yok', 'error');
                 return;
             }
-            
-            // Mevcut diyagramı güncelle
+              // Mevcut diyagramı güncelle
             const response = await fetch(`/projects/${this.projectId}/bpmn/${this.currentDiagram._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    xmlData: xml,
-                    lastModified: new Date().toISOString()
+                    xmlData: xml
                 })
             });
 
@@ -463,11 +461,10 @@ class BPMNWorkflowManager {
         diagrams.forEach(diagram => {
             const diagramItem = document.createElement('div');
             diagramItem.className = 'diagram-item';
-            diagramItem.innerHTML = `
-                <div class="diagram-info">
+            diagramItem.innerHTML = `                <div class="diagram-info">
                     <h5>${diagram.title}</h5>
                     <p>${diagram.description || 'Açıklama yok'}</p>
-                    <small>Son güncelleme: ${new Date(diagram.lastModified).toLocaleString('tr-TR')}</small>
+                    <small>Son güncelleme: ${diagram.updatedAt ? this.formatDate(diagram.updatedAt) : (diagram.createdAt ? this.formatDate(diagram.createdAt) : 'Bilinmiyor')}</small>
                 </div>
                 <div class="diagram-actions">
                     <button class="btn btn-sm btn-primary" onclick="bpmnManager.loadDiagram('${diagram._id}')">
@@ -906,6 +903,31 @@ class BPMNWorkflowManager {
             if (saveBtn) saveBtn.disabled = true;
             if (exportBtn) exportBtn.disabled = false;
             if (currentNameSpan) currentNameSpan.textContent = 'Yeni Diyagram';
+        }
+    }
+    
+    // ==================== HELPER METHODS ====================
+    
+    formatDate(dateString) {
+        try {
+            if (!dateString) return 'Bilinmiyor';
+            
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date received:', dateString);
+                return 'Geçersiz tarih';
+            }
+            
+            return date.toLocaleString('tr-TR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Date formatting error:', error);
+            return 'Hatalı tarih';
         }
     }
     
