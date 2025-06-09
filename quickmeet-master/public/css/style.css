@@ -6,6 +6,7 @@
  * Bu dosya tüm SCSS modüllerini organize eder ve doğru sırada yükler.
  * Herhangi bir gerçek stil kodu içermez - sadece import ifadeleri.
  */
+@import 'vendor/frappe-gantt.css';
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap");
@@ -15,7 +16,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
-@import 'frappe-gantt/dist/frappe-gantt.css';
 :root {
   /* Core Kheshig Colors - Central Asian Inspiration */
   --kheshig-navy: #2C3E50; /* Deep blue of the eternal sky */
@@ -5925,6 +5925,7 @@ navbar .logo {
   gap: 0;
   background: transparent;
   transition: grid-template-columns 0.5s ease-in-out;
+  overflow-x: hidden;
 }
 .modern-room-container.gantt-mode {
   grid-template-columns: 0fr 1fr;
@@ -6182,6 +6183,7 @@ navbar .logo {
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(76, 89, 128, 0.1);
+  overflow-x: hidden;
 }
 .sidebar-panel .sidebar-header {
   padding: 20px;
@@ -6660,14 +6662,12 @@ navbar .logo {
 .right-panel {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   height: 100%;
 }
 
 .tab-content {
   flex-grow: 1;
   display: flex;
-  overflow: hidden;
 }
 
 .tab-pane.active {
@@ -6678,8 +6678,9 @@ navbar .logo {
 
 #gantt-chart-container {
   flex-grow: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto;
+  position: relative;
+  width: 100%;
 }
 
 .modern-dashboard-page {

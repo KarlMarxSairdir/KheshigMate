@@ -1,10 +1,12 @@
 ﻿|-- middleware
   |-- auth.js
 |-- models
+  |-- BPMNDiagram.js
   |-- ChatMessage.js
   |-- DrawingData.js
   |-- Project.js
   |-- ProjectNote.js
+  |-- Task.js
   |-- User.js
 |-- public
   |-- css
@@ -12,14 +14,20 @@
       |-- _global.scss
       |-- _variables.scss
     |-- components
+      |-- _bpmn.scss
       |-- _buttons.scss
       |-- _cards.scss
       |-- _forms.scss
+      |-- _gantt-overrides.scss
+      |-- _gantt.scss
+      |-- _kanban.scss
       |-- _navbar.scss
+      |-- _user-dropdown.scss
     |-- pages
       |-- _dashboard.scss
       |-- _landing.scss
       |-- _login-register.scss
+      |-- _profile.scss
       |-- _project-settings-backup.scss
       |-- _project-settings-new.scss
       |-- _project-settings.scss
@@ -34,23 +42,32 @@
     |-- style.scss.backup
   |-- js
     |-- auth.js
+    |-- bpmn.js
     |-- dashboard.js
+    |-- gantt-clean.js
+    |-- gantt.js
+    |-- kanban.js
     |-- landing.js
+    |-- profile.js
     |-- project-settings.js
     |-- room.js
     |-- room_backup.js
     |-- room_fixed.js
     |-- room_new.js
+  |-- test-dropdown.html
   |-- test-input.html
 |-- views
   |-- dashboard.ejs
   |-- index.ejs
   |-- login.ejs
+  |-- profile.ejs
   |-- project-settings.ejs
   |-- register.ejs
   |-- room.ejs
 |-- .gitignore
 |-- cert.pem
+|-- COPILOT_BRIEFING.md
+|-- create-test-tasks.js
 |-- debug-login.js
 |-- debug-member-add.js
 |-- debug-user-identity.js
@@ -58,9 +75,14 @@
 |-- FAZ1_DURUM_RAPORU.md
 |-- FAZ1_FINAL_RAPOR.md
 |-- FAZ1_YAPLACAKLAR.md
-|-- FAZ2_BASLANGIC_RAPORU.md
+|-- FAZ2_BOLUM1_REHBER.md
+|-- FAZ2_BOLUM2_REHBER.md
+|-- FAZ2_BPMN_PLAN.md
 |-- FAZ2_DETAYLI_PLAN.md
-|-- FAZ2_HAFTA1_GOREVLER.md
+|-- FAZ2_DURUM_RAPORU.md
+|-- FAZ2_YAPLACAKLAR.md
+|-- FAZ3_DETAYLI_PLAN.md
+|-- fix-task-dates.js
 |-- key.pem
 |-- LICENSE
 |-- package-lock.json

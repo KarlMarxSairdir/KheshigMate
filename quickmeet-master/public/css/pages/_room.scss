@@ -110,6 +110,7 @@
     gap: 0; // Arada boşluk olmasın
     background: transparent; // Arka planı room-page'den alsın
     transition: grid-template-columns 0.5s ease-in-out; // Geçiş efekti
+    overflow-x: hidden; // Sayfanın yatayda kaymasını engellemek için eklendi
 
     // Gantt modu aktif olduğunda
     &.gantt-mode {
@@ -397,6 +398,7 @@
     display: flex;
     flex-direction: column;
     border-left: 1px solid rgba(76, 89, 128, 0.1);
+    overflow-x: hidden; // Bu panelin kendisine ayrılan alanı aşmasını engellemek için eklendi
 
     .sidebar-header {
         padding: 20px;
@@ -458,8 +460,10 @@
 
     .sidebar-content {
         flex: 1;
-        overflow: hidden;
+        overflow: hidden; // Alt öğelerin bu container'ı taşırmasını engeller (önemli!)
         position: relative;
+        // display: flex; // .tab-panel position:absolute olduğu için bu gerekli olmayabilir
+        // flex-direction: column;
 
         .tab-panel {
             position: absolute;
@@ -965,14 +969,12 @@
 .right-panel { // Gantt şemasını içeren sağdaki ana sütun
   display: flex;
   flex-direction: column; // Dikey flex container
-  overflow: hidden; // Bu panelin taşmasını engelle
   height: 100%; // Üst container'ın yüksekliğini tam kaplasın
 }
 
 .tab-content { // Sekme içeriklerini tutan container
   flex-grow: 1; // Kalan tüm dikey alanı kaplasın
   display: flex;
-  overflow: hidden; // İçeriğin taşmasını engelle
 }
 
 .tab-pane.active { // Sadece aktif sekme alanı kaplamalı
@@ -982,7 +984,8 @@
 }
 
 #gantt-chart-container {
-  flex-grow: 1; // Kendisine verilen dikey alanın tamamını kullan
-  overflow-x: auto; // Yatayda taşarsa YALNIZCA KENDİSİ kaydırılsın
-  overflow-y: hidden; // Dikey kaydırma olmasın
+  flex-grow: 1;       // Dikeyde alanı kapla
+  overflow: auto;     // Gerektiğinde hem yatay hem dikey scrollbar çıkar
+  position: relative; // İçerik konumlandırması için
+  width: 100%;        // Üst öğenin genişliğini al
 }

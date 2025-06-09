@@ -7,6 +7,14 @@
  */
 
 // =============================================================================
+// ÜÇÜNCÜ PARTİ KÜTÜPHANE STİLLERİ (EN BAŞTA)
+// =============================================================================
+// Bu yol, projemizin kök dizininden node_modules'e gider.
+// Doğru yolun 'frappe-gantt/src/gantt.scss' olduğunu varsayıyoruz.
+// @import '../../node_modules/frappe-gantt/src/gantt.scss'; // Hatalı SCSS importu kaldırıldı
+@import 'vendor/frappe-gantt.css'; // Kopyalanan CSS dosyasını import et
+
+// =============================================================================
 // EXTERNAL FONT IMPORTS
 // =============================================================================
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap");
@@ -32,7 +40,6 @@
 @import 'components/gantt';
 @import 'components/bpmn';
 
-@import 'frappe-gantt/dist/frappe-gantt.css'; // Bu satırı en üste taşıdık
 @import 'components/gantt-overrides'; // YENİ EKLEDİĞİMİZ SATIR
 
 // =============================================================================
