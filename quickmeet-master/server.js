@@ -1082,11 +1082,21 @@ app.post('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
             project: projectId,
             createdBy: req.user._id
         });
-        
-        await diagram.save();
+          await diagram.save();
         await diagram.populate('createdBy', 'username email');
         
         console.log(`✅ BPMN diagram created: ${diagram.title} for project ${project.name}`);
+        
+        // Emit real-time update for diagram list refresh
+        io.to(projectId).emit('bpmn:diagram-created', {
+            projectId,
+            diagram: diagram,
+            createdBy: {
+                userId: req.user._id,
+                userName: req.user.username
+            }
+        });
+        
         res.status(201).json(diagram);
     } catch (error) {
         console.error('BPMN creation error:', error);
@@ -1126,11 +1136,21 @@ app.put('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (req,
             tags: Array.isArray(tags) ? tags : diagram.tags,
             version: diagram.version + 1
         };
-        
-        const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
+          const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
             .populate('createdBy', 'username email');
         
         console.log(`✅ BPMN diagram updated: ${updatedDiagram.title} (v${updatedDiagram.version})`);
+        
+        // Emit real-time update for diagram list refresh
+        io.to(projectId).emit('bpmn:diagram-updated', {
+            projectId,
+            diagram: updatedDiagram,
+            updatedBy: {
+                userId: req.user._id,
+                userName: req.user.username
+            }
+        });
+        
         res.json(updatedDiagram);
     } catch (error) {
         console.error('BPMN update error:', error);
@@ -1187,11 +1207,21 @@ app.put('/projects/:projectId/bpmn/:diagramId/metadata', ensureAuthenticated, as
             description: description !== undefined ? description : diagram.description,
             category: category || diagram.category
         };
-        
-        const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
+          const updatedDiagram = await BPMNDiagram.findByIdAndUpdate(diagramId, updateData, { new: true })
             .populate('createdBy', 'username email');
         
         console.log(`✅ BPMN diagram metadata updated: ${updatedDiagram.title} (${updatedDiagram.category})`);
+        
+        // Emit real-time update for diagram list refresh
+        io.to(projectId).emit('bpmn:diagram-updated', {
+            projectId,
+            diagram: updatedDiagram,
+            updatedBy: {
+                userId: req.user._id,
+                userName: req.user.username
+            }
+        });
+        
         res.json(updatedDiagram);
     } catch (error) {
         console.error('BPMN metadata update error:', error);
@@ -1219,11 +1249,21 @@ app.delete('/projects/:projectId/bpmn/:diagramId', ensureAuthenticated, async (r
         if (!isOwner && !isMember) {
             return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
-        
-        // Soft delete (isActive = false)
+          // Soft delete (isActive = false)
         await BPMNDiagram.findByIdAndUpdate(diagramId, { isActive: false });
         
         console.log(`✅ BPMN diagram soft deleted: ${diagram.title}`);
+        
+        // Emit real-time update for diagram list refresh
+        io.to(projectId).emit('bpmn:diagram-deleted', {
+            projectId,
+            diagramId,
+            deletedBy: {
+                userId: req.user._id,
+                userName: req.user.username
+            }
+        });
+        
         res.json({ message: 'BPMN diyagramı başarıyla silindi' });
     } catch (error) {
         console.error('BPMN deletion error:', error);
@@ -1648,9 +1688,7 @@ function setupSocketHandlers(io) {
                 diagramId,
                 requestedBy: socket.id
             });
-        });
-
-        socket.on('bpmn:sync-response', (diagramId, xmlData, targetSocketId) => {
+        });        socket.on('bpmn:sync-response', (diagramId, xmlData, targetSocketId) => {
             // Send sync response to specific user
             console.log(`SERVER: Sync response for BPMN diagram ${diagramId} to ${targetSocketId}`);
             
@@ -1658,6 +1696,31 @@ function setupSocketHandlers(io) {
                 diagramId,
                 xmlData
             });
+        });
+
+        // ==================== KANBAN TASK REAL-TIME EVENTS ====================
+        socket.on('task-created', (data) => {
+            console.log(`SERVER: Task created in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('task-created', data);
+        });
+
+        socket.on('task-updated', (data) => {
+            console.log(`SERVER: Task updated in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('task-updated', data);
+        });
+
+        socket.on('task-deleted', (data) => {
+            console.log(`SERVER: Task deleted in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('task-deleted', data);
+        });
+
+        socket.on('task-status-updated', (data) => {
+            console.log(`SERVER: Task status updated in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('task-status-updated', data);
         });
 
         socket.on('disconnect', (reason) => {

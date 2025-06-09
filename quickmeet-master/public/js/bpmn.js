@@ -27,12 +27,11 @@ class BPMNWorkflowManager {    constructor() {
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
-    }
-
-    async init(socket, projectId, userId) {
+    }    async init(socket, projectId, userId, userName) {
         this.socket = socket;
         this.projectId = projectId;
         this.userId = userId;
+        this.userName = userName;
         
         try {
             await this.initializeBPMNModeler();
@@ -94,11 +93,12 @@ class BPMNWorkflowManager {    constructor() {
           // Setup modeler event listeners
         this.modeler.on('commandStack.changed', () => {
             this.handleDiagramChange();
-        });
-
-        this.modeler.on('selection.changed', (event) => {
+        });        this.modeler.on('selection.changed', (event) => {
             this.handleSelectionChange(event);
         });
+        
+        // Setup mouse movement tracking for real-time collaboration
+        this.setupMouseTracking();
         
         // Force canvas resize and ensure palette is visible
         setTimeout(() => {
@@ -136,10 +136,43 @@ class BPMNWorkflowManager {    constructor() {
                     console.log('Palette opened successfully');
                 } else {
                     console.warn('Palette module not found');
-                }
-            } catch (error) {
+                }            } catch (error) {
                 console.warn('Could not access palette:', error);
             }
+        }
+    }
+    
+    setupMouseTracking() {
+        if (!this.modeler || !this.modeler.get) return;
+        
+        try {
+            const canvas = this.modeler.get('canvas');
+            const container = canvas.getContainer();
+            
+            // Throttled mouse move handler to prevent too many emissions
+            const throttledMouseMove = this.throttle((event) => {
+                if (this.socket && this.collaborationMode && this.currentDiagram) {
+                    const rect = container.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    
+                    this.socket.emit('bpmn:cursor-move', this.currentDiagram._id, {
+                        x: x,
+                        y: y,
+                        userId: this.userId,
+                        userName: this.userName || 'Anonymous'
+                    });
+                }
+            }, 100); // Throttle to max 10 emissions per second
+            
+            // Add mouse move listener to canvas container
+            container.addEventListener('mousemove', throttledMouseMove);
+            
+            // Store reference for cleanup
+            this.mouseTrackingHandler = throttledMouseMove;
+            
+        } catch (error) {
+            console.warn('Error setting up mouse tracking:', error);
         }
     }
     
@@ -265,9 +298,7 @@ class BPMNWorkflowManager {    constructor() {
                 this.hideEditDiagramModal();
             }
         });
-    }
-
-    setupSocketListeners() {
+    }    setupSocketListeners() {
         if (!this.socket) return;
 
         // Listen for real-time diagram changes
@@ -279,11 +310,71 @@ class BPMNWorkflowManager {    constructor() {
 
         // Listen for collaboration events
         this.socket.on('bpmn:user-joined', (data) => {
-            this.addCollaborationIndicator(data);
+            console.log('BPMN: User joined diagram', data);
+            this.addCollaborationIndicator({
+                id: data.userId,
+                name: data.userName,
+                socketId: data.socketId
+            });
         });
 
         this.socket.on('bpmn:user-left', (data) => {
+            console.log('BPMN: User left diagram', data);
             this.removeCollaborationIndicator(data.userId);
+        });
+
+        // Listen for cursor movements
+        this.socket.on('bpmn:cursor-move', (data) => {
+            if (data.userId !== this.userId) {
+                this.handleRemoteCursorMove(data);
+            }
+        });
+
+        // Listen for selection changes
+        this.socket.on('bpmn:selection-changed', (data) => {
+            if (data.userId !== this.userId) {
+                this.handleRemoteSelectionChange(data);
+            }
+        });
+
+        // Listen for synchronization requests
+        this.socket.on('bpmn:sync-request', (data) => {
+            if (this.currentDiagram && data.diagramId === this.currentDiagram._id) {
+                this.sendSyncResponse(data);
+            }
+        });
+
+        // Listen for synchronization responses
+        this.socket.on('bpmn:sync-response', (data) => {
+            if (data.diagramId === this.currentDiagram?._id) {
+                this.applySyncResponse(data);
+            }
+        });        // Listen for BPMN errors
+        this.socket.on('bpmn:error', (data) => {
+            console.error('BPMN Error:', data);
+            this.updateStatus(`BPMN Hatası: ${data.message}`, 'error');
+        });
+
+        // Listen for diagram list updates (for real-time list refresh)
+        this.socket.on('bpmn:diagram-created', (data) => {
+            if (data.projectId === this.projectId) {
+                console.log('BPMN: New diagram created, refreshing list');
+                this.loadDiagramList();
+            }
+        });
+
+        this.socket.on('bpmn:diagram-updated', (data) => {
+            if (data.projectId === this.projectId) {
+                console.log('BPMN: Diagram updated, refreshing list');
+                this.loadDiagramList();
+            }
+        });
+
+        this.socket.on('bpmn:diagram-deleted', (data) => {
+            if (data.projectId === this.projectId) {
+                console.log('BPMN: Diagram deleted, refreshing list');
+                this.loadDiagramList();
+            }
         });
     }
     
@@ -319,12 +410,87 @@ class BPMNWorkflowManager {    constructor() {
             console.error('❌ Create Modal element not found!');
         }
     }
-    
-    hideCreateDiagramModal() {
+      hideCreateDiagramModal() {
         const modal = document.getElementById('bpmn-create-modal');
         if (modal) {
             modal.style.display = 'none';
         }    }
+    
+    async submitCreateDiagram() {
+        const nameInput = document.getElementById('bpmn-diagram-name');
+        const descriptionInput = document.getElementById('bpmn-diagram-description');
+        const categoryInput = document.getElementById('bpmn-diagram-category');
+        
+        const title = nameInput.value.trim();
+        if (!title) {
+            nameInput.focus();
+            this.updateStatus('Diyagram adı gereklidir', 'error');
+            return;
+        }
+        
+        const description = descriptionInput.value.trim();
+        const category = categoryInput.value;
+        
+        try {
+            this.updateStatus('Diyagram oluşturuluyor...');
+            
+            // Leave previous diagram room if socket is available and there's a current diagram
+            if (this.socket && this.currentDiagram) {
+                this.socket.emit('bpmn:leave-diagram', this.currentDiagram._id);
+                console.log(`BPMN: Left previous diagram room ${this.currentDiagram._id} before creating new diagram`);
+            }
+            
+            // Get current modeler XML data to save
+            const { xml } = await this.modeler.saveXML({ format: true });
+            
+            // Create new diagram
+            const response = await fetch(`/projects/${this.projectId}/bpmn`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    category: category,
+                    xmlData: xml
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const newDiagram = await response.json();
+            this.currentDiagram = newDiagram;
+            
+            this.updateStatus(`Diyagram oluşturuldu: ${title}`);
+            
+            // Update buttons
+            this.disableSaveButton(); // Yeni oluşturulan diyagram saved state'de
+            this.enableExportButton();
+            this.updateMainEditorButtons();
+            
+            // Close modal
+            this.hideCreateDiagramModal();
+            
+            // Refresh diagram list
+            await this.loadDiagramList();
+            
+            // Join new diagram room for collaboration
+            this.socket?.emit('bpmn:join-diagram', newDiagram._id, this.projectId);
+            
+            // Open main editor if not already open
+            const mainEditor = document.getElementById('bpmn-main-editor');
+            if (mainEditor && mainEditor.style.display === 'none') {
+                this.openMainEditor();
+            }
+            
+        } catch (error) {
+            console.error('Error creating diagram:', error);
+            this.updateStatus('Diyagram oluşturulamadı: ' + error.message, 'error');
+        }
+    }
     
     // ==================== EDIT DIAGRAM MODAL FUNCTIONS ====================
     async editDiagram(diagramId) {
@@ -562,10 +728,15 @@ class BPMNWorkflowManager {    constructor() {
             listContainer.appendChild(diagramItem);
         });
     }
-    
-    async loadDiagram(diagramId) {
+      async loadDiagram(diagramId) {
         try {
             this.updateStatus('Diyagram yükleniyor...');
+            
+            // Leave previous diagram room if socket is available and there's a current diagram
+            if (this.socket && this.currentDiagram && this.currentDiagram._id !== diagramId) {
+                this.socket.emit('bpmn:leave-diagram', this.currentDiagram._id);
+                console.log(`BPMN: Left previous diagram room ${this.currentDiagram._id}`);
+            }
             
             // Önce diyagram bilgilerini al
             const diagramResponse = await fetch(`/projects/${this.projectId}/bpmn/${diagramId}`);
@@ -637,12 +808,16 @@ class BPMNWorkflowManager {    constructor() {
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            await this.loadDiagramList();
+            }            await this.loadDiagramList();
             this.updateStatus('Diyagram silindi');
             
             if (this.currentDiagram?._id === diagramId) {
+                // Leave diagram room before clearing current diagram
+                if (this.socket) {
+                    this.socket.emit('bpmn:leave-diagram', diagramId);
+                    console.log(`BPMN: Left diagram room ${diagramId} after deletion`);
+                }
+                
                 this.currentDiagram = null;
                 await this.modeler.importXML(this.defaultXML);
                 this.disableSaveButton();
@@ -685,26 +860,250 @@ class BPMNWorkflowManager {    constructor() {
             this.updateStatus('Diyagram dışa aktarılamadı: ' + error.message, 'error');
         }
     }
-    
-    handleDiagramChange() {
+      handleDiagramChange() {
         if (this.currentDiagram) {
             this.enableSaveButton();
             this.enableExportButton();
             this.hasUnsavedChanges = true;
+            
+            // Emit real-time diagram changes for collaboration
+            if (this.socket && this.collaborationMode) {
+                this.throttledEmitDiagramChange();
+            }
         }
     }
 
+    // Throttled function to prevent too many socket emissions
+    throttledEmitDiagramChange = this.throttle(async () => {
+        if (!this.currentDiagram || !this.socket) return;
+        
+        try {
+            const { xml } = await this.modeler.saveXML({ format: true });
+            
+            this.socket.emit('bpmn:diagram-changed', this.currentDiagram._id, xml, {
+                projectId: this.projectId,
+                userId: this.userId,
+                version: this.currentDiagram.version || 1,
+                timestamp: Date.now()
+            });
+            
+            console.log('BPMN: Real-time diagram change emitted');
+        } catch (error) {
+            console.error('Error emitting diagram change:', error);
+        }
+    }, 1000); // Throttle to max 1 emission per second
+
     handleSelectionChange(event) {
         const selection = event.newSelection;
-        // Handle element selection for properties panel
         console.log('Selection changed:', selection);
+        
+        // Emit selection changes for collaboration
+        if (this.socket && this.collaborationMode && this.currentDiagram) {
+            this.socket.emit('bpmn:selection-changed', this.currentDiagram._id, selection.map(element => element.id));
+        }
     }
 
     handleRemoteDiagramUpdate(data) {
-        if (this.collaborationMode) {
-            // Apply remote changes
+        if (this.collaborationMode && data.xmlData) {
+            console.log('BPMN: Applying remote diagram update from', data.changedBy?.userName);
+            
+            // Temporarily disable local change handlers to prevent feedback loop
+            this.collaborationMode = false;
+            
+            try {
+                this.modeler.importXML(data.xmlData);
+                this.updateStatus(`Diyagram güncellendi (${data.changedBy?.userName || 'Bilinmeyen kullanıcı'})`);
+            } catch (error) {
+                console.error('Error applying remote diagram update:', error);
+                this.updateStatus('Uzak diyagram güncellemesi uygulanamadı', 'error');
+            } finally {
+                // Re-enable collaboration mode after a short delay
+                setTimeout(() => {
+                    this.collaborationMode = true;
+                }, 500);
+            }
+        }
+    }    // Handle remote cursor movements
+    handleRemoteCursorMove(data) {
+        // Show remote user cursor on canvas
+        console.log(`Remote cursor from ${data.userName}:`, data.x, data.y);
+        
+        if (!this.modeler || !this.modeler.get) return;
+        
+        try {
+            const canvas = this.modeler.get('canvas');
+            const container = canvas.getContainer();
+            
+            // Remove existing cursor for this user
+            const existingCursor = container.querySelector(`[data-remote-cursor="${data.userId}"]`);
+            if (existingCursor) {
+                existingCursor.remove();
+            }
+            
+            // Create new cursor element
+            const cursor = document.createElement('div');
+            cursor.setAttribute('data-remote-cursor', data.userId);
+            cursor.className = 'remote-cursor';
+            cursor.style.cssText = `
+                position: absolute;
+                left: ${data.x}px;
+                top: ${data.y}px;
+                width: 12px;
+                height: 16px;
+                background: ${data.userColor || '#007bff'};
+                border-radius: 0 0 4px 0;
+                pointer-events: none;
+                z-index: 1000;
+                transition: all 0.1s ease;
+            `;
+            
+            // Add user name label
+            const label = document.createElement('span');
+            label.textContent = data.userName;
+            label.style.cssText = `
+                position: absolute;
+                left: 15px;
+                top: -5px;
+                background: ${data.userColor || '#007bff'};
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 10px;
+                white-space: nowrap;
+                font-family: Arial, sans-serif;
+            `;
+            cursor.appendChild(label);
+            
+            container.appendChild(cursor);
+            
+            // Auto-remove cursor after 5 seconds of inactivity
+            setTimeout(() => {
+                const stillThere = container.querySelector(`[data-remote-cursor="${data.userId}"]`);
+                if (stillThere === cursor) {
+                    cursor.remove();
+                }
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error showing remote cursor:', error);
+        }
+    }
+
+    // Handle remote selection changes
+    handleRemoteSelectionChange(data) {
+        console.log(`Remote selection from ${data.userName}:`, data.selectedElements);
+        
+        if (!this.modeler || !this.modeler.get || !data.selectedElements) return;
+        
+        try {
+            const elementRegistry = this.modeler.get('elementRegistry');
+            const graphicsFactory = this.modeler.get('graphicsFactory');
+            const canvas = this.modeler.get('canvas');
+            
+            // Remove existing remote selections for this user
+            const container = canvas.getContainer();
+            const existingSelections = container.querySelectorAll(`[data-remote-selection="${data.userId}"]`);
+            existingSelections.forEach(selection => selection.remove());
+            
+            // Add selection indicators for each selected element
+            data.selectedElements.forEach(elementId => {
+                const element = elementRegistry.get(elementId);
+                if (element) {
+                    const gfx = elementRegistry.getGraphics(element);
+                    if (gfx) {
+                        const bbox = gfx.getBBox();
+                        
+                        // Create selection overlay
+                        const selectionOverlay = document.createElement('div');
+                        selectionOverlay.setAttribute('data-remote-selection', data.userId);
+                        selectionOverlay.style.cssText = `
+                            position: absolute;
+                            left: ${bbox.x - 2}px;
+                            top: ${bbox.y - 2}px;
+                            width: ${bbox.width + 4}px;
+                            height: ${bbox.height + 4}px;
+                            border: 2px dashed ${data.userColor || '#007bff'};
+                            pointer-events: none;
+                            z-index: 100;
+                            opacity: 0.7;
+                        `;
+                        
+                        // Add user label
+                        const userLabel = document.createElement('span');
+                        userLabel.textContent = data.userName;
+                        userLabel.style.cssText = `
+                            position: absolute;
+                            top: -20px;
+                            left: 0;
+                            background: ${data.userColor || '#007bff'};
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 3px;
+                            font-size: 10px;
+                            white-space: nowrap;
+                            font-family: Arial, sans-serif;
+                        `;
+                        selectionOverlay.appendChild(userLabel);
+                        
+                        container.appendChild(selectionOverlay);
+                    }
+                }
+            });
+            
+            // Auto-remove selections after 10 seconds
+            setTimeout(() => {
+                const stillThereSelections = container.querySelectorAll(`[data-remote-selection="${data.userId}"]`);
+                stillThereSelections.forEach(selection => selection.remove());
+            }, 10000);
+            
+        } catch (error) {
+            console.error('Error showing remote selection:', error);
+        }
+    }
+
+    // Send sync response to requesting user
+    sendSyncResponse(requestData) {
+        if (!this.currentDiagram || !this.socket) return;
+        
+        this.modeler.saveXML({ format: true }).then(({ xml }) => {
+            this.socket.emit('bpmn:sync-response', this.currentDiagram._id, xml, requestData.requestedBy);
+            console.log('BPMN: Sync response sent to', requestData.requestedBy);
+        }).catch(error => {
+            console.error('Error sending sync response:', error);
+        });
+    }
+
+    // Apply sync response
+    applySyncResponse(data) {
+        if (!data.xmlData) return;
+        
+        console.log('BPMN: Applying sync response');
+        this.collaborationMode = false;
+        
+        try {
             this.modeler.importXML(data.xmlData);
-            this.updateStatus(`Diyagram güncellendi (${data.userName})`);
+            this.updateStatus('Diyagram senkronize edildi');
+        } catch (error) {
+            console.error('Error applying sync response:', error);
+            this.updateStatus('Senkronizasyon hatası', 'error');
+        } finally {
+            setTimeout(() => {
+                this.collaborationMode = true;
+            }, 500);
+        }
+    }
+
+    // Utility throttle function
+    throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
         }
     }
 
@@ -899,14 +1298,34 @@ class BPMNWorkflowManager {    constructor() {
         
         console.warn('Palette element not found in DOM');
         return false;
-    }
-
-    destroy() {
+    }    destroy() {
+        // Leave current diagram room if socket is available and diagram is loaded
+        if (this.socket && this.currentDiagram) {
+            this.socket.emit('bpmn:leave-diagram', this.currentDiagram._id);
+            console.log(`BPMN: Left diagram room on destroy ${this.currentDiagram._id}`);
+        }
+        
+        // Clean up mouse tracking handler
+        if (this.mouseTrackingHandler && this.modeler && this.modeler.get) {
+            try {
+                const canvas = this.modeler.get('canvas');
+                const container = canvas.getContainer();
+                container.removeEventListener('mousemove', this.mouseTrackingHandler);
+                console.log('BPMN: Mouse tracking handler cleaned up');
+            } catch (error) {
+                console.warn('Error cleaning up mouse tracking:', error);
+            }
+        }
+        
         if (this.modeler) {
             this.modeler.destroy();
             this.modeler = null;
         }
         this.isInitialized = false;
+        this.currentDiagram = null;
+        this.socket = null;
+        this.mouseTrackingHandler = null;
+        this.userName = null;
     }
     
     // ==================== MAIN EDITOR CONTROLS ====================
@@ -948,12 +1367,17 @@ class BPMNWorkflowManager {    constructor() {
             this.updateMainEditorButtons();
         }
     }
-    
-    closeMainEditor() {
+      closeMainEditor() {
         const mainEditor = document.getElementById('bpmn-main-editor');
         if (mainEditor) {
             mainEditor.style.display = 'none';
             this.updateStatus('Ana editör kapatıldı');
+            
+            // Leave current diagram room if socket is available and diagram is loaded
+            if (this.socket && this.currentDiagram) {
+                this.socket.emit('bpmn:leave-diagram', this.currentDiagram._id);
+                console.log(`BPMN: Left diagram room ${this.currentDiagram._id}`);
+            }
         }
     }
     
