@@ -3998,6 +3998,42 @@ navbar .logo {
     transform: translateY(0) scale(1);
   }
 }
+.gantt .grid-background {
+  fill: #f5f5f5;
+}
+.gantt .grid-row {
+  fill: #ffffff;
+}
+.gantt .grid-row:nth-child(even) {
+  fill: #f5f5f5;
+}
+.gantt .bar-wrapper {
+  height: 30px;
+  line-height: 30px;
+}
+.gantt .bar-progress {
+  height: 18px;
+  margin-top: 6px;
+}
+.gantt .bar-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+.gantt .grid-header {
+  fill: #ffffff;
+  stroke: #e5e5e5;
+  stroke-width: 1.4;
+}
+.gantt .gantt-upper-timeline text,
+.gantt .gantt-lower-timeline text {
+  fill: #555;
+  font-size: 12px;
+  font-weight: 500;
+}
+.gantt .today-highlight {
+  fill: #fcf8e3;
+}
+
 .landing-page {
   background: var(--gradient-steppe) !important;
   min-height: 100vh !important;
@@ -5888,6 +5924,13 @@ navbar .logo {
   height: calc(100vh - 80px);
   gap: 0;
   background: transparent;
+  transition: grid-template-columns 0.5s ease-in-out;
+}
+.modern-room-container.gantt-mode {
+  grid-template-columns: 0fr 1fr;
+}
+.modern-room-container.gantt-mode .right-panel {
+  border-radius: var(--card-border-radius);
 }
 
 .video-section {
@@ -5897,6 +5940,14 @@ navbar .logo {
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 20px;
+  overflow: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.5s ease, padding 0.5s ease;
+}
+.video-section.hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  width: 0;
+  padding: 0;
   overflow: hidden;
 }
 .video-section .video-container-modern {
@@ -6610,11 +6661,19 @@ navbar .logo {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 
 .tab-content {
   flex-grow: 1;
+  display: flex;
   overflow: hidden;
+}
+
+.tab-pane.active {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 #gantt-chart-container {

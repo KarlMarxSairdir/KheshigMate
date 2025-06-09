@@ -1040,6 +1040,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetContent) {
                 targetContent.classList.add('active');
             }
+
+            // --- YENİ EKLENEN KISIM: Gantt tam ekran modu için --- 
+            const videoArea = document.querySelector('.video-section'); // .video-area yerine .video-section kullanıldı
+            const mainContentGrid = document.querySelector('.modern-room-container'); // .main-content-grid yerine .modern-room-container kullanıldı
+
+            if (targetTab === 'gantt') {
+                if(videoArea) videoArea.classList.add('hidden');
+                if(mainContentGrid) mainContentGrid.classList.add('gantt-mode'); 
+            } else {
+                if(videoArea) videoArea.classList.remove('hidden');
+                if(mainContentGrid) mainContentGrid.classList.remove('gantt-mode');
+            }
+            // --- YENİ EKLENEN KISIM SONU ---
+
               if (targetTab === 'notes') {
                 loadNotes();
             } else if (targetTab === 'attendees') {

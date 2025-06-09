@@ -106,9 +106,21 @@
 .modern-room-container {
     display: grid;
     grid-template-columns: 3fr 2fr; // Video 60%, Kanban 40%
-    height: calc(100vh - 80px);
-    gap: 0;
-    background: transparent;
+    height: calc(100vh - 80px); // room-header yüksekliğini hesaba kat
+    gap: 0; // Arada boşluk olmasın
+    background: transparent; // Arka planı room-page'den alsın
+    transition: grid-template-columns 0.5s ease-in-out; // Geçiş efekti
+
+    // Gantt modu aktif olduğunda
+    &.gantt-mode {
+        grid-template-columns: 0fr 1fr; // Sol panel (video) gizlenir, sağ panel tüm alanı kaplar
+
+        .right-panel {
+            // Gantt modunda sağ panelin kenar boşlukları veya border-radius'u ayarlanabilir
+            border-radius: var(--card-border-radius); // Örnek stil eklendi
+            // margin: 0; // İsteğe bağlı olarak eklenebilir
+        }
+    }
 }
 
 // Video section (left side) - Fixed layout
@@ -116,10 +128,22 @@
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
     padding: 20px;
-    display: grid;
+    display: grid; // İçeriği yönetmek için grid kalabilir
     grid-template-rows: 1fr auto; // Video container + controls
     gap: 20px;
     overflow: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, width 0.5s ease, padding 0.5s ease; // width ve padding eklendi
+
+    // Varsayılan durum
+    &.hidden {
+        opacity: 0;
+        transform: scale(0.95); // Hafif küçülme efekti
+        width: 0; // Genişliği sıfırla
+        padding: 0; // Kenar boşluklarını sıfırla
+        overflow: hidden; // Taşmayı engelle
+        // display: none; // Bu, transitionları engelleyebilir, width: 0 ve opacity: 0 yeterli olmalı
+        // Eğer display: none kesin gerekliyse, transition bittikten sonra JS ile eklenebilir.
+    }
 
     .video-container-modern {
         display: flex;
@@ -939,18 +963,26 @@
 
 // Gantt şemasının taşma sorununu çözmek için eklenen stiller
 .right-panel { // Gantt şemasını içeren sağdaki ana sütun
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; // Bu panelin kendisinin taşmasını engelle
+  display: flex;
+  flex-direction: column; // Dikey flex container
+  overflow: hidden; // Bu panelin taşmasını engelle
+  height: 100%; // Üst container'ın yüksekliğini tam kaplasın
 }
 
 .tab-content { // Sekme içeriklerini tutan container
-    flex-grow: 1;
-    overflow: hidden;
+  flex-grow: 1; // Kalan tüm dikey alanı kaplasın
+  display: flex;
+  overflow: hidden; // İçeriğin taşmasını engelle
 }
 
-#gantt-chart-container { // Sadece Gantt SVG'sini içeren container
-    flex-grow: 1; // Dikeyde kalan alanı doldur
-    overflow-x: auto;  // Yatayda taşarsa kaydırma çubuğu çıkar
-    overflow-y: hidden;
+.tab-pane.active { // Sadece aktif sekme alanı kaplamalı
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#gantt-chart-container {
+  flex-grow: 1; // Kendisine verilen dikey alanın tamamını kullan
+  overflow-x: auto; // Yatayda taşarsa YALNIZCA KENDİSİ kaydırılsın
+  overflow-y: hidden; // Dikey kaydırma olmasın
 }

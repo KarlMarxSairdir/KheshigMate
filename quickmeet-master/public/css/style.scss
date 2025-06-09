@@ -33,6 +33,7 @@
 @import 'components/bpmn';
 
 @import 'frappe-gantt/dist/frappe-gantt.css'; // Bu satırı en üste taşıdık
+@import 'components/gantt-overrides'; // YENİ EKLEDİĞİMİZ SATIR
 
 // =============================================================================
 // PAGE-SPECIFIC STYLES (Dashboard, Room, Auth, Landing, Settings)

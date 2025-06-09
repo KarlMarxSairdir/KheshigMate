@@ -1,0 +1,52 @@
+// public/css/components/_gantt-overrides.scss
+
+.gantt {
+  // Grid'in siyah arka planını düzeltir. Açık bir renk veriyoruz.
+  .grid-background {
+    fill: #f5f5f5; // Açık gri bir arka plan
+  }
+
+  // Grid çizgilerinin görünürlüğünü garanti eder.
+  .grid-row {
+    fill: #ffffff; // Tek sayılı satırlar beyaz
+    &:nth-child(even) {
+      fill: #f5f5f5; // Çift sayılı satırlar açık gri (zebra deseni)
+    }
+  }
+
+  // Görev çubuklarının dikey yüksekliğini artırır.
+  .bar-wrapper {
+    height: 30px; // Bar yüksekliğini artır
+    line-height: 30px;
+  }
+  .bar-progress {
+      height: 18px; // İçindeki progress bar'ın yüksekliği
+      margin-top: 6px;
+  }
+  
+  // Görev isimlerinin okunabilirliğini artırır.
+  .bar-label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  // SİYAH HEADER SORUNU İÇİN YENİ KURAL:
+  .grid-header {
+    fill: #ffffff; // Header arka planını beyaz yap
+    stroke: #e5e5e5; // Çizgi rengi
+    stroke-width: 1.4;
+  }
+
+  // Header üzerindeki metinlerin stilini düzeltir.
+  .gantt-upper-timeline text, 
+  .gantt-lower-timeline text {
+    fill: #555; // Koyu gri metin rengi
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  // Bugün işaretçisinin stilini belirginleştirir.
+  .today-highlight {
+    fill: #fcf8e3; // Hafif sarımsı bir renk
+  }
+}
