@@ -1,0 +1,625 @@
+// Gantt Chart Styles for Kaşıkmate
+// Modern, responsive Gantt chart component
+
+// ==================== FRAPPE GANTT CORE CSS ====================
+// Frappe Gantt temel stilleri - CDN'den kopyalandı
+.gantt {
+    position: relative;
+    overflow: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    
+    // Grid stilləri
+    .grid-background, .grid-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .grid-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        z-index: 3;
+    }
+    
+    .grid-row {
+        border-bottom: 1px solid #f1f3f4;
+    }
+    
+    .grid-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    // Task bar stilləri
+    .bar-wrapper {
+        position: absolute;
+        cursor: pointer;
+    }
+    
+    .bar {
+        height: 20px;
+        background: linear-gradient(135deg, var(--kheshig-blue, #3b82f6), var(--kheshig-navy, #1e3a8a));
+        border-radius: 4px;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .bar:hover {
+        opacity: 0.8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .bar-progress {
+        height: 100%;
+        background: var(--kheshig-gold, #f59e0b);
+        border-radius: inherit;
+        transition: width 0.3s ease;
+    }
+    
+    .bar-label {
+        position: absolute;
+        top: 50%;
+        left: 8px;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100% - 16px);
+    }
+    
+    // Arrow bağlantıları
+    .arrow {
+        stroke: var(--kheshig-sage, #6b7280);
+        stroke-width: 2;
+        fill: none;
+        marker-end: url(#arrowhead);
+    }
+    
+    // Bugün çizgisi
+    .today-highlight {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--kheshig-gold, #f59e0b);
+        z-index: 2;
+        pointer-events: none;
+    }
+    
+    // Zaman etiketləri
+    .upper-text, .lower-text {
+        text-anchor: middle;
+        font-size: 12px;
+        fill: #666;
+    }
+    
+    .upper-text {
+        font-weight: 600;
+    }
+    
+    // Handle stilləri (yeniden boyutlandırma)
+    .handle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        cursor: ew-resize;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .handle.left {
+        left: 0;
+        border-left: 2px solid var(--kheshig-gold, #f59e0b);
+    }
+    
+    .handle.right {
+        right: 0;
+        border-right: 2px solid var(--kheshig-gold, #f59e0b);
+    }
+    
+    .bar-wrapper:hover .handle {
+        opacity: 1;
+    }
+    
+    // View mode seçici
+    .view-mode {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+    
+    .view-mode select {
+        padding: 5px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        font-size: 12px;
+    }
+    
+    // Tooltip
+    .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 100;
+        pointer-events: none;
+        transform: translateX(-50%);
+    }
+    
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    // Responsive tasarım
+    @media (max-width: 768px) {
+        font-size: 12px;
+        
+        .bar {
+            height: 16px;
+        }
+        
+        .bar-label {
+            font-size: 10px;
+        }
+          .view-mode {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin-bottom: 10px;
+        }
+    }
+}
+
+// ==================== GANTT CONTAINER BOYUTLANDIRMA ====================
+// Bu bölüm kritik: Gantt chart'ın görünür olması için
+#gantt-container, .gantt-chart-container {
+    width: 100%;
+    min-height: 400px;
+    height: 600px;
+    max-height: 80vh;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: auto;
+    position: relative;
+    
+    // Gantt chart yüklenirken loading state
+    &.loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(45deg, #f8fafc, #e2e8f0);
+        
+        &::before {
+            content: 'Gantt şeması yükleniyor...';
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+    }
+    
+    // Gantt chart başarıyla yüklendiğinde
+    &.loaded {
+        background-color: #ffffff;
+    }
+    
+    // Hata durumunda
+    &.error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fef2f2;
+        border-color: #fca5a5;
+        
+        &::before {
+            content: 'Gantt şeması yüklenemedi';
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 500;
+        }
+    }
+}
+
+// Gantt SVG için temel stil
+#gantt-container svg, .gantt-chart-container svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 300px;
+}
+
+// Gantt içinde bulunan div'ler için
+#gantt-container > div, .gantt-chart-container > div {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 300px;
+}
+
+// Room sayfasındaki Gantt tab panel
+.tab-panel.gantt-panel {
+    padding: var(--space-lg);
+    height: calc(100vh - 120px);
+    overflow: hidden;
+    
+    .gantt-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+    
+    #gantt-container {
+        flex: 1;
+        min-height: 500px;
+    }
+}
+
+// ==================== GANTT CONTROL PANEL ====================
+.gantt-control-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--background-primary);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    
+    .gantt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-lg);
+        background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-sage));
+        color: white;
+        border-bottom: 1px solid var(--border-subtle);
+        
+        h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            
+            i {
+                font-size: 1.125rem;
+                color: var(--kheshig-gold);
+            }
+        }
+        
+        .gantt-view-controls {
+            display: flex;
+            gap: var(--space-xs);
+            
+            .view-btn {
+                padding: var(--space-sm) var(--space-md);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: var(--border-radius-sm);
+                background: transparent;
+                color: white;
+                font-size: 0.875rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                
+                &:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(255, 255, 255, 0.5);
+                    transform: translateY(-1px);
+                }
+                
+                &.active {
+                    background: var(--gradient-gold);
+                    color: var(--kheshig-navy);
+                    border-color: var(--kheshig-gold);
+                    font-weight: 600;
+                }
+            }
+        }
+        
+        @media (max-width: 768px) {
+            flex-direction: column;
+            gap: var(--space-md);
+            text-align: center;
+            
+            .gantt-view-controls {
+                justify-content: center;
+            }
+        }
+    }
+}
+
+// ==================== GANTT CHART CONTAINER ====================
+.gantt-chart-container {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    
+    #gantt-chart {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+    }
+    
+    // Frappe Gantt overrides
+    .gantt-container {
+        font-family: inherit;
+        
+        .grid-header {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--background-tertiary);
+        }
+        
+        .grid-row {
+            &:nth-child(even) {
+                background: rgba(var(--kheshig-gold-rgb), 0.03);
+            }
+            
+            &:hover {
+                background: rgba(var(--kheshig-gold-rgb), 0.1);
+            }
+        }
+        
+        .bar {
+            border-radius: 4px;
+            
+            &.bar-task {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                border: 1px solid var(--primary-color);
+            }
+            
+            &.bar-milestone {
+                background: var(--gradient-gold);
+                border: 1px solid var(--kheshig-gold);
+            }
+            
+            &.bar-project {
+                background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-sage));
+                border: 1px solid var(--kheshig-navy);
+            }
+            
+            &.bar-critical {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                border: 1px solid #ef4444;
+            }
+        }
+        
+        .bar-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .bar-progress {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        
+        .today-marker {
+            stroke: var(--kheshig-gold);
+            stroke-width: 2px;
+            stroke-dasharray: 4, 4;
+        }
+        
+        .weekend {
+            fill: rgba(var(--kheshig-gold-rgb), 0.05);
+        }
+    }
+    
+    // Loading state
+    &.loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        &::before {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-subtle);
+            border-top: 3px solid var(--kheshig-gold);
+            border-radius: 50%;
+            animation: gantt-loading 1s linear infinite;
+        }
+    }
+    
+    // Empty state
+    &.empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-md);
+            color: var(--border-primary);
+        }
+        
+        .empty-text {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .empty-description {
+            font-size: 0.875rem;
+            text-align: center;
+            max-width: 300px;
+        }
+    }
+}
+
+// ==================== GANTT STATUS BAR ====================
+.gantt-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--background-tertiary);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.875rem;
+    
+    .status-text {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .gantt-info {
+        display: flex;
+        gap: var(--space-lg);
+        color: var(--text-muted);
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            
+            i {
+                color: var(--kheshig-gold);
+            }
+        }
+    }
+    
+    @media (max-width: 768px) {
+        flex-direction: column;
+        gap: var(--space-sm);
+        text-align: center;
+        
+        .gantt-info {
+            justify-content: center;
+        }
+    }
+}
+
+// ==================== ANIMATIONS ====================
+@keyframes gantt-loading {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+// ==================== RESPONSIVE DESIGN ====================
+@media (max-width: 1024px) {
+    .gantt-control-panel {
+        .gantt-header {
+            padding: var(--space-md);
+            
+            h3 {
+                font-size: 1.125rem;
+            }
+        }
+        
+        .gantt-chart-container {
+            #gantt-chart {
+                min-height: 350px;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .gantt-control-panel {
+        .gantt-header {
+            .gantt-view-controls {
+                .view-btn {
+                    padding: var(--space-xs) var(--space-sm);
+                    font-size: 0.8rem;
+                }
+            }
+        }
+        
+        .gantt-chart-container {
+            #gantt-chart {
+                min-height: 300px;
+            }
+        }
+        
+        .gantt-status {
+            padding: var(--space-sm);
+            
+            .gantt-info {
+                gap: var(--space-md);
+                
+                .info-item {
+                    font-size: 0.8rem;
+                }
+            }
+        }
+    }
+}
+
+// ==================== TAB PANEL SPECIFIC STYLES ====================
+.tab-panel#gantt-tab {
+    height: 100%;
+    
+    .gantt-control-panel {
+        height: 100%;
+    }
+}
+
+// ==================== TOOLTIP STYLES ====================
+.gantt-tooltip {
+    position: absolute;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-sm);
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    pointer-events: none;
+    
+    .tooltip-title {
+        font-weight: 600;
+        margin-bottom: var(--space-xs);
+        color: var(--text-primary);
+    }
+    
+    .tooltip-content {
+        color: var(--text-secondary);
+        
+        .tooltip-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-xs);
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+            
+            .label {
+                font-weight: 500;
+            }
+            
+            .value {
+                margin-left: var(--space-sm);
+            }
+        }
+    }
+}

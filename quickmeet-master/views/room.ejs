@@ -9,30 +9,10 @@
     <!-- BPMN.js CSS -->
     <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.7.1/dist/assets/diagram-js.css">
     <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.7.1/dist/assets/bpmn-font/css/bpmn-embedded.css">
-    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
-    <!-- Oda ve kullanıcı bilgilerini JavaScript'e aktar -->    <script>
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>    <script>
         const ROOM_ID = "<%= project._id %>";
         const USER_USERNAME = "<%= user.username %>";
         const USER_ID = "<%= user._id %>";
-        
-        // Global modal control function
-        window.forceCloseTaskModal = function() {
-            const modal = document.getElementById('task-modal');
-            if (modal) {
-                modal.style.display = 'none !important';
-                modal.style.visibility = 'hidden !important';
-                modal.style.opacity = '0 !important';
-                modal.classList.remove('show');
-                console.log('🔒 Task modal forcefully closed by global function');
-                return true;
-            }
-            return false;
-        };
-        
-        // Call it immediately
-        setTimeout(window.forceCloseTaskModal, 100);
-        setTimeout(window.forceCloseTaskModal, 500);
-        setTimeout(window.forceCloseTaskModal, 1000);
     </script>
 </head>
 
@@ -192,10 +172,13 @@
                     <button class="sidebar-tab active" data-tab="chat">
                         <i class="fas fa-comment-alt"></i>
                         <span>Sohbet</span>
-                    </button>
-                    <button class="sidebar-tab" data-tab="tasks">
+                    </button>                    <button class="sidebar-tab" data-tab="tasks">
                         <i class="fas fa-tasks"></i>
                         <span>Görevler</span>
+                    </button>
+                    <button class="sidebar-tab" data-tab="gantt">
+                        <i class="fas fa-chart-gantt"></i>
+                        <span>Zaman Çizelgesi</span>
                     </button>
                     <button class="sidebar-tab" data-tab="workflow">
                         <i class="fas fa-project-diagram"></i>
@@ -324,6 +307,26 @@
                                 <!-- Real-time collaboration indicators -->
                             </div>
                         </div>
+                    </div>                </div>
+
+                <!-- Gantt Chart Tab Panel -->
+                <div class="tab-panel" id="gantt-tab">
+                    <div class="gantt-control-panel">
+                        <div class="gantt-header">
+                            <h3><i class="fas fa-chart-gantt"></i> Zaman Çizelgesi</h3>
+                            <div class="gantt-view-controls">
+                                <button id="gantt-day-view" class="view-btn active" data-view="Day">Gün</button>
+                                <button id="gantt-week-view" class="view-btn" data-view="Week">Hafta</button>
+                                <button id="gantt-month-view" class="view-btn" data-view="Month">Ay</button>
+                            </div>
+                        </div>
+                          <div class="gantt-chart-container" id="gantt-chart-container">
+                            <div id="gantt-chart"></div>
+                        </div>
+                        
+                        <div class="gantt-status">
+                            <span class="status-text">Gantt şeması yükleniyor...</span>
+                        </div>
                     </div>
                 </div>
 
@@ -333,10 +336,142 @@
             </div>
         </div>    <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-    <script src="https://unpkg.com/bpmn-js@17.7.1/dist/bpmn-modeler.development.js"></script>
-    <script src="/js/kanban.js?v=<%= Date.now() %>"></script>
-    <script src="/js/bpmn.js?v=<%= Date.now() %>"></script>
-    <script src="/js/room.js?v=<%= Date.now() %>"></script>
+    <script src="https://unpkg.com/bpmn-js@17.7.1/dist/bpmn-modeler.development.js"></script>    <script src="https://unpkg.com/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <!-- CRITICAL: Multi-Strategy Gantt.js Loading System -->
+    <script>
+        console.log('🔄 MULTI-STRATEGY GANTT LOADING SYSTEM STARTING...');
+        window.GANTT_FORCE_LOAD_STARTED = true;
+        window.GANTT_LOAD_TIMESTAMP = '20250609050835';
+        window.GANTT_LOADING_STRATEGIES = {
+            scriptTag: false,
+            dynamic: false,
+            inline: false,
+            fallback: false
+        };
+    </script>
+    
+    <!-- Strategy 1: Normal script tag with aggressive cache busting -->
+    <script src="/js/gantt.js?v=20250609050835&nocache=true&force=1&bust=20250609050835&strategy=1" 
+            onload="console.log('✅ GANTT SCRIPT TAG LOADED'); window.GANTT_LOADING_STRATEGIES.scriptTag = true;"
+            onerror="console.error('❌ GANTT SCRIPT TAG FAILED'); window.GANTT_LOADING_STRATEGIES.scriptTag = false;"></script>
+    
+    <!-- Strategy 2: Dynamic loading as immediate backup -->
+    <script>
+        setTimeout(function() {
+            if (!window.GANTT_FILE_COMPLETED && !window.GanttManager) {
+                console.log('🔄 STRATEGY 2: Dynamic loading gantt.js');
+                var script = document.createElement('script');
+                script.src = '/js/gantt.js?dynamic=true&v=20250609050835&nocache=true&force=2&strategy=2';
+                script.onload = function() {
+                    console.log('✅ DYNAMIC GANTT LOADED');
+                    window.GANTT_LOADING_STRATEGIES.dynamic = true;
+                };
+                script.onerror = function() {
+                    console.error('❌ DYNAMIC GANTT FAILED');
+                    window.GANTT_LOADING_STRATEGIES.dynamic = false;
+                };
+                document.head.appendChild(script);
+            }
+        }, 500);
+    </script>
+    
+    <!-- Strategy 3: Inline fetch and eval -->
+    <script>
+        setTimeout(function() {
+            if (!window.GANTT_FILE_COMPLETED && !window.GanttManager) {
+                console.log('🔄 STRATEGY 3: Inline fetch and execute');
+                fetch('/js/gantt.js?inline=true&v=20250609050835&nocache=true&force=3&strategy=3')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
+                        }
+                        return response.text();
+                    })
+                    .then(code => {
+                        console.log('📄 Got gantt.js content (' + code.length + ' chars), executing...');
+                        try {
+                            // Create a script element for better error handling
+                            var script = document.createElement('script');
+                            script.text = code;
+                            document.head.appendChild(script);
+                            console.log('✅ INLINE EXECUTION SUCCESS');
+                            window.GANTT_LOADING_STRATEGIES.inline = true;
+                        } catch (error) {
+                            console.error('❌ INLINE EXECUTION ERROR:', error);
+                            window.GANTT_LOADING_STRATEGIES.inline = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ FETCH ERROR:', error);
+                        window.GANTT_LOADING_STRATEGIES.inline = false;
+                    });
+            }
+        }, 1000);
+    </script>
+    
+    <!-- Strategy 4: Ultimate fallback with different URL pattern -->
+    <script>
+        setTimeout(function() {
+            if (!window.GANTT_FILE_COMPLETED && !window.GanttManager) {
+                console.log('🔄 STRATEGY 4: Ultimate fallback loading');
+                var script = document.createElement('script');
+                script.src = '/js/gantt.js?fallback=true&timestamp=' + Date.now() + '&random=' + Math.random() + '&strategy=4';
+                script.onload = function() {
+                    console.log('✅ FALLBACK GANTT LOADED');
+                    window.GANTT_LOADING_STRATEGIES.fallback = true;
+                };
+                script.onerror = function() {
+                    console.error('❌ ALL GANTT LOADING STRATEGIES FAILED!');
+                    window.GANTT_LOADING_STRATEGIES.fallback = false;
+                };
+                document.head.appendChild(script);
+            }
+        }, 2000);
+    </script>
+    
+    <!-- Comprehensive verification and status report -->
+    <script>
+        setTimeout(() => {
+            console.log('\n=== GANTT LOADING FINAL REPORT ===');
+            console.log('📊 Frappe Gantt library:', typeof window.Gantt !== 'undefined' ? '✅ Available' : '❌ Missing');
+            console.log('📊 GanttManager class:', typeof window.GanttManager !== 'undefined' ? '✅ Available' : '❌ Missing');
+            console.log('📊 File loading marker:', window.GANTT_FILE_LOADING ? '✅ Set' : '❌ Not set');
+            console.log('📊 File completion marker:', window.GANTT_FILE_COMPLETED ? '✅ Set' : '❌ Not set');
+            console.log('📊 Loading strategies:');
+            console.log('   - Script Tag:', window.GANTT_LOADING_STRATEGIES.scriptTag ? '✅' : '❌');
+            console.log('   - Dynamic:', window.GANTT_LOADING_STRATEGIES.dynamic ? '✅' : '❌');
+            console.log('   - Inline:', window.GANTT_LOADING_STRATEGIES.inline ? '✅' : '❌');
+            console.log('   - Fallback:', window.GANTT_LOADING_STRATEGIES.fallback ? '✅' : '❌');
+            
+            // List all gantt-related window properties
+            const ganttProps = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('gantt')
+            ).sort();
+            console.log('📊 Window properties with "gantt":', ganttProps);
+            
+            if (!window.GanttManager) {
+                console.error('\n❌ CRITICAL: GanttManager still not available after ALL strategies!');
+                console.error('🔧 NEXT STEPS:');
+                console.error('   1. Check Network tab in DevTools for failed requests');
+                console.error('   2. Clear ALL browser data (cache, cookies, storage)');
+                console.error('   3. Try incognito/private browsing mode');
+                console.error('   4. Check if gantt.js file exists and is accessible');
+                
+                // Show user-friendly alert
+                alert('🚨 GANTT ŞEMASı YÜKLENEMEDİ!\n\n' +
+                      'Tüm yükleme stratejileri başarısız oldu.\n\n' +
+                      'Çözüm adımları:\n' +
+                      '1. CTRL+Shift+R ile hard refresh yapın\n' +
+                      '2. Browser\'ın TÜM verilerini temizleyin\n' +
+                      '3. Gizli/özel pencerede deneyin\n' +
+                      '4. Developer Tools > Network sekmesini kontrol edin');
+            } else {
+                console.log('✅ SUCCESS: GanttManager is available!');
+                console.log('🎉 Gantt chart should work properly now');
+            }
+        }, 5000);
+    </script>
+    <script src="/js/room.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     
     <script>
         // Odaya geri dönmek için buton
@@ -435,8 +570,7 @@
                     <label for="task-description">Açıklama</label>
                     <textarea id="task-description" name="description" rows="4" maxlength="1000"></textarea>
                 </div>
-                
-                <div class="form-row">
+                  <div class="form-row">
                     <div class="form-group">
                         <label for="task-priority">Öncelik</label>
                         <select id="task-priority" name="priority">
@@ -444,6 +578,11 @@
                             <option value="medium" selected>Orta</option>
                             <option value="high">Yüksek</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-start-date">Başlangıç Tarihi</label>
+                        <input type="date" id="task-start-date" name="startDate">
                     </div>
                     
                     <div class="form-group">

@@ -57,8 +57,8 @@ class KanbanBoard {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
-            this.tasks = await response.json();
+              const data = await response.json();
+            this.tasks = Array.isArray(data) ? data : (data.tasks || []);
             console.log(`📋 Loaded ${this.tasks.length} tasks`);
             this.renderTasks();
             this.updateTaskCounts();
@@ -537,7 +537,15 @@ class KanbanBoard {
             modalTitle.textContent = 'Yeni Görev';
             deleteBtn.style.display = 'none';
             form.reset();
-        }        // Add small delay to prevent event conflicts
+            
+            // Set default start date to today for new tasks
+            const startDateField = document.getElementById('task-start-date');
+            if (startDateField) {
+                const today = new Date().toISOString().split('T')[0];
+                startDateField.value = today;
+                console.log('📅 Set default start date to today:', today);
+            }
+        }// Add small delay to prevent event conflicts
         setTimeout(() => {
             modal.classList.add('show');
             console.log('✅ Modal show class added with delay');
@@ -617,8 +625,16 @@ class KanbanBoard {
             const element = document.getElementById(id);
             if (element) {
                 element.value = value;
+            }        });
+        
+        // Handle start date separately
+        if (task.startDate) {
+            const startDateField = document.getElementById('task-start-date');
+            if (startDateField) {
+                const date = new Date(task.startDate);
+                startDateField.value = date.toISOString().split('T')[0];
             }
-        });
+        }
         
         // Handle due date separately
         if (task.dueDate) {
@@ -650,13 +666,12 @@ class KanbanBoard {
         console.log('📋 Form data entries:');
         for (let [key, value] of formData.entries()) {
             console.log(`  ${key}: ${value}`);
-        }
-        
-        const taskData = {
+        }        const taskData = {
             title: formData.get('title')?.trim(),
             description: formData.get('description')?.trim(),
             priority: formData.get('priority'),
             assignedTo: formData.get('assignedTo') || undefined,
+            startDate: formData.get('startDate') || new Date().toISOString().split('T')[0], // Default to today if not provided
             dueDate: formData.get('dueDate') || undefined,
             requiredSkills: formData.get('requiredSkills')
                 ?.split(',')

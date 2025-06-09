@@ -30,11 +30,13 @@ const taskSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
-    },
-    priority: {
+    },    priority: {
         type: String,
         enum: ['low', 'medium', 'high'],
         default: 'medium'
+    },
+    startDate: {
+        type: Date
     },
     dueDate: {
         type: Date

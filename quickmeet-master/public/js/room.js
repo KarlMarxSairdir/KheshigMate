@@ -1048,6 +1048,159 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!window.kanbanBoard) {
                     console.log('🚀 Initializing Kanban board...');
                     window.kanbanBoard = initKanbanBoard(ROOM_ID, socket);
+                }            } else if (targetTab === 'gantt') {
+                // Initialize Gantt chart when gantt tab is opened
+                console.log('🎯 GANTT TAB CLICKED - STARTING COMPREHENSIVE INITIALIZATION');
+                
+                if (!window.ganttManager) {
+                    const initializeGanttComprehensive = async () => {
+                        console.log('🚀 Comprehensive Gantt Chart Initialization Started...');
+                        console.log('🔍 Current timestamp:', new Date().toISOString());
+                        console.log('🔍 Project ID (ROOM_ID):', ROOM_ID);
+                        console.log('🔍 Socket available:', !!socket);
+                        console.log('🔍 Socket connected:', socket?.connected);
+                        
+                        // Check all gantt-related availability
+                        console.log('📊 GANTT AVAILABILITY REPORT:');
+                        console.log('  - Frappe Gantt library:', typeof Gantt);
+                        console.log('  - GanttManager class:', typeof window.GanttManager);
+                        console.log('  - initGanttChart function:', typeof window.initGanttChart);
+                        console.log('  - GANTT_FILE_LOADING:', window.GANTT_FILE_LOADING);
+                        console.log('  - GANTT_FILE_COMPLETED:', window.GANTT_FILE_COMPLETED);
+                        console.log('  - GANTT_ALERT_SHOWN:', window.GANTT_ALERT_SHOWN);
+                        
+                        const ganttProps = Object.keys(window).filter(key => 
+                            key.toLowerCase().includes('gantt')
+                        ).sort();
+                        console.log('  - All gantt window properties:', ganttProps);
+                        
+                        // Force check if gantt.js has actually loaded
+                        if (!window.GANTT_FILE_COMPLETED) {
+                            console.error('❌ CRITICAL: gantt.js file has not completed loading!');
+                            console.error('📍 This indicates the gantt.js script failed to execute properly');
+                            
+                            // Show user-friendly error
+                            const container = document.getElementById('gantt-chart-container');
+                            if (container) {
+                                container.innerHTML = `
+                                    <div class="empty-icon">
+                                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                                    </div>
+                                    <div class="empty-text">Gantt Modülü Yüklenemedi</div>
+                                    <div class="empty-description">
+                                        gantt.js dosyası execute edilemedi.<br>
+                                        <strong>Çözüm:</strong> Sayfayı tamamen yenileyin (CTRL+F5)
+                                    </div>
+                                `;
+                            }
+                            return;
+                        }
+                        
+                        // Enhanced retry mechanism with multiple strategies
+                        let attempts = 0;
+                        const maxAttempts = 15; // Increased attempts
+                        const baseDelay = 300; // Reduced base delay
+                        
+                        while (attempts < maxAttempts) {
+                            attempts++;
+                            console.log(`🔄 Gantt initialization attempt ${attempts}/${maxAttempts}`);
+                            
+                            // Check for GanttManager availability
+                            if (typeof window.GanttManager !== 'undefined') {
+                                console.log('✅ GanttManager class found! Attempting initialization...');
+                                
+                                try {
+                                    // Try using initGanttChart function first
+                                    if (typeof window.initGanttChart === 'function') {
+                                        console.log('🎯 Using initGanttChart function');
+                                        window.ganttManager = window.initGanttChart(ROOM_ID, socket);
+                                    } else {
+                                        console.log('🎯 Using GanttManager constructor directly');
+                                        window.ganttManager = new window.GanttManager(ROOM_ID, socket);
+                                    }
+                                    
+                                    console.log('✅ Gantt Chart Manager initialized successfully');
+                                    console.log('📊 Manager instance:', window.ganttManager);
+                                    
+                                    // Update status
+                                    const statusText = document.querySelector('.gantt-status .status-text');
+                                    if (statusText) {
+                                        statusText.textContent = 'Gantt şeması başlatıldı';
+                                    }
+                                    
+                                    return; // Success!
+                                    
+                                } catch (error) {
+                                    console.error(`❌ Gantt initialization failed on attempt ${attempts}:`, error);
+                                    console.error('❌ Error stack:', error.stack);
+                                    
+                                    // Don't return immediately, try again
+                                    if (attempts >= maxAttempts) {
+                                        // Final attempt failed, show error
+                                        const container = document.getElementById('gantt-chart-container');
+                                        if (container) {
+                                            container.innerHTML = `
+                                                <div class="empty-icon">
+                                                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                                                </div>
+                                                <div class="empty-text">Gantt Başlatma Hatası</div>
+                                                <div class="empty-description">
+                                                    ${error.message}<br>
+                                                    Detaylar için konsolu kontrol edin.
+                                                </div>
+                                            `;
+                                        }
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                            // Progressive delay - longer waits for later attempts
+                            const delay = baseDelay * Math.min(attempts, 5);
+                            
+                            if (attempts < maxAttempts) {
+                                console.log(`⏳ GanttManager not ready, waiting ${delay}ms... (attempt ${attempts}/${maxAttempts})`);
+                                console.log(`   Current status: GanttManager=${typeof window.GanttManager}, GANTT_FILE_COMPLETED=${window.GANTT_FILE_COMPLETED}`);
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                            }
+                        }
+                        
+                        // All attempts exhausted
+                        console.error('❌ GANTT INITIALIZATION COMPLETELY FAILED');
+                        console.error('📊 Final status report:');
+                        console.error('   - GanttManager type:', typeof window.GanttManager);
+                        console.error('   - GANTT_FILE_COMPLETED:', window.GANTT_FILE_COMPLETED);
+                        console.error('   - Available gantt properties:', Object.keys(window).filter(key => key.toLowerCase().includes('gantt')));
+                        
+                        // Show comprehensive error message
+                        const container = document.getElementById('gantt-chart-container');
+                        if (container) {
+                            container.innerHTML = `
+                                <div class="empty-icon">
+                                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                                </div>
+                                <div class="empty-text">Gantt Şeması Başlatılamadı</div>
+                                <div class="empty-description">
+                                    ${maxAttempts} deneme sonrasında Gantt şeması başlatılamadı.<br><br>
+                                    <strong>Olası Çözümler:</strong><br>
+                                    1. Sayfayı tamamen yenileyin (CTRL+F5)<br>
+                                    2. Browser cache'ini temizleyin<br>
+                                    3. Developer Tools > Console'da hataları kontrol edin<br>
+                                    4. Internet bağlantınızı kontrol edin
+                                </div>
+                            `;
+                        }
+                    };
+                    
+                    // Start the comprehensive initialization
+                    initializeGanttComprehensive().catch(error => {
+                        console.error('❌ Comprehensive Gantt initialization threw an error:', error);
+                    });
+                } else {
+                    console.log('♻️ Gantt Manager already exists, refreshing...');
+                    if (window.ganttManager && typeof window.ganttManager.loadTasks === 'function') {
+                        window.ganttManager.loadTasks();
+                    }
                 }
             } else if (targetTab === 'workflow') {
                 // Initialize BPMN workflow manager when workflow tab is opened
