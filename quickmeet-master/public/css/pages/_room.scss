@@ -936,3 +936,21 @@
         bottom: 80px;
     }
 }
+
+// Gantt şemasının taşma sorununu çözmek için eklenen stiller
+.right-panel { // Gantt şemasını içeren sağdaki ana sütun
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; // Bu panelin kendisinin taşmasını engelle
+}
+
+.tab-content { // Sekme içeriklerini tutan container
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#gantt-chart-container { // Sadece Gantt SVG'sini içeren container
+    flex-grow: 1; // Dikeyde kalan alanı doldur
+    overflow-x: auto;  // Yatayda taşarsa kaydırma çubuğu çıkar
+    overflow-y: hidden;
+}

@@ -42,22 +42,26 @@
     
     .bar {
         height: 20px;
-        background: linear-gradient(135deg, var(--kheshig-blue, #3b82f6), var(--kheshig-navy, #1e3a8a));
-        border-radius: 4px;
-        position: relative;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        // background: linear-gradient(135deg, var(--kheshig-blue, #3b82f6), var(--kheshig-navy, #1e3a8a)); // Eski background kuralı
+        fill: var(--kheshig-blue, #3b82f6); // Yeni fill kuralı
+        stroke: var(--kheshig-navy, #1e3a8a); // Kenarlık ekleyebiliriz
+        stroke-width: 1px; // Kenarlık kalınlığı
+        border-radius: 4px; // SVG rect için border-radius doğrudan çalışmaz, ancak kalsın
+        position: relative; // SVG içinde position relative'in etkisi sınırlıdır
+        // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // SVG rect için box-shadow doğrudan çalışmaz
         transition: all 0.2s ease;
     }
     
     .bar:hover {
         opacity: 0.8;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        // transform: translateY(-1px); // SVG için transform farklı çalışır
+        // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
     
     .bar-progress {
-        height: 100%;
-        background: var(--kheshig-gold, #f59e0b);
+        height: 100%; // SVG rect için height doğrudan bu şekilde çalışmaz
+        // background: var(--kheshig-gold, #f59e0b); // Eski background kuralı
+        fill: var(--kheshig-gold, #f59e0b); // Yeni fill kuralı
         border-radius: inherit;
         transition: width 0.3s ease;
     }

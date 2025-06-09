@@ -32,6 +32,8 @@
 @import 'components/gantt';
 @import 'components/bpmn';
 
+@import 'frappe-gantt/dist/frappe-gantt.css'; // Bu satırı en üste taşıdık
+
 // =============================================================================
 // PAGE-SPECIFIC STYLES (Dashboard, Room, Auth, Landing, Settings)
 // =============================================================================
