@@ -30,13 +30,11 @@ const taskSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
-    },    priority: {
+    },
+    priority: {
         type: String,
         enum: ['low', 'medium', 'high'],
         default: 'medium'
-    },
-    startDate: {
-        type: Date
     },
     dueDate: {
         type: Date
@@ -45,6 +43,12 @@ const taskSchema = new mongoose.Schema({
         type: String,
         trim: true
     }],
+    progress: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
     order: {
         type: Number,
         default: 0

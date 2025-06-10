@@ -84,12 +84,18 @@ class GanttManager {
 
     setupSocketListeners() {
         if (!this.socket) return;
-
-        this.socket.on('taskUpdated', (data) => {
-            console.log('📡 Task updated via socket:', data);
-            this.handleTaskUpdate(data);
+        // task-updated event'ini dinle (backend ile uyumlu)
+        this.socket.on('task-updated', (updatedTask) => {
+            if (!updatedTask || !updatedTask._id) return;
+            const index = this.tasks.findIndex(t => t._id === updatedTask._id);
+            if (index !== -1) {
+                this.tasks[index] = updatedTask;
+            } else {
+                this.tasks.push(updatedTask);
+            }
+            this.renderGanttChart();
+            this.showInfo(`Görev güncellendi: ${updatedTask.title}`);
         });
-
         this.socket.on('taskCreated', (data) => {
             console.log('📡 Task created via socket:', data);
             this.handleTaskCreated(data);
@@ -198,11 +204,11 @@ class GanttManager {
                     
                     // Calculate progress (0-100 integer)
                     let progress = 0;
-                    if (task.status === 'done' || task.status === 'completed') progress = 100;
+                    if (typeof task.progress === 'number') progress = Math.round(task.progress);
+                    else if (typeof task.progress === 'string') progress = Math.round(parseFloat(task.progress) || 0);
+                    else if (task.status === 'done' || task.status === 'completed') progress = 100;
                     else if (task.status === 'in-progress') progress = 50;
                     else if (task.status === 'todo' || task.status === 'pending') progress = 0;
-                    else if (typeof task.progress === 'number') progress = Math.round(task.progress);
-                    else if (typeof task.progress === 'string') progress = Math.round(parseFloat(task.progress) || 0);
                     
                     progress = Math.max(0, Math.min(100, progress));
                       // EXACT FRAPPE GANTT v1.0.3 FORMAT (from Context7 documentation)
@@ -571,7 +577,7 @@ class GanttManager {
             if (!objectIdPattern.test(taskId)) {
                 console.warn(`[GANTT_HANDLER] Invalid taskId detected in handleTaskDateChange: "${taskId}". Update will be skipped. This might be a sample/fallback task or an invalid ID format.`);
                 // İsteğe bağlı: Kullanıcıya bir mesaj gösterilebilir.
-                // this.showError('Bu görev güncellenemez (geçersiz ID).'); 
+                // this.showError görev güncellenemez (geçersiz ID).'); 
                 return; 
             }
 
@@ -598,35 +604,27 @@ class GanttManager {
             const rawTaskId = task.id;
             const taskId = rawTaskId.startsWith('task_') ? rawTaskId.substring(5) : rawTaskId;
             console.log(`[GANTT_HANDLER] Parsed taskId: ${taskId}`);
-
             const objectIdPattern = /^[a-fA-F0-9]{24}$/;
             if (!objectIdPattern.test(taskId)) {
-                console.warn(`[GANTT_HANDLER] Invalid taskId detected in handleTaskProgressChange: "${taskId}". Update will be skipped. This might be a sample/fallback task or an invalid ID format.`);
-                // İsteğe bağlı: Kullanıcıya bir mesaj gösterilebilir.
-                // this.showError('Bu görev güncellenemez (geçersiz ID).');
-                return; 
+                console.warn(`[GANTT_HANDLER] Invalid taskId detected in handleTaskProgressChange: "${taskId}". Update will be skipped.`);
+                return;
             }
-
             const newStatus = progress <= 0 ? 'todo' : progress >= 100 ? 'done' : 'in-progress';
-            
             const updateData = {
+                progress: parseInt(progress, 10),
                 status: newStatus
-                // İsteğe bağlı olarak progress değerini de gönderebilirsiniz:
-                // progress: parseInt(progress) 
             };
-            
             console.log('[GANTT_HANDLER] handleTaskProgressChange - Sunucuya gönderilecek güncellemeler:', updateData);
-            await this.updateTask(taskId, updateData); // updateTaskOnServer yerine updateTask kullanılıyor
+            await this.updateTask(taskId, updateData);
             console.log('✅ Task progress updated successfully via handleTaskProgressChange');
         } catch (error) {
             console.error('❌ Error updating task progress in handleTaskProgressChange:', error);
             this.showError('Görev durumu güncellenirken hata oluştu: ' + error.message);
-            // Hatanın yeniden fırlatılması, on_progress_change içindeki catch tarafından yakalanmasını sağlar
             throw error;
         }
     }
 
-    async updateTask(taskId, updates) { // Bu fonksiyon zaten vardı, updateTaskOnServer yerine bunu kullanıyoruz.
+    async updateTask(taskId, updates) {
         console.log('[GANTT_API] updateTask çağrıldı. Task ID:', taskId, 'Updates:', updates);
         const response = await fetch('/projects/' + this.projectId + '/tasks/' + taskId, {
             method: 'PUT',
@@ -635,11 +633,9 @@ class GanttManager {
             },
             body: JSON.stringify(updates)
         });
-        
         if (!response.ok) {
             throw new Error('HTTP error! status: ' + response.status);
         }
-        
         return response.json();
     }
 
@@ -681,6 +677,14 @@ class GanttManager {
         const container = document.getElementById('gantt-chart');
         if (container) {
             container.innerHTML = '<div class="error-state"><div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div><h3>Hata Oluştu</h3><p>' + this.escapeHtml(message) + '</p><button onclick="location.reload()" class="retry-btn">Sayfayı Yenile</button></div>';
+        }
+    }
+
+    showInfo(message) {
+        if (typeof showNotification === 'function') {
+            showNotification(message, 'info');
+        } else {
+            console.log('INFO:', message);
         }
     }
 

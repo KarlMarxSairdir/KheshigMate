@@ -807,14 +807,6 @@ app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => 
 app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId } = req.params;
-
-        // Check if projectId is a valid MongoDB ObjectId.
-        // If not (e.g., "test"), it cannot be a real project ID.
-        // Return an empty array of tasks, as no tasks can exist for an invalid project ID.
-        if (!mongoose.Types.ObjectId.isValid(projectId)) {
-            console.warn(`[GET /projects/${projectId}/tasks] Invalid projectId format: "${projectId}". Returning empty task list.`);
-            return res.json([]); // Return an empty array
-        }
         
         // Proje erişim kontrolü
         const project = await Project.findById(projectId);
@@ -841,162 +833,49 @@ app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
         res.json(tasks);
     } catch (error) {
         console.error('Task listing error:', error);
-        // The mongoose.Types.ObjectId.isValid check should prevent most CastErrors for projectId
-        // but if one still occurs (e.g. from other ObjectId fields if any were involved),
-        // or for other unexpected errors, return 500.
         res.status(500).json({ error: 'Görevler getirilirken hata oluştu' });
     }
 });
 
-// Görevi güncelle
+// Görevi güncelle (AKILLI, MERKEZİ, WEBSOCKET'Lİ)
 app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId, taskId } = req.params;
-        const incomingData = req.body;
-
-        console.log(`📝 Task update request for task ${taskId} in project ${projectId}:`, incomingData);
-
-        // Görev ve proje erişim kontrolü
-        let task = await Task.findById(taskId);
-        if (!task || task.project.toString() !== projectId) {
-            return res.status(404).json({ error: 'Görev bulunamadı.' });
-        }
-
+        let updateData = req.body;
+        const task = await Task.findById(taskId);
+        if (!task) { return res.status(404).json({ error: 'Görev bulunamadı.' }); }
+        // Proje erişim kontrolü
         const project = await Project.findById(projectId);
-        if (!project) {
-            return res.status(404).json({ error: 'Proje bulunamadı.' });
-        }
-
         const isOwner = project.owner.toString() === req.user._id.toString();
-        const isMember = project.members.some(member =>
-            member.user.toString() === req.user._id.toString()
-        );
-
+        const isMember = project.members.some(member => member.user.toString() === req.user._id.toString());
         if (!isOwner && !isMember) {
-            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok.' });
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
-
-        // AssignedTo kontrolü
-        if (incomingData.assignedTo !== undefined) {
-            if (incomingData.assignedTo && incomingData.assignedTo !== null && incomingData.assignedTo !== '') { // Check if a user ID is provided
-                const assignedUser = await User.findById(incomingData.assignedTo);
-                if (!assignedUser) {
-                    return res.status(400).json({ error: 'Atanan kullanıcı bulunamadı.' });
-                }
-                const isAssignedUserMember = project.owner.toString() === incomingData.assignedTo.toString() ||
-                    project.members.some(member => member.user.toString() === incomingData.assignedTo.toString());
-                if (!isAssignedUserMember) {
-                    return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil.' });
-                }
-            }
+        // --- AKILLI SENKRONİZASYON MANTIĞI ---
+        if ('status' in updateData && !('progress' in updateData)) {
+            if (updateData.status === 'done') updateData.progress = 100;
+            else if (updateData.status === 'in-progress') {
+                if (task.progress === 0 || task.progress === 100) updateData.progress = 10;
+            } else if (updateData.status === 'todo') updateData.progress = 0;
+        } else if ('progress' in updateData) {
+            const progress = Number(updateData.progress);
+            if (progress >= 100) updateData.status = 'done';
+            else if (progress > 0) updateData.status = 'in-progress';
+            else updateData.status = 'todo';
         }
-
-        const updateFields = {};
-
-        if (incomingData.title !== undefined) updateFields.title = incomingData.title;
-        if (incomingData.description !== undefined) updateFields.description = incomingData.description;
-        if (incomingData.priority !== undefined) updateFields.priority = incomingData.priority;
-        if (incomingData.assignedTo !== undefined) {
-            updateFields.assignedTo = incomingData.assignedTo || null; // Allows unassigning by sending null or empty string
+        // --- BİTTİ ---
+        const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updateData }, { new: true, runValidators: true })
+            .populate('assignedTo', 'username email skills')
+            .populate('createdBy', 'username email');
+        // --- WEBSOCKET BİLDİRİMİ ---
+        if (typeof io !== 'undefined' && io && io.to) {
+            io.to(projectId).emit('task-updated', updatedTask);
+            console.log(`📡 WebSocket event 'task-updated' emitted for task ${updatedTask._id}`);
         }
-        if (incomingData.requiredSkills !== undefined) {
-            updateFields.requiredSkills = Array.isArray(incomingData.requiredSkills) ? incomingData.requiredSkills : [];
-        }
-
-        // Date handling - use current task dates as base
-        let newStartDate = task.startDate;
-        let newDueDate = task.dueDate;
-
-        if (incomingData.startDate !== undefined) {
-            if (incomingData.startDate === null) {
-                 updateFields.startDate = null; // Allow unsetting date
-                 newStartDate = null;
-            } else {
-                updateFields.startDate = new Date(incomingData.startDate);
-                newStartDate = updateFields.startDate;
-            }
-        }
-        if (incomingData.dueDate !== undefined) {
-            if (incomingData.dueDate === null) {
-                updateFields.dueDate = null; // Allow unsetting date
-                newDueDate = null;
-            } else {
-                updateFields.dueDate = new Date(incomingData.dueDate);
-                newDueDate = updateFields.dueDate;
-            }
-        }
-        
-        // Date validation: startDate must be before or same as dueDate if both are set
-        if (newStartDate && newDueDate) {
-            if (new Date(newStartDate) > new Date(newDueDate)) {
-                return res.status(400).json({ error: 'Başlangıç tarihi bitiş tarihinden sonra olamaz.' });
-            }
-        }
-
-        // Progress and Status management
-        if (incomingData.progress !== undefined) {
-            const numericProgress = parseInt(incomingData.progress, 10);
-            if (!isNaN(numericProgress)) {
-                updateFields.progress = Math.max(0, Math.min(100, numericProgress));
-                if (updateFields.progress === 100) {
-                    updateFields.status = 'done';
-                } else if (updateFields.progress > 0) {
-                    updateFields.status = 'in-progress';
-                } else { // progress is 0
-                    updateFields.status = 'todo';
-                }
-            }
-        } else if (incomingData.status !== undefined) { // Only if progress is not sent
-            updateFields.status = incomingData.status;
-            switch (incomingData.status) {
-                case 'done':
-                    updateFields.progress = 100;
-                    break;
-                case 'in-progress':
-                    // If task already has a progress value between 1-99, keep it. Otherwise, set to 50.
-                    updateFields.progress = (task.progress !== undefined && task.progress > 0 && task.progress < 100) ? task.progress : 50;
-                    break;
-                case 'todo':
-                    updateFields.progress = 0;
-                    break;
-                default:
-                    // If status is unknown, don't automatically set progress unless it's undefined
-                    if (task.progress === undefined) updateFields.progress = 0; 
-                    break;
-            }
-        }
-
-        if (Object.keys(updateFields).length === 0) {
-            console.log(`ℹ️ No fields to update for task: ${taskId}. Returning current task.`);
-            await task.populate(['assignedTo', 'createdBy'], 'username email'); // Populate before sending
-            return res.json(task);
-        }
-
-        const updatedTaskDoc = await Task.findByIdAndUpdate(
-            taskId,
-            { $set: updateFields },
-            { new: true, runValidators: true }
-        ).populate(['assignedTo', 'createdBy'], 'username email');
-
-        if (!updatedTaskDoc) {
-            // This case should ideally be caught by the initial findById, but as a safeguard
-            return res.status(404).json({ error: 'Görev güncellenirken bulunamadı (son kontrol).' });
-        }
-
-        console.log(`✅ Task (ID: ${taskId}) partially updated with:`, updateFields);
-        
-        // Socket.IO event (io is globally available in server.js)
-        if (io) {
-            io.to(projectId).emit('taskUpdated', updatedTaskDoc.toObject());
-            console.log(`🚀 Emitted taskUpdated for task ${updatedTaskDoc._id} in project ${projectId}`);
-        } else {
-            console.warn('⚠️ Socket.IO instance not found, cannot emit taskUpdated event.');
-        }
-
-        res.json(updatedTaskDoc);
+        res.json(updatedTask);
     } catch (error) {
-        console.error(`❌ Task update error for task ${req.params.taskId}:`, error);
-        res.status(500).json({ error: 'Görev güncellenirken sunucu hatası oluştu', details: error.message });
+        console.error('Task update error:', error);
+        res.status(500).json({ error: 'Görev güncellenirken hata oluştu' });
     }
 });
 
@@ -1032,89 +911,7 @@ app.delete('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req
     }
 });
 
-// Görev durumunu güncelle (Kanban sürükle-bırak için)
-app.put('/projects/:projectId/tasks/:taskId/status', ensureAuthenticated, async (req, res) => {
-    try {
-        const { projectId, taskId } = req.params;
-        const { status, order } = req.body;
-        
-        // Görev ve proje erişim kontrolü
-        const task = await Task.findById(taskId);
-        if (!task || task.project.toString() !== projectId) {
-            return res.status(404).json({ error: 'Görev bulunamadı' });
-        }
-        
-        const project = await Project.findById(projectId);
-        const isOwner = project.owner.toString() === req.user._id.toString();
-        const isMember = project.members.some(member => 
-            member.user.toString() === req.user._id.toString()
-        );
-        
-        if (!isOwner && !isMember) {
-            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
-        }
-        
-        // Status güncelleme
-        const updatedTask = await Task.findByIdAndUpdate(taskId, {
-            status,
-            order: order || task.order
-        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email');
-        
-        console.log(`✅ Task status updated: ${updatedTask.title} -> ${status}`);
-        res.json(updatedTask);
-    } catch (error) {
-        console.error('Task status update error:', error);
-        res.status(500).json({ error: 'Görev durumu güncellenirken hata oluştu' });
-    }
-});
-
-// Görev ataması (skills matching için)
-app.put('/projects/:projectId/tasks/:taskId/assign', ensureAuthenticated, async (req, res) => {
-    try {
-        const { projectId, taskId } = req.params;
-        const { assignedTo } = req.body;
-        
-        // Görev ve proje erişim kontrolü
-        const task = await Task.findById(taskId);
-        if (!task || task.project.toString() !== projectId) {
-            return res.status(404).json({ error: 'Görev bulunamadı' });
-        }
-        
-        const project = await Project.findById(projectId);
-        const isOwner = project.owner.toString() === req.user._id.toString();
-        const isMember = project.members.some(member => 
-            member.user.toString() === req.user._id.toString()
-        );
-        
-        if (!isOwner && !isMember) {
-            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
-        }
-        
-        // Atanacak kullanıcının proje üyesi olup olmadığını kontrol et
-        if (assignedTo) {
-            const assigneeIsOwner = project.owner.toString() === assignedTo;
-            const assigneeIsMember = project.members.some(member => 
-                member.user.toString() === assignedTo
-            );
-            
-            if (!assigneeIsOwner && !assigneeIsMember) {
-                return res.status(400).json({ error: 'Kullanıcı bu projenin üyesi değil' });
-            }
-        }
-        
-        // Atama işlemi
-        const updatedTask = await Task.findByIdAndUpdate(taskId, {
-            assignedTo: assignedTo || null
-        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email skills');
-        
-        console.log(`✅ Task assigned: ${updatedTask.title} -> ${updatedTask.assignedTo?.username || 'Unassigned'}`);
-        res.json(updatedTask);    } catch (error) {
-        console.error('Task assignment error:', error);
-        res.status(500).json({ error: 'Görev atanırken hata oluştu' });
-    }
-});
-
-// --- BPMN Workflow API Routes ---
+// BPMN Workflow API Routes ---
 
 // Proje BPMN diyagramlarını listele
 app.get('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
@@ -1778,7 +1575,7 @@ function setupSocketHandlers(io) {
                     userId: userInfo.userId,
                     userName: userInfo.userName,
                     socketId: socket.id,
-                                       diagramId,
+                    diagramId,
                     selectedElements
                 });
             }

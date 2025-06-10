@@ -57,8 +57,8 @@ class KanbanBoard {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-              const data = await response.json();
-            this.tasks = Array.isArray(data) ? data : (data.tasks || []);
+            
+            this.tasks = await response.json();
             console.log(`📋 Loaded ${this.tasks.length} tasks`);
             this.renderTasks();
             this.updateTaskCounts();
@@ -114,13 +114,7 @@ class KanbanBoard {
             this.tasks.push(task);
             this.renderTasks();
             this.updateTaskCounts();
-            
-            // Socket.IO ile real-time güncelleme
-            this.socket.emit('task-created', { 
-                projectId: this.projectId, 
-                task: task 
-            });
-            
+            // this.socket.emit('task-created', { projectId: this.projectId, task: task }); // ARTIK GEREKSİZ
             console.log('✅ Task created:', task.title);
             return task;
         } catch (error) {
@@ -151,13 +145,7 @@ class KanbanBoard {
                 this.renderTasks();
                 this.updateTaskCounts();
             }
-            
-            // Socket.IO ile real-time güncelleme
-            this.socket.emit('task-updated', { 
-                projectId: this.projectId, 
-                task: updatedTask 
-            });
-            
+            // this.socket.emit('task-updated', { projectId: this.projectId, task: updatedTask }); // ARTIK GEREKSİZ
             console.log('✅ Task updated:', updatedTask.title);
             return updatedTask;
         } catch (error) {
@@ -180,54 +168,10 @@ class KanbanBoard {
             this.tasks = this.tasks.filter(t => t._id !== taskId);
             this.renderTasks();
             this.updateTaskCounts();
-            
-            // Socket.IO ile real-time güncelleme
-            this.socket.emit('task-deleted', { 
-                projectId: this.projectId, 
-                taskId: taskId 
-            });
-            
+            // this.socket.emit('task-deleted', { projectId: this.projectId, taskId: taskId }); // ARTIK GEREKSİZ
             console.log('✅ Task deleted:', taskId);
         } catch (error) {
             console.error('Task deletion error:', error);
-            throw error;
-        }
-    }
-
-    async updateTaskStatus(taskId, newStatus) {
-        try {
-            const response = await fetch(`/projects/${this.projectId}/tasks/${taskId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Task status could not be updated');
-            }
-            
-            const updatedTask = await response.json();
-            const index = this.tasks.findIndex(t => t._id === taskId);
-            if (index !== -1) {
-                this.tasks[index] = updatedTask;
-                this.renderTasks();
-                this.updateTaskCounts();
-            }
-            
-            // Socket.IO ile real-time güncelleme
-            this.socket.emit('task-status-updated', { 
-                projectId: this.projectId, 
-                taskId: taskId,
-                newStatus: newStatus
-            });
-            
-            console.log('✅ Task status updated:', taskId, newStatus);
-            return updatedTask;
-        } catch (error) {
-            console.error('Task status update error:', error);
             throw error;
         }
     }
@@ -467,12 +411,11 @@ class KanbanBoard {
         if (this.draggedTask.status !== newStatus) {
             try {
                 console.log(`🎯 Dropping task ${this.draggedTask.title} to ${newStatus}`);
-                await this.updateTaskStatus(this.draggedTask._id, newStatus);
+                await this.updateTask(this.draggedTask._id, { status: newStatus });
                 this.showSuccess(`Görev "${this.draggedTask.title}" durumu "${this.getStatusDisplayName(newStatus)}" olarak güncellendi`);
             } catch (error) {
                 console.error('Task status update error:', error);
                 this.showError('Görev durumu güncellenirken hata oluştu');
-                // Revert UI
                 this.renderTasks();
             }
         }
@@ -537,15 +480,7 @@ class KanbanBoard {
             modalTitle.textContent = 'Yeni Görev';
             deleteBtn.style.display = 'none';
             form.reset();
-            
-            // Set default start date to today for new tasks
-            const startDateField = document.getElementById('task-start-date');
-            if (startDateField) {
-                const today = new Date().toISOString().split('T')[0];
-                startDateField.value = today;
-                console.log('📅 Set default start date to today:', today);
-            }
-        }// Add small delay to prevent event conflicts
+        }        // Add small delay to prevent event conflicts
         setTimeout(() => {
             modal.classList.add('show');
             console.log('✅ Modal show class added with delay');
@@ -625,16 +560,8 @@ class KanbanBoard {
             const element = document.getElementById(id);
             if (element) {
                 element.value = value;
-            }        });
-        
-        // Handle start date separately
-        if (task.startDate) {
-            const startDateField = document.getElementById('task-start-date');
-            if (startDateField) {
-                const date = new Date(task.startDate);
-                startDateField.value = date.toISOString().split('T')[0];
             }
-        }
+        });
         
         // Handle due date separately
         if (task.dueDate) {
@@ -666,12 +593,13 @@ class KanbanBoard {
         console.log('📋 Form data entries:');
         for (let [key, value] of formData.entries()) {
             console.log(`  ${key}: ${value}`);
-        }        const taskData = {
+        }
+        
+        const taskData = {
             title: formData.get('title')?.trim(),
             description: formData.get('description')?.trim(),
             priority: formData.get('priority'),
             assignedTo: formData.get('assignedTo') || undefined,
-            startDate: formData.get('startDate') || new Date().toISOString().split('T')[0], // Default to today if not provided
             dueDate: formData.get('dueDate') || undefined,
             requiredSkills: formData.get('requiredSkills')
                 ?.split(',')
@@ -725,64 +653,20 @@ class KanbanBoard {
             console.warn('Socket not available for real-time updates');
             return;
         }
-
-        this.socket.on('task-created', (data) => {
-            if (data.projectId === this.projectId) {
-                console.log('📨 Real-time: Task created', data.task.title);
-                
-                // Add task if not already exists
-                const exists = this.tasks.find(t => t._id === data.task._id);
-                if (!exists) {
-                    this.tasks.push(data.task);
-                    this.renderTasks();
-                    this.updateTaskCounts();
-                    this.showInfo(`Yeni görev eklendi: ${data.task.title}`);
-                }
+        // task-updated event'ini dinle (backend ile uyumlu)
+        this.socket.on('task-updated', (updatedTask) => {
+            if (!updatedTask || !updatedTask._id) return;
+            const index = this.tasks.findIndex(t => t._id === updatedTask._id);
+            if (index !== -1) {
+                this.tasks[index] = updatedTask;
+            } else {
+                this.tasks.push(updatedTask);
             }
+            this.renderTasks();
+            this.updateTaskCounts();
+            this.showInfo(`Görev güncellendi: ${updatedTask.title}`);
         });
-
-        this.socket.on('task-updated', (data) => {
-            if (data.projectId === this.projectId) {
-                console.log('📨 Real-time: Task updated', data.task.title);
-                
-                const index = this.tasks.findIndex(t => t._id === data.task._id);
-                if (index !== -1) {
-                    this.tasks[index] = data.task;
-                    this.renderTasks();
-                    this.updateTaskCounts();
-                    this.showInfo(`Görev güncellendi: ${data.task.title}`);
-                }
-            }
-        });
-
-        this.socket.on('task-deleted', (data) => {
-            if (data.projectId === this.projectId) {
-                console.log('📨 Real-time: Task deleted', data.taskId);
-                
-                const deletedTask = this.tasks.find(t => t._id === data.taskId);
-                this.tasks = this.tasks.filter(t => t._id !== data.taskId);
-                this.renderTasks();
-                this.updateTaskCounts();
-                
-                if (deletedTask) {
-                    this.showInfo(`Görev silindi: ${deletedTask.title}`);
-                }
-            }
-        });
-
-        this.socket.on('task-status-updated', (data) => {
-            if (data.projectId === this.projectId) {
-                console.log('📨 Real-time: Task status updated', data.taskId, data.newStatus);
-                
-                const task = this.tasks.find(t => t._id === data.taskId);
-                if (task) {
-                    task.status = data.newStatus;
-                    this.renderTasks();
-                    this.updateTaskCounts();
-                    this.showInfo(`Görev durumu güncellendi: ${task.title} → ${this.getStatusDisplayName(data.newStatus)}`);
-                }
-            }
-        });
+        // ...diğer eski eventler (task-created, task-deleted, task-status-updated) gerekirse kaldırılabilir...
     }
 
     // ==================== UTILITY METHODS ====================
