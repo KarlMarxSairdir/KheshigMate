@@ -184,9 +184,10 @@ if (typeof QuillNotesManager === 'undefined') {
                 });
 
                 const data = await response.json();
+                console.log('🎨 loadNotes: Data received from /projects/.../notes API:', data); // EKLENDİ: API yanıtını logla
                 
                 if (response.ok) {
-                    this.currentProjectData = data;
+                    this.currentProjectData = data.project; // DEĞİŞTİRİLDİ: data -> data.project
                     this.renderNotes(data.notes);
                 } else {
                     console.error('Failed to load notes:', data.message);
@@ -437,13 +438,22 @@ if (typeof QuillNotesManager === 'undefined') {
 
         // Permission checking methods
         canCreateNote() {
+            console.log('🎨 canCreateNote called. currentUser:', this.currentUser);
             if (!this.currentProjectData) {
-                console.log('🎨 canCreateNote: currentProjectData is null/undefined at the time of check.'); // EKLENDİ
+                console.log('🎨 canCreateNote: currentProjectData is null/undefined at the time of check.');
                 return false;
             }
-            const currentUserMember = this.currentProjectData.members?.find(m => m.user._id === this.currentUser.id);
+            console.log('🎨 canCreateNote: currentProjectData.members:', this.currentProjectData.members);
+            const currentUserMember = this.currentProjectData.members?.find(m => {
+                console.log('🎨 Checking member:', m, 'against currentUser.id:', this.currentUser.id);
+                return m.user._id === this.currentUser.id;
+            });
+            console.log('🎨 canCreateNote: currentUserMember found:', currentUserMember);
             const role = currentUserMember?.role || 'member';
-            return role === 'owner' || role === 'editor';
+            console.log('🎨 canCreateNote: User role determined as:', role);
+            const canCreate = role === 'owner' || role === 'editor';
+            console.log('🎨 canCreateNote: Permission to create note:', canCreate);
+            return canCreate;
         }
 
         canEditNote(note) {
