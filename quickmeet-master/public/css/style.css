@@ -3998,6 +3998,9 @@ navbar .logo {
     transform: translateY(0) scale(1);
   }
 }
+.gantt {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
 .gantt .grid-background {
   fill: #f5f5f5;
 }
@@ -4016,6 +4019,8 @@ navbar .logo {
   margin-top: 6px;
 }
 .gantt .bar-label {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  fill: #333;
   font-size: 14px;
   font-weight: 500;
 }

@@ -744,18 +744,9 @@ app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
 app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId } = req.params;
-        const { title, description, priority, assignedTo, startDate, dueDate, requiredSkills } = req.body;
+        const { title, description, priority, assignedTo, dueDate, requiredSkills } = req.body;
         
-        console.log('📝 Task creation request:', { title, description, priority, assignedTo, startDate, dueDate, requiredSkills });
-        
-        // Tarih validasyonu - startDate dueDate'den önce olmalı
-        if (startDate && dueDate) {
-            const start = new Date(startDate);
-            const due = new Date(dueDate);
-            if (start > due) {
-                return res.status(400).json({ error: 'Başlangıç tarihi bitiş tarihinden sonra olamaz' });
-            }
-        }
+        console.log('📝 Task creation request:', { title, description, priority, assignedTo, dueDate, requiredSkills });
         
         // Proje erişim kontrolü
         const project = await Project.findById(projectId);
@@ -788,13 +779,13 @@ app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => 
                 return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil' });
             }
         }
-          // Yeni görev oluştur
+        
+        // Yeni görev oluştur
         const task = new Task({
             title,
             description,
             priority,
             assignedTo: assignedTo || undefined,
-            startDate: startDate ? new Date(startDate) : undefined,
             dueDate: dueDate ? new Date(dueDate) : undefined,
             requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : [],
             project: projectId,
@@ -814,65 +805,15 @@ app.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => 
 
 // Proje görevlerini listele
 app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
-    console.log('🔍 GET /projects/:projectId/tasks called');
-    console.log('🔍 User authenticated:', req.isAuthenticated());
-    console.log('🔍 User:', req.user ? req.user.username : 'No user');
-    console.log('🔍 Project ID:', req.params.projectId);
-    
     try {
         const { projectId } = req.params;
-        
-        console.log('📋 Real Gantt tasks request for project:', projectId);
-        
-        // MongoDB ObjectId validation
+
+        // Check if projectId is a valid MongoDB ObjectId.
+        // If not (e.g., "test"), it cannot be a real project ID.
+        // Return an empty array of tasks, as no tasks can exist for an invalid project ID.
         if (!mongoose.Types.ObjectId.isValid(projectId)) {
-            console.log('⚠️ Invalid project ID format, using fallback test tasks');
-            
-            // Fallback test görevleri (geçersiz project ID için)
-            const fallbackTasks = [
-                {
-                    _id: 'test_task_1',
-                    title: 'Ornek Gorev 1',
-                    description: 'Bu bir örnek görevdir',
-                    status: 'todo',
-                    priority: 'medium',
-                    startDate: '2025-01-15',
-                    dueDate: '2025-01-22',
-                    assignedTo: { username: 'Test User', email: 'test@example.com' },
-                    createdBy: { username: 'System', email: 'system@example.com' },
-                    createdAt: '2025-01-15',
-                    progress: 0
-                },
-                {
-                    _id: 'test_task_2',
-                    title: 'Ornek Gorev 2',
-                    description: 'Bu ikinci örnek görevdir',
-                    status: 'in-progress',
-                    priority: 'high',
-                    startDate: '2025-01-16',
-                    dueDate: '2025-01-25',
-                    assignedTo: { username: 'Test User 2', email: 'test2@example.com' },
-                    createdBy: { username: 'System', email: 'system@example.com' },
-                    createdAt: '2025-01-16',
-                    progress: 50
-                },
-                {
-                    _id: 'test_task_3',
-                    title: 'Ornek Gorev 3',
-                    description: 'Bu üçüncü örnek görevdir',
-                    status: 'done',
-                    priority: 'low',
-                    startDate: '2025-01-18',
-                    dueDate: '2025-01-20',
-                    assignedTo: { username: 'Test User 3', email: 'test3@example.com' },
-                    createdBy: { username: 'System', email: 'system@example.com' },
-                    createdAt: '2025-01-18',
-                    progress: 100
-                }
-            ];
-            
-            console.log(`📋 Returning ${fallbackTasks.length} fallback tasks for invalid project ID`);
-            return res.json(fallbackTasks);
+            console.warn(`[GET /projects/${projectId}/tasks] Invalid projectId format: "${projectId}". Returning empty task list.`);
+            return res.json([]); // Return an empty array
         }
         
         // Proje erişim kontrolü
@@ -890,162 +831,172 @@ app.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
             return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
         }
         
-        // Gerçek görevleri veritabanından al
-        const rawTasks = await Task.find({ project: projectId })
-            .populate('assignedTo', 'username email')
+        // Görevleri getir
+        const tasks = await Task.find({ project: projectId })
+            .populate('assignedTo', 'username email skills')
             .populate('createdBy', 'username email')
-            .sort({ createdAt: -1 });
-        
-        console.log(`📊 Found ${rawTasks.length} real tasks in database`);
-        
-        // Frappe Gantt için tarihleri ve verileri temizle
-        const cleanTasks = rawTasks.map(task => {
-            // Tarihleri Frappe Gantt formatına dönüştür (YYYY-MM-DD)
-            const formatDate = (date) => {
-                if (!date) return '2025-01-15'; // Default date
-                
-                let dateObj;
-                if (date instanceof Date) {
-                    dateObj = date;
-                } else {
-                    dateObj = new Date(date);
-                }
-                
-                if (isNaN(dateObj.getTime())) {
-                    return '2025-01-15'; // Default if invalid
-                }
-                
-                return dateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
-            };
+            .sort({ order: 1, createdAt: -1 });
             
-            // Progress calculation based on status
-            const calculateProgress = (status) => {
-                switch (status) {
-                    case 'done': return 100;
-                    case 'in-progress': return 50;
-                    case 'todo': 
-                    default: return 0;
-                }
-            };
-            
-            return {
-                _id: String(task._id || '').replace(/[^a-zA-Z0-9_-]/g, '_'),
-                title: String(task.title || 'Unnamed Task').replace(/[^\w\s-]/g, '').substring(0, 100),
-                description: String(task.description || ''),
-                status: String(task.status || 'todo'),
-                priority: String(task.priority || 'medium'),
-                startDate: formatDate(task.startDate || task.createdAt), // Use startDate or fallback to createdAt
-                dueDate: formatDate(task.dueDate || task.startDate || task.createdAt), // Use dueDate or fallback
-                assignedTo: task.assignedTo,
-                createdBy: task.createdBy,
-                createdAt: formatDate(task.createdAt),                progress: calculateProgress(task.status)
-            };
-        });
-        
-        // Eğer gerçek görev yoksa, fallback test görevleri kullan
-        let finalTasks = cleanTasks;
-        if (cleanTasks.length === 0) {
-            console.log('⚠️ No real tasks found, using fallback test tasks');
-            finalTasks = [
-                {
-                    _id: 'test_task_1',
-                    title: 'Ornek Gorev 1',
-                    description: 'Bu bir örnek görevdir',
-                    status: 'todo',
-                    priority: 'medium',
-                    startDate: '2025-01-15',
-                    dueDate: '2025-01-22',
-                    assignedTo: { username: 'Test User', email: 'test@example.com' },
-                    createdBy: req.user,
-                    createdAt: '2025-01-15',
-                    progress: 0
-                }
-            ];
-        }
-        
-        console.log(`📋 Returning ${finalTasks.length} Gantt tasks for project ${projectId}`);
-        console.log('📊 Sample task:', finalTasks[0] ? {
-            id: finalTasks[0]._id,
-            title: finalTasks[0].title,
-            start: finalTasks[0].startDate,
-            end: finalTasks[0].dueDate
-        } : 'No tasks');
-        
-        res.json(finalTasks);          } catch (error) {
-        console.error('❌ Task listing error:', error);
-        console.error('❌ Error stack:', error.stack);
-        console.error('❌ Error message:', error.message);
-        res.status(500).json({ 
-            error: 'Görevler getirilirken hata oluştu',
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        console.log(`📋 Found ${tasks.length} tasks for project ${project.name}`);
+        res.json(tasks);
+    } catch (error) {
+        console.error('Task listing error:', error);
+        // The mongoose.Types.ObjectId.isValid check should prevent most CastErrors for projectId
+        // but if one still occurs (e.g. from other ObjectId fields if any were involved),
+        // or for other unexpected errors, return 500.
+        res.status(500).json({ error: 'Görevler getirilirken hata oluştu' });
     }
 });
 
 // Görevi güncelle
 app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, res) => {
-    try {        const { projectId, taskId } = req.params;
-        const { title, description, priority, assignedTo, startDate, dueDate, requiredSkills } = req.body;
-        
-        console.log('📝 Task update request:', { title, description, priority, assignedTo, startDate, dueDate, requiredSkills });
-        
-        // Tarih validasyonu - startDate dueDate'den önce olmalı
-        if (startDate && dueDate) {
-            const start = new Date(startDate);
-            const due = new Date(dueDate);
-            if (start > due) {
-                return res.status(400).json({ error: 'Başlangıç tarihi bitiş tarihinden sonra olamaz' });
-            }
-        }
-        
+    try {
+        const { projectId, taskId } = req.params;
+        const incomingData = req.body;
+
+        console.log(`📝 Task update request for task ${taskId} in project ${projectId}:`, incomingData);
+
         // Görev ve proje erişim kontrolü
-        const task = await Task.findById(taskId);
+        let task = await Task.findById(taskId);
         if (!task || task.project.toString() !== projectId) {
-            return res.status(404).json({ error: 'Görev bulunamadı' });
+            return res.status(404).json({ error: 'Görev bulunamadı.' });
         }
-        
+
         const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı.' });
+        }
+
         const isOwner = project.owner.toString() === req.user._id.toString();
-        const isMember = project.members.some(member => 
+        const isMember = project.members.some(member =>
             member.user.toString() === req.user._id.toString()
         );
-        
+
         if (!isOwner && !isMember) {
-            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok.' });
+        }
+
+        // AssignedTo kontrolü
+        if (incomingData.assignedTo !== undefined) {
+            if (incomingData.assignedTo && incomingData.assignedTo !== null && incomingData.assignedTo !== '') { // Check if a user ID is provided
+                const assignedUser = await User.findById(incomingData.assignedTo);
+                if (!assignedUser) {
+                    return res.status(400).json({ error: 'Atanan kullanıcı bulunamadı.' });
+                }
+                const isAssignedUserMember = project.owner.toString() === incomingData.assignedTo.toString() ||
+                    project.members.some(member => member.user.toString() === incomingData.assignedTo.toString());
+                if (!isAssignedUserMember) {
+                    return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil.' });
+                }
+            }
+        }
+
+        const updateFields = {};
+
+        if (incomingData.title !== undefined) updateFields.title = incomingData.title;
+        if (incomingData.description !== undefined) updateFields.description = incomingData.description;
+        if (incomingData.priority !== undefined) updateFields.priority = incomingData.priority;
+        if (incomingData.assignedTo !== undefined) {
+            updateFields.assignedTo = incomingData.assignedTo || null; // Allows unassigning by sending null or empty string
+        }
+        if (incomingData.requiredSkills !== undefined) {
+            updateFields.requiredSkills = Array.isArray(incomingData.requiredSkills) ? incomingData.requiredSkills : [];
+        }
+
+        // Date handling - use current task dates as base
+        let newStartDate = task.startDate;
+        let newDueDate = task.dueDate;
+
+        if (incomingData.startDate !== undefined) {
+            if (incomingData.startDate === null) {
+                 updateFields.startDate = null; // Allow unsetting date
+                 newStartDate = null;
+            } else {
+                updateFields.startDate = new Date(incomingData.startDate);
+                newStartDate = updateFields.startDate;
+            }
+        }
+        if (incomingData.dueDate !== undefined) {
+            if (incomingData.dueDate === null) {
+                updateFields.dueDate = null; // Allow unsetting date
+                newDueDate = null;
+            } else {
+                updateFields.dueDate = new Date(incomingData.dueDate);
+                newDueDate = updateFields.dueDate;
+            }
         }
         
-        // AssignedTo kontrolü - eğer belirtilmişse geçerli kullanıcı olup olmadığını kontrol et
-        if (assignedTo) {
-            const assignedUser = await User.findById(assignedTo);
-            if (!assignedUser) {
-                return res.status(400).json({ error: 'Atanan kullanıcı bulunamadı' });
-            }
-            
-            // Atanan kullanıcının proje üyesi olup olmadığını kontrol et
-            const isAssignedUserMember = project.owner.toString() === assignedTo.toString() ||
-                project.members.some(member => member.user.toString() === assignedTo.toString());
-            
-            if (!isAssignedUserMember) {
-                return res.status(400).json({ error: 'Atanan kullanıcı bu projenin üyesi değil' });
+        // Date validation: startDate must be before or same as dueDate if both are set
+        if (newStartDate && newDueDate) {
+            if (new Date(newStartDate) > new Date(newDueDate)) {
+                return res.status(400).json({ error: 'Başlangıç tarihi bitiş tarihinden sonra olamaz.' });
             }
         }
-          // Güncelle
-        const updatedTask = await Task.findByIdAndUpdate(taskId, {
-            title,
-            description,
-            priority,
-            assignedTo: assignedTo || undefined,
-            startDate: startDate ? new Date(startDate) : undefined,
-            dueDate: dueDate ? new Date(dueDate) : undefined,
-            requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : []
-        }, { new: true }).populate(['assignedTo', 'createdBy'], 'username email');
+
+        // Progress and Status management
+        if (incomingData.progress !== undefined) {
+            const numericProgress = parseInt(incomingData.progress, 10);
+            if (!isNaN(numericProgress)) {
+                updateFields.progress = Math.max(0, Math.min(100, numericProgress));
+                if (updateFields.progress === 100) {
+                    updateFields.status = 'done';
+                } else if (updateFields.progress > 0) {
+                    updateFields.status = 'in-progress';
+                } else { // progress is 0
+                    updateFields.status = 'todo';
+                }
+            }
+        } else if (incomingData.status !== undefined) { // Only if progress is not sent
+            updateFields.status = incomingData.status;
+            switch (incomingData.status) {
+                case 'done':
+                    updateFields.progress = 100;
+                    break;
+                case 'in-progress':
+                    // If task already has a progress value between 1-99, keep it. Otherwise, set to 50.
+                    updateFields.progress = (task.progress !== undefined && task.progress > 0 && task.progress < 100) ? task.progress : 50;
+                    break;
+                case 'todo':
+                    updateFields.progress = 0;
+                    break;
+                default:
+                    // If status is unknown, don't automatically set progress unless it's undefined
+                    if (task.progress === undefined) updateFields.progress = 0; 
+                    break;
+            }
+        }
+
+        if (Object.keys(updateFields).length === 0) {
+            console.log(`ℹ️ No fields to update for task: ${taskId}. Returning current task.`);
+            await task.populate(['assignedTo', 'createdBy'], 'username email'); // Populate before sending
+            return res.json(task);
+        }
+
+        const updatedTaskDoc = await Task.findByIdAndUpdate(
+            taskId,
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        ).populate(['assignedTo', 'createdBy'], 'username email');
+
+        if (!updatedTaskDoc) {
+            // This case should ideally be caught by the initial findById, but as a safeguard
+            return res.status(404).json({ error: 'Görev güncellenirken bulunamadı (son kontrol).' });
+        }
+
+        console.log(`✅ Task (ID: ${taskId}) partially updated with:`, updateFields);
         
-        console.log(`✅ Task updated: ${updatedTask.title}, assigned to: ${updatedTask.assignedTo?.username || 'Atanmamış'}`);
-        res.json(updatedTask);
+        // Socket.IO event (io is globally available in server.js)
+        if (io) {
+            io.to(projectId).emit('taskUpdated', updatedTaskDoc.toObject());
+            console.log(`🚀 Emitted taskUpdated for task ${updatedTaskDoc._id} in project ${projectId}`);
+        } else {
+            console.warn('⚠️ Socket.IO instance not found, cannot emit taskUpdated event.');
+        }
+
+        res.json(updatedTaskDoc);
     } catch (error) {
-        console.error('Task update error:', error);
-        res.status(500).json({ error: 'Görev güncellenirken hata oluştu' });
+        console.error(`❌ Task update error for task ${req.params.taskId}:`, error);
+        res.status(500).json({ error: 'Görev güncellenirken sunucu hatası oluştu', details: error.message });
     }
 });
 
@@ -1827,7 +1778,7 @@ function setupSocketHandlers(io) {
                     userId: userInfo.userId,
                     userName: userInfo.userName,
                     socketId: socket.id,
-                    diagramId,
+                                       diagramId,
                     selectedElements
                 });
             }

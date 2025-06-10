@@ -1,6 +1,7 @@
 // public/css/components/_gantt-overrides.scss
 
 .gantt {
+  font-family: "Helvetica Neue", Arial, sans-serif; // Genel font ayarı
   // Grid'in siyah arka planını düzeltir. Açık bir renk veriyoruz.
   .grid-background {
     fill: #f5f5f5; // Açık gri bir arka plan
@@ -26,6 +27,8 @@
   
   // Görev isimlerinin okunabilirliğini artırır.
   .bar-label {
+    font-family: "Helvetica Neue", Arial, sans-serif; // Türkçe karakterleri destekleyen fontlar
+    fill: #333; // Etiket rengini koyu gri yap
     font-size: 14px;
     font-weight: 500;
   }

@@ -281,7 +281,38 @@ class GanttManager {
               // MINIMAL CONFIG (Context7 style)
             const config = {
                 view_mode: this.currentView,
-                date_format: 'YYYY-MM-DD'
+                date_format: 'YYYY-MM-DD',
+                on_click: function (task) {
+                    console.log('Görev tıklandı (özel işleyici), varsayılan popup devrede değil. Task ID:', task.id);
+                    // Özel modal gösterimi daha sonra burada uygulanabilir.
+                },
+                on_date_change: async (task, start, end) => { // async eklendi
+                    console.log('[GANTT_EVENT] on_date_change tetiklendi. Task:', task, 'Start:', start, 'End:', end);
+                    try {
+                        // Tarihleri Frappe Gantt'ın beklediği YYYY-MM-DD formatına getirelim
+                        const formattedStart = start instanceof Date ? start.toISOString().split('T')[0] : start;
+                        const formattedEnd = end instanceof Date ? end.toISOString().split('T')[0] : end;
+                        
+                        console.log('[GANTT_EVENT] on_date_change - Tarihler formatlandı. Start:', formattedStart, 'End:', formattedEnd);
+                        await this.handleTaskDateChange(task, formattedStart, formattedEnd);
+                        console.log('[GANTT_EVENT] on_date_change - handleTaskDateChange başarıyla tamamlandı.');
+                    } catch (error) {
+                        console.error('[GANTT_EVENT] on_date_change içinde hata:', error);
+                        // Kullanıcıya bir hata mesajı göstermek isteyebilirsiniz
+                        // this.showError('Tarih güncellenirken bir hata oluştu.');
+                    }
+                },
+                on_progress_change: async (task, progress) => { // async eklendi
+                    console.log('[GANTT_EVENT] on_progress_change tetiklendi. Task:', task, 'Progress:', progress);
+                    try {
+                        await this.handleTaskProgressChange(task, progress);
+                        console.log('[GANTT_EVENT] on_progress_change - handleTaskProgressChange başarıyla tamamlandı.');
+                    } catch (error) {
+                        console.error('[GANTT_EVENT] on_progress_change içinde hata:', error);
+                        // Kullanıcıya bir hata mesajı göstermek isteyebilirsiniz
+                        // this.showError('İlerleme güncellenirken bir hata oluştu.');
+                    }
+                }
             };
             
             console.log('🔧 Creating Frappe Gantt with minimal config and Context7 format...');
@@ -302,7 +333,8 @@ class GanttManager {
                 
                 // Setup event listeners with error handling
                 try {
-                    this.setupGanttEventListeners();
+                    // this.setupGanttEventListeners(); // Bu satırı yorumluyoruz çünkü eventler artık config içinde tanımlı
+                    console.log('✅ Gantt event listeners are now part of the config object.');
                 } catch (eventError) {
                     console.warn('⚠️ Event listeners setup failed (non-critical):', eventError);
                 }
@@ -348,13 +380,13 @@ class GanttManager {
             // Enhanced error handling based on error type
             let userMessage = 'Gantt şeması oluşturulamadı';
             
-            if (error.message.includes('Frappe Gantt')) {
+            if (error.message && error.message.includes('Frappe Gantt')) { // error.message null kontrolü eklendi
                 userMessage += ': Kütüphane hatası';
-            } else if (error.message.includes('Context7')) {
+            } else if (error.message && error.message.includes('Context7')) { // error.message null kontrolü eklendi
                 userMessage += ': Veri formatı hatası';
-            } else if (error.message.includes('t is undefined')) {
+            } else if (error.message && error.message.includes('t is undefined')) { // error.message null kontrolü eklendi
                 userMessage += ': İç durum hatası (re-render sorunu çözüldü)';
-            } else {
+            } else if (error.message) { // error.message null kontrolü eklendi
                 userMessage += ': ' + error.message;
             }
             
@@ -369,36 +401,6 @@ class GanttManager {
                     <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Sayfayı Yenile</button>
                 </div>
             `;
-        }
-    }setupGanttEventListeners() {
-        if (!this.ganttChart) return;
-
-        try {
-            // Frappe Gantt uses different event API
-            console.log('🔧 Setting up Gantt event listeners...');
-            console.log('🔍 Available methods on ganttChart:', Object.getOwnPropertyNames(this.ganttChart.__proto__));
-            
-            // Check if events are supported
-            if (typeof this.ganttChart.on === 'function') {
-                this.ganttChart.on('click', (task) => {
-                    console.log('📊 Task clicked:', task);
-                    this.showTaskDetails(task);
-                });
-
-                this.ganttChart.on('date_change', (task, start, end) => {
-                    console.log('📊 Task date changed:', task, start, end);
-                    this.handleTaskDateChange(task, start, end);
-                });
-
-                this.ganttChart.on('progress_change', (task, progress) => {
-                    console.log('📊 Task progress changed:', task, progress);
-                    this.handleTaskProgressChange(task, progress);
-                });
-            } else {
-                console.log('⚠️ Gantt chart event listeners not supported in this version');
-            }
-        } catch (error) {
-            console.error('❌ Error setting up Gantt event listeners:', error);
         }
     }    formatDateForGantt(dateInput) {
         console.log('📅 formatDateForGantt input:', dateInput, 'type:', typeof dateInput);
@@ -559,35 +561,73 @@ class GanttManager {
     }
 
     async handleTaskDateChange(task, start, end) {
+        console.log('[GANTT_HANDLER] handleTaskDateChange çağrıldı. Raw task.id:', task.id, 'Start:', start, 'End:', end);
         try {
-            const taskId = task.id.replace('task_', '');
+            const rawTaskId = task.id;
+            const taskId = rawTaskId.startsWith('task_') ? rawTaskId.substring(5) : rawTaskId;
+            console.log(`[GANTT_HANDLER] Parsed taskId: ${taskId}`);
+
+            const objectIdPattern = /^[a-fA-F0-9]{24}$/;
+            if (!objectIdPattern.test(taskId)) {
+                console.warn(`[GANTT_HANDLER] Invalid taskId detected in handleTaskDateChange: "${taskId}". Update will be skipped. This might be a sample/fallback task or an invalid ID format.`);
+                // İsteğe bağlı: Kullanıcıya bir mesaj gösterilebilir.
+                // this.showError('Bu görev güncellenemez (geçersiz ID).'); 
+                return; 
+            }
+
+            // Gelen tarihlerin string ve YYYY-MM-DD formatında olduğundan emin olalım
             const updates = {
-                startDate: start,
-                dueDate: end
+                startDate: typeof start === 'string' ? start : start.toISOString().split('T')[0],
+                dueDate: typeof end === 'string' ? end : end.toISOString().split('T')[0]
             };
             
-            await this.updateTask(taskId, updates);
-            console.log('✅ Task dates updated successfully');
+            console.log('[GANTT_HANDLER] handleTaskDateChange - Sunucuya gönderilecek güncellemeler:', updates);
+            await this.updateTask(taskId, updates); // updateTaskOnServer yerine updateTask kullanılıyor
+            console.log('✅ Task dates updated successfully via handleTaskDateChange');
         } catch (error) {
-            console.error('❌ Error updating task dates:', error);
-            this.showError('Görev tarihleri güncellenirken hata oluştu');
+            console.error('❌ Error updating task dates in handleTaskDateChange:', error);
+            this.showError('Görev tarihleri güncellenirken hata oluştu: ' + error.message);
+            // Hatanın yeniden fırlatılması, on_date_change içindeki catch tarafından yakalanmasını sağlar
+            throw error; 
         }
     }
 
     async handleTaskProgressChange(task, progress) {
+        console.log('[GANTT_HANDLER] handleTaskProgressChange çağrıldı. Raw task.id:', task.id, 'Progress:', progress);
         try {
-            const taskId = task.id.replace('task_', '');
-            const status = progress === 0 ? 'todo' : progress === 100 ? 'done' : 'in-progress';
+            const rawTaskId = task.id;
+            const taskId = rawTaskId.startsWith('task_') ? rawTaskId.substring(5) : rawTaskId;
+            console.log(`[GANTT_HANDLER] Parsed taskId: ${taskId}`);
+
+            const objectIdPattern = /^[a-fA-F0-9]{24}$/;
+            if (!objectIdPattern.test(taskId)) {
+                console.warn(`[GANTT_HANDLER] Invalid taskId detected in handleTaskProgressChange: "${taskId}". Update will be skipped. This might be a sample/fallback task or an invalid ID format.`);
+                // İsteğe bağlı: Kullanıcıya bir mesaj gösterilebilir.
+                // this.showError('Bu görev güncellenemez (geçersiz ID).');
+                return; 
+            }
+
+            const newStatus = progress <= 0 ? 'todo' : progress >= 100 ? 'done' : 'in-progress';
             
-            await this.updateTask(taskId, { status: status });
-            console.log('✅ Task progress updated successfully');
+            const updateData = {
+                status: newStatus
+                // İsteğe bağlı olarak progress değerini de gönderebilirsiniz:
+                // progress: parseInt(progress) 
+            };
+            
+            console.log('[GANTT_HANDLER] handleTaskProgressChange - Sunucuya gönderilecek güncellemeler:', updateData);
+            await this.updateTask(taskId, updateData); // updateTaskOnServer yerine updateTask kullanılıyor
+            console.log('✅ Task progress updated successfully via handleTaskProgressChange');
         } catch (error) {
-            console.error('❌ Error updating task progress:', error);
-            this.showError('Görev durumu güncellenirken hata oluştu');
+            console.error('❌ Error updating task progress in handleTaskProgressChange:', error);
+            this.showError('Görev durumu güncellenirken hata oluştu: ' + error.message);
+            // Hatanın yeniden fırlatılması, on_progress_change içindeki catch tarafından yakalanmasını sağlar
+            throw error;
         }
     }
 
-    async updateTask(taskId, updates) {
+    async updateTask(taskId, updates) { // Bu fonksiyon zaten vardı, updateTaskOnServer yerine bunu kullanıyoruz.
+        console.log('[GANTT_API] updateTask çağrıldı. Task ID:', taskId, 'Updates:', updates);
         const response = await fetch('/projects/' + this.projectId + '/tasks/' + taskId, {
             method: 'PUT',
             headers: {
