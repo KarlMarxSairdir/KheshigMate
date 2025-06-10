@@ -175,10 +175,13 @@
                     </button>                    <button class="sidebar-tab" data-tab="tasks">
                         <i class="fas fa-tasks"></i>
                         <span>Görevler</span>
-                    </button>
-                    <button class="sidebar-tab" data-tab="gantt">
+                    </button>                    <button class="sidebar-tab" data-tab="gantt">
                         <i class="fas fa-chart-gantt"></i>
                         <span>Zaman Çizelgesi</span>
+                    </button>
+                    <button class="sidebar-tab" data-tab="calendar">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Takvim</span>
                     </button>
                     <button class="sidebar-tab" data-tab="workflow">
                         <i class="fas fa-project-diagram"></i>
@@ -327,6 +330,17 @@
                         <div class="gantt-status">
                             <span class="status-text">Gantt şeması yükleniyor...</span>
                         </div>
+                    </div>                </div>                <!-- Calendar Tab Panel -->
+                <div class="tab-panel" id="calendar-tab">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <h2><i class="fas fa-calendar-alt icon"></i>Proje Takvimi</h2>
+                            <button class="new-event-btn">
+                                <i class="fas fa-plus"></i>
+                                Yeni Etkinlik
+                            </button>
+                        </div>
+                        <div id="calendar"></div>
                     </div>
                 </div>
 
@@ -337,6 +351,15 @@
         </div>    <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/bpmn-js@17.7.1/dist/bpmn-modeler.development.js"></script>    <script src="https://unpkg.com/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    <!-- FullCalendar CSS and JS -->
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.js"></script>
+    <script src="/js/calendar.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <!-- CRITICAL: Multi-Strategy Gantt.js Loading System -->
     <script>
         console.log('🔄 MULTI-STRATEGY GANTT LOADING SYSTEM STARTING...');
@@ -699,6 +722,71 @@
                 <button type="button" id="update-bpmn-diagram-btn" class="btn btn-primary">
                     <i class="fas fa-save"></i> Değişiklikleri Kaydet
                 </button>
+            </div>        </div>
+    </div>
+
+    <!-- Calendar Event Modal -->
+    <div id="eventModal" class="modal" style="display: none;">
+        <div class="modal-content event-modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-calendar-plus icon"></i>Yeni Etkinlik</h3>
+                <button type="button" class="close-btn" onclick="window.calendarManager?.closeEventModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="eventForm">
+                <div class="form-group">
+                    <label for="eventTitle">Etkinlik Başlığı *</label>
+                    <input type="text" id="eventTitle" name="title" required maxlength="200" 
+                           placeholder="Etkinlik başlığını giriniz">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventDescription">Açıklama</label>
+                    <textarea id="eventDescription" name="description" rows="3" maxlength="1000"
+                              placeholder="Etkinlik açıklamasını giriniz (isteğe bağlı)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <div class="datetime-row">
+                        <div>
+                            <label for="eventStartDate">Başlangıç Tarihi ve Saati *</label>
+                            <input type="datetime-local" id="eventStartDate" name="startDate" required>
+                        </div>
+                        <div>
+                            <label for="eventEndDate">Bitiş Tarihi ve Saati *</label>
+                            <input type="datetime-local" id="eventEndDate" name="endDate" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="eventAllDay" name="allDay">
+                        <label for="eventAllDay">Tüm gün</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventType">Etkinlik Türü</label>
+                    <select id="eventType" name="type">
+                        <option value="event">Genel Etkinlik</option>
+                        <option value="meeting">Toplantı</option>
+                        <option value="deadline">Son Tarih</option>
+                        <option value="milestone">Kilometre Taşı</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventColor">Renk</label>
+                    <input type="color" id="eventColor" name="color" value="#3498db">
+                </div>
+            </form>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.calendarManager?.closeEventModal()">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="window.calendarManager?.handleEventFormSubmit()">Kaydet</button>
             </div>
         </div>
     </div>

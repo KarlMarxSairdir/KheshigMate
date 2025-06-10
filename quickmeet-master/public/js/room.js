@@ -1215,8 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (window.ganttManager && typeof window.ganttManager.loadTasks === 'function') {
                         window.ganttManager.loadTasks();
                     }
-                }
-            } else if (targetTab === 'workflow') {
+                }            } else if (targetTab === 'workflow') {
                 // Initialize BPMN workflow manager when workflow tab is opened
                 if (!bpmnInitialized && window.bpmnManager) {
                     console.log('🚀 Initializing BPMN Workflow Manager...');
@@ -1226,6 +1225,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).catch(error => {
                         console.error('❌ BPMN initialization failed:', error);
                     });
+                }
+            } else if (targetTab === 'calendar') {
+                // Initialize Calendar manager when calendar tab is opened
+                if (!window.calendarManager && window.CalendarManager) {
+                    console.log('🚀 Initializing Calendar Manager...');
+                    try {
+                        window.calendarManager = new window.CalendarManager(ROOM_ID, socket);
+                        console.log('✅ Calendar Manager initialized successfully');
+                    } catch (error) {
+                        console.error('❌ Calendar initialization failed:', error);
+                    }
+                } else if (window.calendarManager && typeof window.calendarManager.loadEvents === 'function') {
+                    console.log('♻️ Calendar Manager already exists, refreshing...');
+                    window.calendarManager.loadEvents();
                 }
             }
         });

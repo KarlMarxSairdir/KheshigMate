@@ -1,0 +1,694 @@
+// Modern Calendar Component Styles
+// FullCalendar integration for Kaşıkmate
+
+.calendar-container {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 255, 0.95));
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 20px rgba(108, 99, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c63ff, #8b5cf6, #ec4899, #f59e0b);
+        z-index: 1;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(108, 99, 255, 0.1);
+        position: relative;
+        
+        h2 {
+            color: $text-primary;
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin: 0;
+            position: relative;
+            background: linear-gradient(135deg, #6c63ff 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 4px rgba(108, 99, 255, 0.15));
+            
+            .icon {
+                margin-right: 0.75rem;
+                background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                filter: drop-shadow(0 2px 4px rgba(108, 99, 255, 0.3));
+                display: inline-block;
+                animation: pulse 2s infinite;
+            }
+
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: -8px;
+                left: 0;
+                width: 60px;
+                height: 3px;
+                background: linear-gradient(90deg, #6c63ff, #8b5cf6);
+                border-radius: 2px;
+            }
+        }
+        
+        .new-event-btn {
+            background: linear-gradient(135deg, #6c63ff 0%, #8b5cf6 50%, #ec4899 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 8px 25px rgba(108, 99, 255, 0.25),
+                0 4px 10px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                transition: left 0.5s;
+            }
+            
+            &:hover {
+                transform: translateY(-3px) scale(1.02);
+                box-shadow: 
+                    0 15px 35px rgba(108, 99, 255, 0.35),
+                    0 8px 20px rgba(0, 0, 0, 0.15);
+                
+                &::before {
+                    left: 100%;
+                }
+            }
+            
+            &:active {
+                transform: translateY(-1px) scale(1.01);
+            }
+            
+            i {
+                font-size: 1.1rem;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+            }
+        }
+    }
+}
+
+// FullCalendar Modern Customization
+.fc {
+    font-family: $font-family-base;
+    
+    // Header styling - Modern approach
+    .fc-header-toolbar {
+        margin-bottom: 2rem;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 255, 0.9));
+        border-radius: 16px;
+        border: 1px solid rgba(108, 99, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        
+        .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+        }
+        
+        .fc-button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(247, 250, 255, 0.9));
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            color: $text-primary;
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 0 0.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            
+            &:hover:not(:disabled) {
+                background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                border-color: #6c63ff;
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+            }
+            
+            &:focus {
+                box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+                outline: none;
+            }
+            
+            &.fc-button-active {
+                background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                border-color: #6c63ff;
+                color: white;
+                box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+                transform: translateY(-1px);
+            }
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 2rem;
+            filter: drop-shadow(0 2px 4px rgba(108, 99, 255, 0.1));
+        }
+    }
+    
+    // Calendar grid - Premium styling
+    .fc-theme-standard {
+        .fc-scrollgrid {
+            border: 1px solid rgba(108, 99, 255, 0.15);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+        
+        th, td {
+            border-color: rgba(108, 99, 255, 0.1);
+        }
+        
+        .fc-col-header {
+            background: linear-gradient(135deg, 
+                rgba(108, 99, 255, 0.05) 0%, 
+                rgba(139, 92, 246, 0.05) 50%, 
+                rgba(236, 72, 153, 0.05) 100%);
+            
+            .fc-col-header-cell {
+                padding: 1.5rem 1rem;
+                font-weight: 700;
+                color: $text-primary;
+                border-bottom: 2px solid rgba(108, 99, 255, 0.15);
+                font-size: 0.875rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+        }
+        
+        .fc-daygrid-day {
+            background: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s ease;
+            position: relative;
+            
+            &:hover {
+                background: linear-gradient(135deg, 
+                    rgba(108, 99, 255, 0.08), 
+                    rgba(139, 92, 246, 0.08));
+                transform: scale(1.02);
+                z-index: 2;
+            }
+            
+            &.fc-day-today {
+                background: linear-gradient(135deg, 
+                    rgba(108, 99, 255, 0.12), 
+                    rgba(139, 92, 246, 0.12));
+                position: relative;
+                
+                &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
+                    background: linear-gradient(90deg, #6c63ff, #8b5cf6);
+                    z-index: 1;
+                }
+                
+                .fc-daygrid-day-number {
+                    background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                    color: white;
+                    border-radius: 50%;
+                    width: 2.5rem;
+                    height: 2.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+                    animation: todayPulse 2s infinite;
+                }
+            }
+            
+            .fc-daygrid-day-number {
+                padding: 0.75rem;
+                font-weight: 600;
+                color: $text-primary;
+                transition: all 0.3s ease;
+            }
+        }
+        
+        .fc-daygrid-day-frame {
+            min-height: 140px;
+            padding: 0.75rem;
+        }
+    }
+    
+    // Event styling - Premium design
+    .fc-event {
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+        
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+        }
+        
+        &:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            z-index: 3;
+        }
+        
+        .fc-event-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        
+        // Event type indicators with premium gradients
+        &.event-type-meeting {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            box-shadow: 0 3px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        &.event-type-deadline {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 3px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        &.event-type-milestone {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            box-shadow: 0 3px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        &.event-type-task-deadline {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            box-shadow: 0 3px 12px rgba(155, 89, 182, 0.3);
+            
+            &::after {
+                content: "📝";
+                position: absolute;
+                top: 0.25rem;
+                right: 0.5rem;
+                font-size: 1rem;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+            }
+        }
+    }
+    
+    // Time grid view
+    .fc-timegrid {
+        .fc-timegrid-slot {
+            border-color: rgba(108, 99, 255, 0.1);
+        }
+        
+        .fc-timegrid-slot-minor {
+            border-style: dotted;
+            border-color: rgba(108, 99, 255, 0.05);
+        }
+        
+        .fc-timegrid-event {
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+    }
+}
+
+// Event creation modal - Premium design
+.event-modal {
+    .modal-content {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 255, 0.95));
+        border-radius: 24px;
+        padding: 3rem;
+        max-width: 600px;
+        width: 90vw;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 
+            0 25px 50px rgba(0, 0, 0, 0.15),
+            0 10px 30px rgba(108, 99, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(20px);
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(108, 99, 255, 0.15);
+            
+            h3 {
+                background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-size: 1.75rem;
+                font-weight: 800;
+                margin: 0;
+                
+                .icon {
+                    margin-right: 0.75rem;
+                    background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+            }
+            
+            .close-btn {
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid rgba(108, 99, 255, 0.2);
+                font-size: 1.25rem;
+                color: $text-secondary;
+                cursor: pointer;
+                padding: 0.75rem;
+                border-radius: 50%;
+                transition: all 0.3s ease;
+                width: 3rem;
+                height: 3rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                
+                &:hover {
+                    background: linear-gradient(135deg, #e74c3c, #c0392b);
+                    color: white;
+                    transform: scale(1.1);
+                }
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+            
+            label {
+                display: block;
+                margin-bottom: 0.75rem;
+                font-weight: 700;
+                color: $text-primary;
+                font-size: 0.95rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            input, textarea, select {
+                width: 100%;
+                padding: 1rem 1.25rem;
+                border: 2px solid rgba(108, 99, 255, 0.15);
+                border-radius: 12px;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(10px);
+                
+                &:focus {
+                    outline: none;
+                    border-color: #6c63ff;
+                    box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
+                    background: rgba(255, 255, 255, 0.95);
+                }
+            }
+            
+            textarea {
+                resize: vertical;
+                min-height: 120px;
+            }
+            
+            .datetime-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                
+                @media (max-width: 768px) {
+                    grid-template-columns: 1fr;
+                }
+            }
+            
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem;
+                background: rgba(108, 99, 255, 0.05);
+                border-radius: 12px;
+                
+                input[type="checkbox"] {
+                    width: auto;
+                    margin: 0;
+                    transform: scale(1.2);
+                }
+                
+                label {
+                    margin: 0;
+                    font-weight: 600;
+                    text-transform: none;
+                    letter-spacing: normal;
+                }
+            }
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(108, 99, 255, 0.15);
+            
+            .btn {
+                padding: 1rem 2rem;
+                border: none;
+                border-radius: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                font-size: 0.95rem;
+                
+                &.btn-secondary {
+                    background: rgba(255, 255, 255, 0.8);
+                    color: $text-secondary;
+                    border: 2px solid rgba(108, 99, 255, 0.2);
+                    
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.95);
+                        color: $text-primary;
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                    }
+                }
+                
+                &.btn-primary {
+                    background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+                    color: white;
+                    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+                    
+                    &:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 10px 30px rgba(108, 99, 255, 0.4);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Loading states - Premium design
+.calendar-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: $text-secondary;
+    
+    .spinner {
+        width: 3rem;
+        height: 3rem;
+        border: 3px solid rgba(108, 99, 255, 0.2);
+        border-top: 3px solid #6c63ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1.5rem;
+    }
+    
+    span {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+}
+
+// Empty state - Premium design
+.calendar-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: $text-secondary;
+    
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 4px rgba(108, 99, 255, 0.2));
+    }
+    
+    h3 {
+        margin-bottom: 1rem;
+        color: $text-primary;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    p {
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .new-event-btn {
+        background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(108, 99, 255, 0.4);
+        }
+    }
+}
+
+// Responsive design - Premium mobile experience
+@media (max-width: 768px) {
+    .calendar-container {
+        padding: 1.5rem;
+        margin: 1rem;
+        border-radius: 16px;
+        
+        .calendar-header {
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            
+            h2 {
+                font-size: 1.75rem;
+                text-align: center;
+            }
+            
+            .new-event-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 1rem;
+            }
+        }
+    }
+    
+    .fc {
+        .fc-header-toolbar {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+            
+            .fc-toolbar-chunk {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+        
+        .fc-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1.25rem;
+            margin: 0;
+        }
+        
+        .fc-daygrid-day-frame {
+            min-height: 120px;
+        }
+    }
+    
+    .event-modal .modal-content {
+        padding: 2rem;
+        border-radius: 16px;
+        
+        .modal-actions {
+            flex-direction: column;
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    }
+}
+
+// Animation keyframes
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes todayPulse {
+    0%, 100% { 
+        box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+    }
+    50% { 
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.6);
+    }
+}

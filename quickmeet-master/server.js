@@ -16,6 +16,7 @@ const DrawingData = require('./models/DrawingData'); // Added DrawingData model
 const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
 const Task = require('./models/Task'); // Added Task model
 const BPMNDiagram = require('./models/BPMNDiagram'); // Added BPMN model
+const CalendarEvent = require('./models/CalendarEvent'); // Added CalendarEvent model
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
@@ -853,7 +854,7 @@ app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, r
         }
         // --- AKILLI SENKRONİZASYON MANTIĞI ---
         if ('status' in updateData && !('progress' in updateData)) {
-            if (updateData.status === 'done') updateData.progress = 100;
+            if (updateData.status === 'done' ) updateData.progress = 100;
             else if (updateData.status === 'in-progress') {
                 if (task.progress === 0 || task.progress === 100) updateData.progress = 10;
             } else if (updateData.status === 'todo') updateData.progress = 0;
@@ -914,6 +915,207 @@ app.delete('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req
     } catch (error) {
         console.error('Task deletion error:', error);
         res.status(500).json({ error: 'Görev silinirken hata oluştu' });
+    }
+});
+
+// --- CALENDAR EVENT API ROUTES ---
+
+// Proje etkinliklerini listele (görevlerle birleştir)
+app.get('/projects/:projectId/events', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Etkinlikleri getir
+        const events = await CalendarEvent.find({ project: projectId, isActive: true })
+            .populate('createdBy', 'username email')
+            .populate('attendees.user', 'username email')
+            .sort({ startDate: 1 });
+        
+        // Görevleri de etkinlik olarak dahil et (son tarih olanlar)
+        const tasks = await Task.find({ 
+            project: projectId, 
+            dueDate: { $exists: true, $ne: null } 
+        })
+            .populate('assignedTo', 'username email')
+            .populate('createdBy', 'username email');
+        
+        // Görevleri takvim etkinliği formatına çevir
+        const taskEvents = tasks.map(task => ({
+            _id: `task_${task._id}`,
+            title: `📝 ${task.title}`,
+            description: task.description,
+            startDate: task.dueDate,
+            endDate: task.dueDate,
+            allDay: true,
+            color: task.status === 'done' ? '#27ae60' : 
+                   task.status === 'in-progress' ? '#f39c12' : '#e74c3c',
+            type: 'task-deadline',
+            project: task.project,
+            createdBy: task.createdBy,
+            taskData: task,
+            isTaskEvent: true
+        }));
+        
+        const allEvents = [...events, ...taskEvents];
+        
+        console.log(`📅 Found ${events.length} events and ${taskEvents.length} task deadlines for project ${project.name}`);
+        res.json(allEvents);
+    } catch (error) {
+        console.error('Calendar events listing error:', error);
+        res.status(500).json({ error: 'Etkinlikler getirilirken hata oluştu' });
+    }
+});
+
+// Yeni etkinlik oluştur
+app.post('/projects/:projectId/events', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { title, description, startDate, endDate, allDay, color, type, attendees } = req.body;
+        
+        // Proje erişim kontrolü
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Tarih validasyonu
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end < start) {
+            return res.status(400).json({ error: 'Bitiş tarihi başlangıç tarihinden önce olamaz' });
+        }
+        
+        // Yeni etkinlik oluştur
+        const event = new CalendarEvent({
+            title,
+            description,
+            startDate: start,
+            endDate: end,
+            allDay: allDay || false,
+            color: color || '#3498db',
+            type: type || 'event',
+            project: projectId,
+            createdBy: req.user._id,
+            attendees: Array.isArray(attendees) ? attendees.map(userId => ({
+                user: userId,
+                status: 'pending'
+            })) : []
+        });
+        
+        await event.save();
+        await event.populate(['createdBy', 'attendees.user'], 'username email');
+        
+        console.log(`✅ Calendar event created: ${event.title} for project ${project.name}`);
+        res.status(201).json(event);
+    } catch (error) {
+        console.error('Calendar event creation error:', error);
+        res.status(500).json({ error: 'Etkinlik oluşturulurken hata oluştu' });
+    }
+});
+
+// Etkinlik güncelle
+app.put('/projects/:projectId/events/:eventId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, eventId } = req.params;
+        const updateData = req.body;
+        
+        // Etkinlik ve proje erişim kontrolü
+        const event = await CalendarEvent.findById(eventId);
+        if (!event || event.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Etkinlik bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Tarih alanlarını düzelt
+        ['startDate', 'endDate'].forEach(field => {
+            if (updateData[field]) {
+                updateData[field] = new Date(updateData[field]);
+            }
+        });
+        
+        // Tarih validasyonu
+        const start = updateData.startDate || event.startDate;
+        const end = updateData.endDate || event.endDate;
+        
+        if (end < start) {
+            return res.status(400).json({ error: 'Bitiş tarihi başlangıç tarihinden önce olamaz' });
+        }
+        
+        const updatedEvent = await CalendarEvent.findByIdAndUpdate(eventId, { $set: updateData }, { new: true, runValidators: true })
+            .populate('createdBy', 'username email')
+            .populate('attendees.user', 'username email');
+        
+        console.log(`✅ Calendar event updated: ${updatedEvent.title}`);
+        res.json(updatedEvent);
+    } catch (error) {
+        console.error('Calendar event update error:', error);
+        res.status(500).json({ error: 'Etkinlik güncellenirken hata oluştu' });
+    }
+});
+
+// Etkinlik sil
+app.delete('/projects/:projectId/events/:eventId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, eventId } = req.params;
+        
+        // Etkinlik ve proje erişim kontrolü
+        const event = await CalendarEvent.findById(eventId);
+        if (!event || event.project.toString() !== projectId) {
+            return res.status(404).json({ error: 'Etkinlik bulunamadı' });
+        }
+        
+        const project = await Project.findById(projectId);
+        const isOwner = project.owner.toString() === req.user._id.toString();
+        const isMember = project.members.some(member => 
+            member.user.toString() === req.user._id.toString()
+        );
+        
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ error: 'Bu projeye erişim yetkiniz yok' });
+        }
+        
+        // Soft delete
+        await CalendarEvent.findByIdAndUpdate(eventId, { isActive: false });
+        
+        console.log(`✅ Calendar event deleted: ${event.title}`);
+        res.json({ message: 'Etkinlik başarıyla silindi' });
+    } catch (error) {
+        console.error('Calendar event deletion error:', error);
+        res.status(500).json({ error: 'Etkinlik silinirken hata oluştu' });
     }
 });
 
