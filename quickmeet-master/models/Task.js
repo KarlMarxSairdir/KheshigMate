@@ -39,6 +39,12 @@ const taskSchema = new mongoose.Schema({
     dueDate: {
         type: Date
     },
+    startDate: {
+        type: Date
+    },
+    endDate: {
+        type: Date
+    },
     requiredSkills: [{
         type: String,
         trim: true

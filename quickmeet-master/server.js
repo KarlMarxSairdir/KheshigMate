@@ -863,6 +863,12 @@ app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, r
             else if (progress > 0) updateData.status = 'in-progress';
             else updateData.status = 'todo';
         }
+        // --- TARİH ALANLARINI DÜZELT ---
+        ['startDate', 'dueDate', 'endDate'].forEach(field => {
+            if (updateData[field]) {
+                updateData[field] = new Date(updateData[field]);
+            }
+        });
         // --- BİTTİ ---
         const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updateData }, { new: true, runValidators: true })
             .populate('assignedTo', 'username email skills')

@@ -562,7 +562,14 @@ class KanbanBoard {
                 element.value = value;
             }
         });
-        
+        // Handle startDate separately
+        if (task.startDate) {
+            const startDateField = document.getElementById('task-start-date');
+            if (startDateField) {
+                const date = new Date(task.startDate);
+                startDateField.value = date.toISOString().split('T')[0];
+            }
+        }
         // Handle due date separately
         if (task.dueDate) {
             const dateField = document.getElementById('task-due-date');
@@ -600,6 +607,7 @@ class KanbanBoard {
             description: formData.get('description')?.trim(),
             priority: formData.get('priority'),
             assignedTo: formData.get('assignedTo') || undefined,
+            startDate: formData.get('startDate') || undefined,
             dueDate: formData.get('dueDate') || undefined,
             requiredSkills: formData.get('requiredSkills')
                 ?.split(',')
