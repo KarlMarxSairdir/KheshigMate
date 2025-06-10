@@ -30,6 +30,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "peer": "^1.0.2",
+    "quill": "^2.0.3",
     "socket.io": "^4.7.5",
     "uuid": "^8.3.0",
     "webrtc-adapter": "^7.7.0"

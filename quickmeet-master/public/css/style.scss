@@ -40,8 +40,13 @@
 @import 'components/gantt';
 @import 'components/bpmn';
 @import 'components/calendar';
+@import 'components/quill-notes'; // ✅ GELİŞMİŞ NOT EDİTÖRÜ
 
 @import 'components/gantt-overrides'; // YENİ EKLEDİĞİMİZ SATIR
+
+// === EKSTRA KULLANIŞLI UTILITY VE MODERN CLASSLAR ===
+// (style-backup.css ve style-new.css dosyalarından alınan, ana SCSS'de eksik olanlar)
+@import 'components/extra-utilities';
 
 // =============================================================================
 // PAGE-SPECIFIC STYLES (Dashboard, Room, Auth, Landing, Settings)

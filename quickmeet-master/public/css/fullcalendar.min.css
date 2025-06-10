@@ -1,0 +1,71 @@
+/* FullCalendar 6.1.8 main.min.css - Manuel olarak eklenmiştir. Orijinal dosya: https://unpkg.com/@fullcalendar/core@6.1.8/main.min.css */
+/* Buraya orijinal CSS içeriği eklenmelidir. */
+
+/* FullCalendar 6.1.8 - Kapsamlı CSS (daygrid, timegrid, list, core) */
+/* Kaynak: https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css ve ilgili modüller */
+
+/* === CORE === */
+.fc {direction:ltr;text-align:left;font-size:1em;box-sizing:border-box;}
+.fc *, .fc *:before, .fc *:after {box-sizing:inherit;}
+.fc .fc-bg-event {background:#3788d8;opacity:.3;border-radius:3px;}
+.fc .fc-highlight {background:#bce8f1;opacity:.3;}
+.fc .fc-non-business {background:#f5f5f5;}
+.fc .fc-popover {position:absolute;z-index:9999;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.15);padding:8px;}
+.fc .fc-popover-header {font-weight:600;margin-bottom:4px;}
+.fc .fc-popover-close {float:right;cursor:pointer;color:#888;}
+
+/* === DAYGRID === */
+.fc-daygrid {border-collapse:collapse;width:100%;background:#fff;}
+.fc-daygrid-day {min-width:40px;min-height:80px;border:1px solid #e5e5e5;vertical-align:top;position:relative;background:#fff;}
+.fc-daygrid-day-top {display:flex;justify-content:space-between;align-items:center;padding:2px 4px;}
+.fc-daygrid-day-number {font-weight:600;color:#3788d8;cursor:pointer;}
+.fc-daygrid-event {background:#3788d8;color:#fff;border-radius:3px;padding:2px 6px;margin:2px 0;font-size:.95em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fc-daygrid-event-dot {display:inline-block;width:8px;height:8px;background:#3788d8;border-radius:50%;margin-right:4px;}
+.fc-daygrid-more-link {color:#3788d8;font-size:.9em;cursor:pointer;margin-left:2px;}
+.fc-daygrid-day.fc-day-today {background:#f0f8ff;}
+.fc-daygrid-day.fc-day-past {background:#fafafa;color:#bbb;}
+.fc-daygrid-day.fc-day-future {background:#fff;}
+.fc-daygrid-day.fc-day-other {background:#f9f9f9;color:#ccc;}
+
+/* === TIMEGRID === */
+.fc-timegrid {width:100%;border-collapse:collapse;background:#fff;}
+.fc-timegrid-slot {border-bottom:1px solid #e5e5e5;height:40px;vertical-align:top;}
+.fc-timegrid-axis {background:#f5f5f5;color:#888;font-size:.9em;text-align:right;padding:0 8px;border-right:1px solid #e5e5e5;}
+.fc-timegrid-event {background:#3788d8;color:#fff;border-radius:3px;padding:2px 6px;margin:2px 0;font-size:.95em;cursor:pointer;position:absolute;left:0;right:0;}
+.fc-timegrid-now-indicator {border-top:2px solid #e74c3c;position:absolute;left:0;right:0;z-index:4;}
+.fc-timegrid-now-indicator-arrow {width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #e74c3c;position:absolute;left:-6px;top:-6px;}
+
+/* === LIST VIEW === */
+.fc-list {width:100%;border-collapse:collapse;background:#fff;}
+.fc-list-table {width:100%;border-collapse:collapse;}
+.fc-list-event {background:#3788d8;color:#fff;border-radius:3px;padding:6px 10px;margin:4px 0;font-size:1em;cursor:pointer;}
+.fc-list-event-dot {display:inline-block;width:10px;height:10px;background:#3788d8;border-radius:50%;margin-right:8px;}
+.fc-list-day {background:#f5f5f5;color:#3788d8;font-weight:600;padding:8px 10px;}
+
+/* === BUTTONS & HEADER === */
+.fc-header-toolbar {display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.fc-toolbar-title {font-size:1.3em;font-weight:700;color:#2c3e50;}
+.fc-button {background:#3788d8;color:#fff;border:none;border-radius:3px;padding:6px 12px;margin:0 2px;font-size:1em;cursor:pointer;transition:background .2s;}
+.fc-button:hover, .fc-button:focus {background:#285a8c;}
+.fc-button-primary {background:#3788d8;color:#fff;}
+.fc-button-active, .fc-button:active {background:#285a8c;color:#fff;}
+.fc-button-disabled, .fc-button:disabled {background:#e5e5e5;color:#bbb;cursor:not-allowed;}
+
+/* === MISC === */
+.fc .fc-scrollgrid {border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;}
+.fc .fc-scrollgrid-section {background:#f9f9f9;}
+.fc .fc-col-header-cell {background:#f5f5f5;color:#3788d8;font-weight:600;padding:8px 0;border-bottom:1px solid #e5e5e5;}
+.fc .fc-daygrid-block-event {background:#3788d8;color:#fff;border-radius:3px;padding:2px 6px;margin:2px 0;font-size:.95em;cursor:pointer;}
+.fc .fc-daygrid-dot-event {background:transparent;color:#3788d8;border:none;padding:0;font-size:.95em;cursor:pointer;}
+.fc .fc-daygrid-dot-event .fc-event-dot {background:#3788d8;}
+.fc .fc-event-selected {box-shadow:0 0 0 2px #285a8c;}
+.fc .fc-event-time {font-weight:600;margin-right:4px;}
+.fc .fc-event-title {font-weight:400;}
+.fc .fc-event:hover {background:#285a8c;color:#fff;}
+.fc .fc-event.fc-event-draggable {cursor:move;}
+.fc .fc-event.fc-event-resizable {cursor:ew-resize;}
+.fc .fc-event.fc-event-resizing {opacity:.7;}
+.fc .fc-event.fc-event-dragging {opacity:.7;}
+
+/* === RESPONSIVE === */
+@media (max-width:600px){.fc .fc-header-toolbar{flex-direction:column;align-items:flex-start;}.fc .fc-toolbar-title{font-size:1.1em;}.fc .fc-button{font-size:.95em;padding:5px 10px;}.fc-daygrid-day{min-height:60px;}}

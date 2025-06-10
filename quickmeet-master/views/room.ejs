@@ -6,10 +6,16 @@
     <title>KheshigMate Odası - <%= project.name %></title>
     <meta name="description" content="KheshigMate Elite Proje Odası">
     <meta name="viewport" content="width=device-width, initial-scale=1">    <link rel="stylesheet" href="/css/style.css?v=6.0.0">
+      <!-- FullCalendar CSS (Yerel) -->
+    <link rel="stylesheet" href="/css/fullcalendar.min.css">
+    
+    <!-- Quill.js Rich Text Editor CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.snow.min.css">
+    
     <!-- BPMN.js CSS -->
     <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.7.1/dist/assets/diagram-js.css">
     <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.7.1/dist/assets/bpmn-font/css/bpmn-embedded.css">
-    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>    <script>
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script><script>
         const ROOM_ID = "<%= project._id %>";
         const USER_USERNAME = "<%= user.username %>";
         const USER_ID = "<%= user._id %>";
@@ -209,29 +215,25 @@
                             </button>
                         </div>
                     </div>
-                </div>
-
-                <div class="tab-panel" id="notes-tab">
-                    <div class="notes-header-modern">
-                        <button id="add-note-btn" class="add-note-btn-modern">
-                            <i class="fas fa-plus"></i>
-                            Yeni Not Ekle
-                        </button>
-                    </div>
-                    <div class="notes-list-modern" id="notes-list"></div>
-                    <div class="note-editor-modern" id="note-editor" style="display:none;">
-                        <div class="note-editor-header">
-                            <button id="save-note-btn" class="save-note-btn-modern">
-                                <i class="fas fa-save"></i>
-                                Kaydet
-                            </button>
-                            <button id="cancel-note-btn" class="cancel-note-btn-modern">
-                                <i class="fas fa-times"></i>
-                                İptal
-                            </button>
+                </div>                <div class="tab-panel" id="notes-tab">
+                    <div class="quill-notes-container">
+                        <div class="notes-header-quill">
+                            <div class="notes-title">
+                                <i class="fas fa-feather-alt"></i>
+                                Gelişmiş Notlar
+                            </div>
+                            <div class="notes-actions">
+                                <button id="add-note-btn-quill" class="add-note-btn-quill">
+                                    <i class="fas fa-plus"></i>
+                                    Yeni Not Ekle
+                                </button>
+                            </div>
                         </div>
-                        <textarea id="note-content" class="note-textarea-modern" placeholder="Notunuzu buraya yazın..."></textarea>
-                    </div>                </div>
+                        <div class="notes-list-quill" id="notes-list-quill">
+                            <!-- Rich text notes will be loaded here -->
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Tasks Tab Panel (Kanban Board) -->
                 <div class="tab-panel" id="tasks-tab">
@@ -350,17 +352,19 @@
             </div>
         </div>    <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-    <script src="https://unpkg.com/bpmn-js@17.7.1/dist/bpmn-modeler.development.js"></script>    <script src="https://unpkg.com/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
-    <!-- FullCalendar CSS and JS -->
-    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/main.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.js"></script>
+    <script src="https://unpkg.com/bpmn-js@17.7.1/dist/bpmn-modeler.development.js"></script>
+    <script src="https://unpkg.com/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    
+    <!-- Quill.js Rich Text Editor JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.min.js"></script>
+    
+    <!-- FullCalendar JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
     <script src="/js/calendar.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
-    <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <!-- CRITICAL: Multi-Strategy Gantt.js Loading System -->
+    <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <!-- ✅ Quill.js Rich Text Notes Manager -->
+    <script src="/js/quill-notes.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
+    
+    <!-- CRITICAL: Multi-Strategy Gantt.js Loading System -->
     <script>
         console.log('🔄 MULTI-STRATEGY GANTT LOADING SYSTEM STARTING...');
         window.GANTT_FORCE_LOAD_STARTED = true;
@@ -787,6 +791,43 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="window.calendarManager?.closeEventModal()">İptal</button>
                 <button type="button" class="btn btn-primary" onclick="window.calendarManager?.handleEventFormSubmit()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quill Rich Text Editor Modal -->
+    <div id="quill-editor-modal" class="note-editor-quill" style="display: none;">
+        <div class="editor-container">
+            <div class="editor-header">
+                <div class="editor-title">
+                    <i class="fas fa-feather-alt"></i>
+                    <span id="editor-modal-title">Yeni Not</span>
+                </div>
+                <div class="editor-actions">
+                    <button id="save-quill-note-btn" class="editor-btn save">
+                        <i class="fas fa-save"></i>
+                        Kaydet
+                    </button>
+                    <button id="cancel-quill-note-btn" class="editor-btn cancel">
+                        <i class="fas fa-times"></i>
+                        İptal
+                    </button>
+                </div>
+            </div>
+            
+            <div class="editor-content">
+                <div class="editor-input-group">
+                    <label for="note-title-input">Not Başlığı (İsteğe bağlı)</label>
+                    <input type="text" id="note-title-input" class="note-title-input" 
+                           placeholder="Not başlığını giriniz..." maxlength="100">
+                </div>
+                
+                <div class="editor-input-group">
+                    <label>Not İçeriği</label>
+                    <div id="quill-editor-container" class="quill-editor-container">
+                        <!-- Quill editor will be initialized here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>

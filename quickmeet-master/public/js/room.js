@@ -46,146 +46,10 @@ socket.on('project-users-list', (usersInRoom) => {
 });
 
 // --- TAB SİSTEMİ ve NOT YÖNETİMİ ---
-// DOM elementleri - DOMContentLoaded içinde tanımlanacak
-let tabs, tabContents;
-let currentEditingNoteId = null;
-let addNoteBtn, noteEditor, saveNoteBtn, cancelNoteBtn, noteContent, notesList;
-let currentProjectData = null; // Proje ve kullanıcı bilgilerini saklar
+// Eski not yönetimi kodları kaldırıldı. Tüm not işlemleri Quill-notes.js tarafından yönetilmektedir.
 
 // BPMN Manager entegrasyonu
 let bpmnInitialized = false;
-
-async function loadNotes() {
-    if (!ROOM_ID) return;
-    try {
-        const response = await fetch(`/projects/${ROOM_ID}/notes`, { credentials: 'include' });
-        const data = await response.json();
-        if (response.ok) {
-            currentProjectData = data; // Proje bilgilerini kaydet
-            renderNotes(data.notes);
-        } else {
-            console.error('Notlar yüklenemedi:', data.message);
-        }
-    } catch (err) {
-        console.error('Not yükleme hatası:', err);
-    }
-}
-
-function renderNotes(notes) {
-    if (!notesList) return;
-    notesList.innerHTML = '';
-    if (!notes || notes.length === 0) {
-        notesList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-sticky-note"></i>
-                <h3>Henüz Not Yok</h3>
-                <p>İlk notunuzu eklemek için "Yeni Not Ekle" butonuna tıklayın.</p>
-            </div>
-        `;
-        return;
-    }
-    notes.forEach(note => {
-        const noteEl = document.createElement('div');
-        noteEl.className = 'note-item';
-        
-        // Yetki kontrolü
-        const canEdit = currentProjectData && (currentProjectData.currentUser.isOwner || currentProjectData.currentUser.isMember);
-        const canDelete = currentProjectData && (currentProjectData.currentUser.isOwner || note.user._id === currentProjectData.currentUser._id);
-        
-        noteEl.innerHTML = `
-            <div class="note-header">
-                <div class="note-author">
-                    <i class="fas fa-user"></i>
-                    <span>${note.user.username}</span>
-                </div>
-                <div class="note-date">${new Date(note.createdAt).toLocaleDateString()}</div>
-                <div class="note-actions">
-                    ${canEdit ? `<button class="note-action-btn edit-note-btn" onclick="editNote('${note._id}', \`${escapeAttributeForJS(note.content)}\`)" title="Düzenle">
-                        <i class="fas fa-edit"></i>
-                    </button>` : ''}
-                    ${canDelete ? `<button class="note-action-btn delete-note-btn" onclick="deleteNote('${note._id}')" title="Sil">
-                        <i class="fas fa-trash"></i>
-                    </button>` : ''}
-                </div>
-            </div>
-            <div class="note-content">${escapeHTML(note.content)}</div>
-        `;
-        notesList.appendChild(noteEl);
-    });
-}
-
-function escapeHTML(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/[&<>"']/g, function (s) {
-        return {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        }[s];
-    });
-}
-
-// JavaScript dizesi içinde kullanılacak öznitelik değerlerini kaçırmak için yeni fonksiyon
-function escapeAttributeForJS(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/\\/g, '\\\\') // Önce ters eğik çizgileri kaçır
-              .replace(/`/g, '\\`')   // Backtick'leri kaçır
-              .replace(/'/g, '\\\'')  // Tek tırnakları kaçır
-              .replace(/"/g, '\\"');  // Çift tırnakları kaçır
-}
-
-
-async function createNote(content) {
-    const response = await fetch(`/projects/${ROOM_ID}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-        credentials: 'include'
-    });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Not oluşturulamadı');
-    }
-}
-
-async function updateNote(noteId, content) {
-    const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-        credentials: 'include'
-    });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Not güncellenemedi');
-    }
-}
-
-async function deleteNote(noteId) {
-    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
-    try {
-        const response = await fetch(`/projects/${ROOM_ID}/notes/${noteId}`, { 
-            method: 'DELETE',
-            credentials: 'include' 
-        });
-        if (response.ok) {
-            loadNotes();
-        } else {
-            const error = await response.json();
-            alert('Not silme hatası: ' + (error.message || 'Bilinmeyen hata'));
-        }
-    } catch (err) {
-        alert('Not silme hatası: ' + err.message);
-    }
-}
-
-function editNote(noteId, content) {
-    currentEditingNoteId = noteId;
-    noteContent.value = content; 
-    noteEditor.style.display = 'flex';
-}
 
 function loadAttendees() {
     const attendeesList = document.getElementById('attendees-list');
@@ -198,7 +62,7 @@ function loadAttendees() {
     myAttendee.innerHTML = `
         <div class="attendee-avatar">${USER_USERNAME.charAt(0).toUpperCase()}</div>
         <div class="attendee-info">
-            <div class="attendee-name">${escapeHTML(USER_USERNAME)} (Siz)</div>
+            <div class="attendee-name">${USER_USERNAME} (Siz)</div>
             <div class="attendee-status">Çevrimiçi</div>
         </div>
     `;
@@ -213,7 +77,7 @@ function loadAttendees() {
             attendeeEl.innerHTML = `
                 <div class="attendee-avatar">${username.charAt(0).toUpperCase()}</div>
                 <div class="attendee-info">
-                    <div class="attendee-name">${escapeHTML(username)}</div>
+                    <div class="attendee-name">${username}</div>
                     <div class="attendee-status">Çevrimiçi</div>
                 </div>
             `;
@@ -535,7 +399,7 @@ function addRemoteVideo(stream, peerId, peerUsername) {
     });
     
     nameTag.className = "nametag";
-    nameTag.innerHTML = escapeHTML(peerUsername) || `Kullanıcı ${peerId.substring(0, 6)}`; 
+    nameTag.innerHTML = peerUsername || `Kullanıcı ${peerId.substring(0, 6)}`; 
     
     vidCont.appendChild(video);
     vidCont.appendChild(nameTag);
@@ -660,7 +524,7 @@ function appendMessage(sender, message, timestamp, isMe) {
     
     const senderSpan = document.createElement('span');
     senderSpan.className = 'sender';
-    senderSpan.textContent = isMe ? 'Siz' : escapeHTML(sender);
+    senderSpan.textContent = isMe ? 'Siz' : sender;
     
     const timeSpan = document.createElement('span');
     timeSpan.className = 'timestamp';
@@ -668,7 +532,7 @@ function appendMessage(sender, message, timestamp, isMe) {
     
     const contentP = document.createElement('p');
     // Mesaj içeriği sunucudan güvenli geliyorsa (sanitize edilmişse) doğrudan atanabilir.
-    // Emin değilseniz: contentP.textContent = escapeHTML(message);
+    // Emin değilseniz: contentP.textContent = message;
     contentP.textContent = message; 
     
     msgDiv.appendChild(senderSpan);
@@ -1042,8 +906,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // --- YENİ EKLENEN KISIM: Gantt tam ekran modu için --- 
-            const videoArea = document.querySelector('.video-section'); // .video-area yerine .video-section kullanıldı
-            const mainContentGrid = document.querySelector('.modern-room-container'); // .main-content-grid yerine .modern-room-container kullanıldı
+            const videoArea = document.querySelector('.video-section');
+            const mainContentGrid = document.querySelector('.modern-room-container');
 
             if (targetTab === 'gantt') {
                 if(videoArea) videoArea.classList.add('hidden');
@@ -1054,15 +918,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // --- YENİ EKLENEN KISIM SONU ---
 
-              if (targetTab === 'notes') {
-                loadNotes();
-            } else if (targetTab === 'attendees') {
-                loadAttendees();            } else if (targetTab === 'tasks') {
+            // NOT: Eski not yönetimi kaldırıldı, Quill-notes.js yönetecek.
+            // if (targetTab === 'notes') {
+            //     loadNotes();
+            // }
+            if (targetTab === 'attendees') {
+                loadAttendees();
+            } else if (targetTab === 'tasks') {
                 // Initialize Kanban board when tasks tab is opened
                 if (!window.kanbanBoard) {
                     console.log('🚀 Initializing Kanban board...');
                     window.kanbanBoard = initKanbanBoard(ROOM_ID, socket);
-                }            } else if (targetTab === 'gantt') {
+                }
+            } else if (targetTab === 'gantt') {
                 // Initialize Gantt chart when gantt tab is opened
                 console.log('🎯 GANTT TAB CLICKED - STARTING COMPREHENSIVE INITIALIZATION');
                 
@@ -1244,47 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Not yönetimi elementlerini tanımla
-    addNoteBtn = document.getElementById('add-note-btn');
-    noteEditor = document.getElementById('note-editor');
-    saveNoteBtn = document.getElementById('save-note-btn');
-    cancelNoteBtn = document.getElementById('cancel-note-btn');
-    noteContent = document.getElementById('note-content');
-    notesList = document.getElementById('notes-list');
-    
-    // Not event listener'larını ekle
-    if (addNoteBtn) {
-        addNoteBtn.onclick = () => {
-            currentEditingNoteId = null;
-            noteContent.value = '';
-            noteEditor.style.display = 'flex';
-        };
-    }
-
-    if (cancelNoteBtn) {
-        cancelNoteBtn.onclick = () => {
-            noteEditor.style.display = 'none';
-            currentEditingNoteId = null;
-        };
-    }
-
-    if (saveNoteBtn) {
-        saveNoteBtn.onclick = async () => {
-            const content = noteContent.value.trim();
-            if (!content) return;
-            try {
-                if (currentEditingNoteId) {
-                    await updateNote(currentEditingNoteId, content);
-                } else {
-                    await createNote(content);
-                }
-                noteEditor.style.display = 'none';
-                loadNotes();
-            } catch (err) {
-                alert('Not kaydetme hatası: ' + err.message);
-            }
-        };
-    }    // Whiteboard button event listener'ını ekle
+    // Whiteboard button event listener'ını ekle
     if (whiteboardButt) {
         whiteboardButt.addEventListener('click', () => {
             boardVisible = !boardVisible;
@@ -1398,32 +1226,18 @@ function copyRoomId() {
             if (btn) {
                 const icon = btn.querySelector('i');
                 if (icon) {
-                    icon.className = 'fas fa-check';
+                    icon.classList.add('fa-check');
                     setTimeout(() => {
-                        icon.className = 'fas fa-copy';
-                    }, 2000);
+                        icon.classList.remove('fa-check');
+                    }, 1000);
                 }
             }
-        }).catch(err => {
-            console.error('Oda kodu kopyalanamadı:', err);
-            alert('Oda Kodu: ' + roomId);
+        }, (err) => {
+            console.error('Oda kodu kopyalanırken hata oluştu:', err);
         });
     } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = roomId;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            console.log('Oda kodu kopyalandı (fallback):', roomId);
-        } catch (err) {
-            console.error('Kopyalama başarısız:', err);
-            alert('Oda Kodu: ' + roomId);
-        }
-        document.body.removeChild(textArea);
+        console.warn('Clipboard API desteklenmiyor.');
     }
 }
 
-// Global fonksiyonları window objesine ekle
-window.copyRoomId = copyRoomId;
+// Diğer utility fonksiyonlar burada tanımlanabilir.

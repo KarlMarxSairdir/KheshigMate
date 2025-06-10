@@ -54,6 +54,13 @@ app.use(cors({
     credentials: true // Kimlik bilgileriyle (cookie vs.) isteklere izin ver
 }));
 
+// Security headers to fix MIME type issues
+app.use((req, res, next) => {
+    // Allow external resources for CDN links
+    res.removeHeader('X-Content-Type-Options');
+    next();
+});
+
 // EJS View Engine Setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -62,7 +69,16 @@ app.use(express.json()); // JSON body parser eklendi
 app.use(express.urlencoded({ extended: true })); // URL-encoded body parser for form submissions
 
 // Serve static files from the "public" directory (MOVED UP)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.set('Content-Type', 'text/css');
+        }
+        if (path.endsWith('.js')) {
+            res.set('Content-Type', 'application/javascript');
+        }
+    }
+}));
 
 // Session middleware (MOVED UP)
 app.use(session({
@@ -391,10 +407,19 @@ app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
         
         // Kullanıcının proje üyesi olup olmadığını kontrol et
         const isOwner = project.owner._id.toString() === userId.toString();
-        const isMember = project.members.some(member => member.user._id.toString() === userId.toString());
+        const memberData = project.members.find(member => member.user._id.toString() === userId.toString());
+        const isMember = !!memberData;
         
         if (!isOwner && !isMember) {
             return res.status(403).json({ message: 'Bu projeye erişim izniniz yok.' });
+        }
+        
+        // Kullanıcının rolünü belirle
+        let userRole = 'member';
+        if (isOwner) {
+            userRole = 'owner';
+        } else if (memberData) {
+            userRole = memberData.role;
         }
         
         const notes = await ProjectNote.find({ project: projectId })
@@ -412,7 +437,8 @@ app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
             currentUser: {
                 _id: userId,
                 isOwner,
-                isMember
+                isMember,
+                role: userRole
             }
         });
     } catch (err) {
@@ -422,31 +448,52 @@ app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
 });
 
 // Create a new note for a project
-app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {    try {
+app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
+    try {
         const projectId = req.params.projectId;
-        const { content } = req.body;
+        const { title, content, deltaContent, htmlContent } = req.body;
         const userId = req.user._id;
 
-        if (!content || content.trim() === '') {
-            return res.status(400).json({ message: 'Not içeriği boş olamaz.' });
+        // Quill zorunluluğu: deltaContent ve htmlContent gereklidir
+        if (!deltaContent || !htmlContent) {
+            return res.status(400).json({ message: 'Not kaydı için zengin metin (deltaContent ve htmlContent) gereklidir.' });
         }
 
-        const project = await Project.findById(projectId);
+        // Project access control and role checking
+        const project = await Project.findById(projectId)
+            .populate('members.user', '_id');
         if (!project) {
             return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+        const isOwner = project.owner.toString() === userId.toString();
+        const memberData = project.members.find(member => member.user._id.toString() === userId.toString());
+        const userRole = isOwner ? 'owner' : (memberData ? memberData.role : 'none');
+        if (userRole !== 'owner' && userRole !== 'editor') {
+            return res.status(403).json({ message: 'Not oluşturmak için editör veya sahip yetkisine sahip olmalısınız.' });
         }
 
         const newNote = new ProjectNote({
             project: projectId,
             user: userId,
-            content: content.trim()
+            title: title ? title.trim() : '',
+            content: content ? content.trim() : '', // fallback, zorunlu değil
+            deltaContent,
+            htmlContent
         });
-
         await newNote.save();
         const populatedNote = await ProjectNote.findById(newNote._id).populate('user', 'username email _id');
-        
+        if (io) {
+            io.to(projectId).emit('noteCreated', {
+                projectId: projectId,
+                noteId: newNote._id,
+                note: populatedNote,
+                createdBy: {
+                    userId: userId,
+                    username: req.user.username
+                }
+            });
+        }
         res.status(201).json({ message: 'Not başarıyla oluşturuldu.', note: populatedNote });
-
     } catch (err) {
         console.error(`Error creating note for project ${req.params.projectId}:`, err);
         res.status(500).json({ message: 'Not oluşturulurken sunucu hatası oluştu.', error: err.message });
@@ -457,45 +504,58 @@ app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => 
 app.put('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req, res) => {
     try {
         const { projectId, noteId } = req.params;
-        const { content } = req.body;
+        const { title, content, deltaContent, htmlContent } = req.body;
         const userId = req.user._id;
 
-        if (!content || content.trim() === '') {
-            return res.status(400).json({ message: 'Not içeriği boş olamaz.' });
+        // Quill zorunluluğu: deltaContent ve htmlContent gereklidir
+        if (!deltaContent || !htmlContent) {
+            return res.status(400).json({ message: 'Not güncelleme için zengin metin (deltaContent ve htmlContent) gereklidir.' });
         }
 
         const note = await ProjectNote.findById(noteId);
-
         if (!note) {
             return res.status(404).json({ message: 'Not bulunamadı.' });
         }
-        
         if (note.project.toString() !== projectId) {
-             return res.status(400).json({ message: 'Not bu projeye ait değil.' });
+            return res.status(400).json({ message: 'Not bu projeye ait değil.' });
         }
-
-        // YENİ YETKI KURALI: Tüm proje üyeleri herhangi bir notu düzenleyebilir
-        const project = await Project.findById(projectId);
+        const project = await Project.findById(projectId)
+            .populate('members.user', '_id');
         if (!project) {
             return res.status(404).json({ message: 'Proje bulunamadı.' });
         }
-
-        // Kullanıcının proje üyesi olup olmadığını kontrol et
         const isOwner = project.owner.toString() === userId.toString();
-        const isMember = project.members.some(member => member.user.toString() === userId.toString());
-        
-        if (!isOwner && !isMember) {
-            return res.status(403).json({ message: 'Bu notu düzenlemek için proje üyesi olmalısınız.' });
+        const memberData = project.members.find(member => member.user._id.toString() === userId.toString());
+        const userRole = isOwner ? 'owner' : (memberData ? memberData.role : 'none');
+        let canEdit = false;
+        if (userRole === 'owner') canEdit = true;
+        else if (userRole === 'editor') canEdit = note.user.toString() === userId.toString();
+        if (!canEdit) {
+            return res.status(403).json({ 
+                message: userRole === 'editor' 
+                    ? 'Editörler sadece kendi oluşturdukları notları düzenleyebilir.' 
+                    : 'Bu notu düzenlemek için yetkiniz yok.' 
+            });
         }
-
-        note.content = content.trim();
+        note.title = title !== undefined ? title.trim() : note.title;
+        note.content = content ? content.trim() : note.content;
+        note.deltaContent = deltaContent;
+        note.htmlContent = htmlContent;
         note.updatedAt = Date.now();
-
         await note.save();
         const populatedNote = await ProjectNote.findById(note._id).populate('user', 'username email _id');
-
+        if (io) {
+            io.to(projectId).emit('noteUpdated', {
+                projectId: projectId,
+                noteId: noteId,
+                note: populatedNote,
+                updatedBy: {
+                    userId: userId,
+                    username: req.user.username
+                }
+            });
+        }
         res.status(200).json({ message: 'Not başarıyla güncellendi.', note: populatedNote });
-
     } catch (err) {
         console.error(`Error updating note ${req.params.noteId} for project ${req.params.projectId}:`, err);
         res.status(500).json({ message: 'Not güncellenirken sunucu hatası oluştu.', error: err.message });
@@ -509,7 +569,6 @@ app.delete('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req
         const userId = req.user._id;
 
         const note = await ProjectNote.findById(noteId);
-
         if (!note) {
             return res.status(404).json({ message: 'Not bulunamadı.' });
         }
@@ -518,22 +577,55 @@ app.delete('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req
             return res.status(400).json({ message: 'Not bu projeye ait değil.' });
         }
 
-        // YENİ YETKI KURALI: Sadece proje sahibi veya notu oluşturan kişi silebilir
-        const project = await Project.findById(projectId);
+        // Project access control and role checking
+        const project = await Project.findById(projectId)
+            .populate('members.user', '_id');
+        
         if (!project) {
             return res.status(404).json({ message: 'Proje bulunamadı.' });
         }
 
-        const isProjectOwner = project.owner.toString() === userId.toString();
-        const isNoteCreator = note.user.toString() === userId.toString();
-        
-        if (!isProjectOwner && !isNoteCreator) {
-            return res.status(403).json({ message: 'Bu notu sadece proje sahibi veya notu oluşturan kişi silebilir.' });
+        // Check user's role and permissions
+        const isOwner = project.owner.toString() === userId.toString();
+        const memberData = project.members.find(member => member.user._id.toString() === userId.toString());
+        const userRole = isOwner ? 'owner' : (memberData ? memberData.role : 'none');
+
+        // Role-based permission check for deletion
+        let canDelete = false;
+        if (userRole === 'owner') {
+            // Owner can delete all notes
+            canDelete = true;
+        } else if (userRole === 'editor') {
+            // Editor can only delete their own notes
+            canDelete = note.user.toString() === userId.toString();
         }
+        // Members cannot delete any notes
 
-        await ProjectNote.findByIdAndDelete(noteId);
+        if (!canDelete) {
+            return res.status(403).json({ 
+                message: userRole === 'editor' 
+                    ? 'Editörler sadece kendi oluşturdukları notları silebilir.' 
+                    : 'Bu notu silmek için yetkiniz yok.' 
+            });
+        }        await ProjectNote.findByIdAndDelete(noteId);
 
-        res.status(200).json({ message: 'Not başarıyla silindi.' });    } catch (err) {
+        console.log(`🗑️ Note deleted by ${req.user.username} (${userRole}) - Note ID: ${noteId}`);
+        
+        // Emit socket event for real-time updates
+        if (io) {
+            io.to(projectId).emit('noteDeleted', {
+                projectId: projectId,
+                noteId: noteId,
+                deletedBy: {
+                    userId: userId,
+                    username: req.user.username
+                }
+            });
+        }
+        
+        res.status(200).json({ message: 'Not başarıyla silindi.' });
+        
+    } catch (err) {
         console.error(`Error deleting note ${req.params.noteId} for project ${req.params.projectId}:`, err);
         res.status(500).json({ message: 'Not silinirken sunucu hatası oluştu.', error: err.message });
     }
@@ -1688,6 +1780,7 @@ function setupSocketHandlers(io) {
                 await Project.findByIdAndUpdate(projectId, { lastCanvasState: '' });
                 io.to(projectId).emit('clearBoard');
                 console.log(`Board cleared for project ${projectId} by socket ${socket.id}`);
+           
             } catch (err) {
                 console.error(`Error clearing board for project ${projectId}:`, err);
             }
@@ -1825,12 +1918,29 @@ function setupSocketHandlers(io) {
             console.log(`SERVER: Task deleted in project ${data.projectId} by ${socket.id}`);
             // Broadcast to all other users in the project
             socket.to(data.projectId).emit('task-deleted', data);
-        });
-
-        socket.on('task-status-updated', (data) => {
+        });        socket.on('task-status-updated', (data) => {
             console.log(`SERVER: Task status updated in project ${data.projectId} by ${socket.id}`);
             // Broadcast to all other users in the project
             socket.to(data.projectId).emit('task-status-updated', data);
+        });
+
+        // ==================== PROJECT NOTE REAL-TIME EVENTS ====================
+        socket.on('noteCreated', (data) => {
+            console.log(`SERVER: Note created in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('noteCreated', data);
+        });
+
+        socket.on('noteUpdated', (data) => {
+            console.log(`SERVER: Note updated in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('noteUpdated', data);
+        });
+
+        socket.on('noteDeleted', (data) => {
+            console.log(`SERVER: Note deleted in project ${data.projectId} by ${socket.id}`);
+            // Broadcast to all other users in the project
+            socket.to(data.projectId).emit('noteDeleted', data);
         });
 
         socket.on('disconnect', (reason) => {

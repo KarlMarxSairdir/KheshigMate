@@ -1,0 +1,584 @@
+// ==================================================
+// 🎨 QUILL.JS GELİŞMİŞ NOT EDİTÖRÜ STİLLERİ
+// ==================================================
+
+// Quill Editor Container
+.quill-notes-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+}
+
+// Notes Header with Rich Text Editor Controls
+.notes-header-quill {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+
+    .notes-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+
+        i {
+            color: #667eea;
+            font-size: 20px;
+        }
+    }
+
+    .notes-actions {
+        display: flex;
+        gap: 10px;
+    }
+}
+
+// Enhanced Add Note Button
+.add-note-btn-quill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    i {
+        font-size: 16px;
+    }
+}
+
+// Notes List with Rich Content Display
+.notes-list-quill {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+    max-height: calc(100vh - 350px);
+    
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        
+        &:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    }
+}
+
+// Individual Note Item with Rich Content
+.note-item-quill {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-left: 4px solid #667eea;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.08);
+    transition: all 0.3s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+    }
+
+    .note-header-quill {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+
+        .note-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .note-author {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 600;
+                color: #2d3748;
+                font-size: 14px;
+
+                i {
+                    color: #667eea;
+                }
+            }
+
+            .note-date {
+                font-size: 12px;
+                color: #718096;
+            }
+        }
+
+        .note-actions-quill {
+            display: flex;
+            gap: 6px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+
+            .note-action-btn-quill {
+                padding: 8px 12px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+
+                &.edit {
+                    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+                    color: white;
+
+                    &:hover {
+                        transform: scale(1.05);
+                        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+                    }
+                }
+
+                &.delete {
+                    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+                    color: white;
+
+                    &:hover {
+                        transform: scale(1.05);
+                        box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+                    }
+                }
+            }
+        }
+
+        &:hover .note-actions-quill {
+            opacity: 1;
+        }
+    }
+
+    // Rich Text Content Display
+    .note-content-quill {
+        color: #2d3748;
+        line-height: 1.6;
+        
+        // Quill rendered content styling
+        .ql-editor {
+            padding: 0;
+            border: none;
+            font-family: inherit;
+            
+            h1, h2, h3 { margin: 0.5em 0; }
+            p { margin: 0.3em 0; }
+            strong { font-weight: 600; }
+            em { font-style: italic; }
+            ul, ol { margin: 0.5em 0; padding-left: 1.5em; }
+            blockquote { 
+                border-left: 3px solid #667eea; 
+                padding-left: 1em; 
+                margin: 0.5em 0;
+                color: #718096;
+            }
+        }
+    }
+}
+
+// Quill Editor Modal/Overlay
+.note-editor-quill {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+
+    .editor-container {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+
+            .editor-title {
+                font-size: 18px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+
+                i {
+                    font-size: 20px;
+                }
+            }
+
+            .editor-actions {
+                display: flex;
+                gap: 10px;
+
+                .editor-btn {
+                    padding: 10px 16px;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    background: rgba(255, 255, 255, 0.1);
+                    color: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                        border-color: rgba(255, 255, 255, 0.5);
+                    }
+
+                    &.save {
+                        background: rgba(72, 187, 120, 0.2);
+                        border-color: #48bb78;
+
+                        &:hover {
+                            background: #48bb78;
+                        }
+                    }
+
+                    &.cancel {
+                        background: rgba(245, 101, 101, 0.2);
+                        border-color: #f56565;
+
+                        &:hover {
+                            background: #f56565;
+                        }
+                    }
+                }
+            }
+        }
+
+        .editor-content {
+            padding: 25px;
+            height: calc(70vh - 80px);
+            overflow-y: auto;
+
+            .editor-input-group {
+                margin-bottom: 20px;
+
+                label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+
+                .note-title-input {
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    transition: all 0.2s ease;
+
+                    &:focus {
+                        outline: none;
+                        border-color: #667eea;
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                    }
+                }
+            }
+
+            // Quill Editor Container
+            .quill-editor-container {
+                height: calc(100% - 80px);
+                border: 2px solid #e2e8f0;
+                border-radius: 8px;
+                overflow: hidden;
+
+                &.focused {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                }
+            }
+        }
+    }
+}
+
+// Quill Toolbar Customization
+.ql-toolbar {
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    padding: 12px 16px !important;
+    background: #f7fafc !important;
+
+    .ql-formats {
+        margin-right: 15px;
+    }
+
+    .ql-picker-label {
+        color: #4a5568 !important;
+    }
+
+    button {
+        color: #4a5568 !important;
+        
+        &:hover {
+            color: #667eea !important;
+        }
+
+        &.ql-active {
+            color: #667eea !important;
+            background: rgba(102, 126, 234, 0.1) !important;
+        }
+    }
+}
+
+.ql-container {
+    border: none !important;
+    font-family: inherit !important;
+    height: calc(100% - 62px) !important;
+}
+
+.ql-editor {
+    padding: 20px !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    color: #2d3748 !important;
+    min-height: 300px !important;
+
+    &:focus {
+        outline: none !important;
+    }
+
+    // Rich text elements styling
+    h1, h2, h3 {
+        color: #2d3748;
+        margin: 1em 0 0.5em;
+    }
+
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+
+    strong {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    em {
+        color: #4a5568;
+    }
+
+    ul, ol {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+    }
+
+    blockquote {
+        border-left: 4px solid #667eea;
+        padding-left: 1em;
+        margin: 1em 0;
+        color: #718096;
+        font-style: italic;
+    }
+
+    code {
+        background: #f7fafc;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        color: #e53e3e;
+    }
+
+    pre {
+        background: #f7fafc;
+        padding: 1em;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1em 0;
+    }
+}
+
+// Role-based permission indicators
+.note-permission-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.owner {
+        background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        color: white;
+    }
+
+    &.editor {
+        background: linear-gradient(135deg, #4fd1c7 0%, #38b2ac 100%);
+        color: white;
+    }
+
+    &.viewer {
+        background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+        color: white;
+    }
+}
+
+// Empty state for notes
+.notes-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+
+    i {
+        font-size: 48px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    p {
+        margin: 0;
+        font-size: 14px;
+        opacity: 0.8;
+    }
+}
+
+// Loading states
+.notes-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: rgba(255, 255, 255, 0.7);
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .note-editor-quill {
+        padding: 10px;
+
+        .editor-container {
+            width: 95%;
+            max-height: 95vh;
+
+            .editor-header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+
+                .editor-actions {
+                    justify-content: space-between;
+                }
+            }
+
+            .editor-content {
+                padding: 20px;
+                height: calc(90vh - 120px);
+            }
+        }
+    }
+
+    .notes-header-quill {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+
+        .notes-actions {
+            justify-content: center;
+        }
+    }
+
+    .note-item-quill {
+        padding: 15px;
+
+        .note-header-quill {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+
+            .note-actions-quill {
+                justify-content: center;
+            }
+        }
+    }
+}

@@ -1,0 +1,135 @@
+// Ekstra utility ve modern class'lar (style-backup.css ve style-new.css'den)
+// Eğer ana partial'larda yoksa, buraya eklenir.
+
+// Örnek: .createroom-butt, .createroom-clicked, .roomcode, .roomcode-error, .joinroom, .overlay, .overlay .box, .overlay .box .head-name, .overlay .box .name-field, .overlay .box .continue-name
+.createroom-butt {
+  width: 100%;
+  margin-top: 60px;
+  font-size: 24px;
+  font-weight: bold;
+  background-color: #4ecca3;
+  color: white;
+  text-align: center;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  border: 2px solid #4ecca3;
+  transition: 0.3s;
+}
+.createroom-butt:hover {
+  background-color: white;
+  border: 2px solid #4ecca3;
+  color: #4ecca3;
+  cursor: pointer;
+}
+.createroom-butt:focus {
+  outline: none;
+}
+.createroom-clicked {
+  width: 100%;
+  margin-top: 60px;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background-color: white;
+  border: 2px solid #4ecca3;
+  color: #4ecca3;
+}
+.createroom-clicked:focus {
+  outline: none;
+}
+.roomcode {
+  width: 100%;
+  margin-top: 30px;
+  font-size: 24px;
+  color: #393e46;
+  text-align: center;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 3px solid #232931;
+  border-top: 2px solid white;
+  font-weight: bold;
+}
+.roomcode:focus {
+  background-color: white;
+  border: 0;
+  border-bottom: 3px solid #232931;
+  border-top: 2px solid white;
+  outline: none;
+  border-radius: 0;
+}
+.roomcode-error {
+  border-bottom: 3px solid #d31c1c;
+}
+.joinroom {
+  margin-top: 20px;
+  width: 100%;
+  text-align: right;
+  font-size: 24px;
+  font-weight: bold;
+  color: #232931;
+}
+.joinroom:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+.overlay {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #393e46;
+}
+.overlay .box {
+  width: 25%;
+  margin: 0 auto;
+  height: 200px;
+  background-color: #ffffff;
+  margin-top: 100px;
+  border-radius: 10px;
+  text-align: center;
+}
+.overlay .box .head-name {
+  padding-top: 20px;
+  text-align: center;
+  color: #393e46;
+  font-weight: bold;
+}
+.overlay .box .name-field {
+  margin: 0px auto;
+  margin-top: 20px;
+  border: 0;
+  font-weight: bold;
+  padding: 10px;
+  width: 90%;
+  border-bottom: 3px solid #4ecca3;
+  color: #393e46;
+  height: 40px;
+}
+.overlay .box .name-field:focus {
+  outline: none;
+}
+.overlay .box .continue-name {
+  border: none;
+  margin: 0 auto;
+  margin-top: 30px;
+  color: #ffffff;
+  font-weight: bold;
+  background-color: #4ecca3;
+  border-radius: 10px;
+  padding: 10px 30px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.overlay .box .continue-name:hover {
+  background-color: #393e46;
+  color: #4ecca3;
+}

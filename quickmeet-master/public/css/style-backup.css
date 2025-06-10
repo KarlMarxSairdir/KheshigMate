@@ -404,10 +404,7 @@ navbar .logo {
   margin-bottom: var(--space-xl);
   line-height: 1.6;
 }
-  font-size: 24px;
-  color: #6f6f6f;
-  margin-top: 10px;
-}
+
 .main .create-join .createroom-butt {
   width: 100%;
   margin-top: 60px;
@@ -422,15 +419,18 @@ navbar .logo {
   border: 2px solid #4ecca3;
   transition: 0.3s;
 }
+
 .main .create-join .createroom-butt:hover {
   background-color: white;
   border: 2px solid #4ecca3;
   color: #4ecca3;
   cursor: pointer;
 }
+
 .main .create-join .createroom-butt:focus {
   outline: none;
 }
+
 .main .create-join .createroom-clicked {
   width: 100%;
   margin-top: 60px;
@@ -444,9 +444,11 @@ navbar .logo {
   border: 2px solid #4ecca3;
   color: #4ecca3;
 }
+
 .main .create-join .createroom-clicked:focus {
   outline: none;
 }
+
 .main .create-join .roomcode {
   width: 100%;
   margin-top: 30px;
@@ -459,6 +461,7 @@ navbar .logo {
   border-top: 2px solid white;
   font-weight: bold;
 }
+
 .main .create-join .roomcode:focus {
   background-color: white;
   border: 0;
@@ -467,9 +470,11 @@ navbar .logo {
   outline: none;
   border-radius: 0;
 }
+
 .main .create-join .roomcode-error {
   border-bottom: 3px solid #d31c1c;
 }
+
 .main .create-join .joinroom {
   margin-top: 20px;
   width: 100%;
@@ -478,14 +483,17 @@ navbar .logo {
   font-weight: bold;
   color: #232931;
 }
+
 .main .create-join .joinroom:hover {
   cursor: pointer;
   text-decoration: underline;
 }
+
 .main .video-cont {
   width: 100%;
   text-align: center;
 }
+
 .main .video-cont .video-self {
   height: 400px;
   width: 100%;
@@ -493,12 +501,14 @@ navbar .logo {
   border-radius: 10px;
   object-fit: cover;
 }
+
 .main .video-cont .settings {
   margin: 0 auto;
   display: flex;
   margin-top: 10px;
   width: 100px;
 }
+
 .main .video-cont .settings .device {
   background-color: #4ecca3;
   border-radius: 100px;
@@ -508,10 +518,12 @@ navbar .logo {
   margin-right: 10px;
   color: white;
 }
+
 .main .video-cont .settings .device:hover {
   background-color: #393e46;
   cursor: pointer;
 }
+
 .main .video-cont .settings .nodevice {
   background-color: #b12c2c;
   border-radius: 100px;
@@ -521,6 +533,7 @@ navbar .logo {
   margin-right: 10px;
   color: white;
 }
+
 .main .video-cont .settings .nodevice:hover {
   background-color: #393e46;
   cursor: pointer;
@@ -1970,4 +1983,10 @@ navbar .logo {
 .room-page .tool-btn.clear-btn:hover {
     background: #ffebee;
     color: #d32f2f;
+}
+
+.backup-style {
+  font-size: 24px;
+  color: #6f6f6f;
+  margin-top: 10px;
 }
