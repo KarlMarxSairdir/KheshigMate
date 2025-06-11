@@ -388,6 +388,7 @@ if (typeof QuillNotesManager === 'undefined') {
         }
 
         async editNote(noteId) {
+            console.log('🎨 editNote called with noteId:', noteId, 'and projectId:', this.projectId); // BU SATIRI EKLEYİN
             try {
                 const response = await fetch(`/projects/${this.projectId}/notes/${noteId}`, {
                     credentials: 'include'

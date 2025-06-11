@@ -447,6 +447,71 @@ app.get('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// Get single note details
+app.get('/projects/:projectId/notes/:noteId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { projectId, noteId } = req.params;
+        const userId = req.user._id;
+
+        console.log(`[GET /projects/${projectId}/notes/${noteId}] Attempting to fetch note by user ${userId}`);
+
+        // 1. Validate Note ID format
+        if (!mongoose.Types.ObjectId.isValid(noteId)) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] Invalid Note ID format: ${noteId}`);
+            return res.status(400).json({ message: 'Geçersiz Not ID formatı.' });
+        }
+        // 2. Validate Project ID format
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] Invalid Project ID format: ${projectId}`);
+            return res.status(400).json({ message: 'Geçersiz Proje ID formatı.' });
+        }
+
+        // 3. Fetch the note by its ID and populate user details
+        const note = await ProjectNote.findById(noteId).populate('user', 'username email _id');
+        if (!note) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] Note not found with ID: ${noteId}`);
+            return res.status(404).json({ message: 'Not bulunamadı.' });
+        }
+        console.log(`[GET /projects/${projectId}/notes/${noteId}] Found note: ${note._id}, project field: ${note.project}`);
+
+        // 4. Verify the note belongs to the specified project
+        if (note.project.toString() !== projectId) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] Note ${noteId} (project: ${note.project.toString()}) does not belong to target project ${projectId}.`);
+            return res.status(400).json({ message: 'Not bu projeye ait değil veya yanlış proje için istendi.' });
+        }
+
+        // 5. Fetch the project to check for user membership/ownership
+        const project = await Project.findById(projectId);
+        if (!project) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] Project not found with ID: ${projectId} (when fetching note ${noteId})`);
+            return res.status(404).json({ message: 'İlişkili proje bulunamadı.' });
+        }
+        console.log(`[GET /projects/${projectId}/notes/${noteId}] Found project: ${project.name}`);
+
+        // 6. Check if the user is a member or owner of the project
+        const isOwner = project.owner.toString() === userId.toString();
+        const isMember = project.members.some(member => member.user && member.user.toString() === userId.toString());
+        console.log(`[GET /projects/${projectId}/notes/${noteId}] User ${userId} access check for project ${projectId}: isOwner=${isOwner}, isMember=${isMember}`);
+
+        if (!isOwner && !isMember) {
+            console.log(`[GET /projects/${projectId}/notes/${noteId}] User ${userId} is not authorized for project ${projectId}.`);
+            return res.status(403).json({ message: 'Bu nota erişim yetkiniz yok (proje üyesi değilsiniz).' });
+        }
+        
+        console.log(`[GET /projects/${projectId}/notes/${noteId}] Note ${noteId} fetched successfully. User: ${userId}, Project: ${projectId}`);
+        res.status(200).json(note);
+
+    } catch (err) {
+        const { projectId, noteId } = req.params; // Ensure these are available for logging
+        console.error(`[GET /projects/${projectId}/notes/${noteId}] Error fetching note:`, err);
+        if (err.name === 'CastError' && err.kind === 'ObjectId') {
+             console.log(`[GET /projects/${projectId}/notes/${noteId}] Invalid ID format during database query. Path: ${err.path}, Value: ${err.value}`);
+             return res.status(400).json({ message: `Geçersiz ID formatı: ${err.path}` });
+        }
+        res.status(500).json({ message: 'Not alınırken sunucu hatası oluştu.', error: err.message });
+    }
+});
+
 // Create a new note for a project
 app.post('/projects/:projectId/notes', ensureAuthenticated, async (req, res) => {
     try {
