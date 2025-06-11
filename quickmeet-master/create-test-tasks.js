@@ -8,12 +8,15 @@ mongoose.connect('mongodb://localhost:27017/quickmeet', {
 });
 
 async function createTestTasks() {
+    // BU SCRIPT GEÇİCİ OLARAK DEVRE DIŞI BIRAKILDI
+    // Sabit kodlanmış projectId nedeniyle Gantt şemasında hatalara yol açıyordu.
+    // Yeniden etkinleştirmeden önce projectId'nin doğru ve geçerli olduğundan emin olun.
     try {
-        console.log('🔄 Creating test tasks...');
+        console.log('🔄 Creating test tasks... (DEVRE DIŞI)');
         
         // Önce mevcut tüm görevleri temizle
-        await Task.deleteMany({});
-        console.log('🗑️ Cleared existing tasks');
+        // await Task.deleteMany({}); // DEVRE DIŞI BIRAKILDI
+        // console.log('🗑️ Cleared existing tasks (DEVRE DIŞI)');
         
         // Test görevleri oluştur
         const testTasks = [
@@ -79,16 +82,17 @@ async function createTestTasks() {
             }
         ];
         
-        // Görevleri veritabanına kaydet
-        const createdTasks = await Task.insertMany(testTasks);
-        
-        console.log('✅ Test tasks created successfully:');
-        createdTasks.forEach((task, index) => {
-            console.log(`${index + 1}. ${task.title} (${task.status}) - ${task.startDate?.toISOString()?.split('T')[0]} → ${task.dueDate?.toISOString()?.split('T')[0]}`);
-        });
+        // Görevleri veritabanına ekle
+        if (testTasks.length > 0) {
+            // await Task.insertMany(testTasks); // DEVRE DIŞI BIRAKILDI
+            // console.log(`✅ Successfully created ${testTasks.length} test tasks. (DEVRE DIŞI)`);
+            console.log('ℹ️ Test task creation is currently disabled.');
+        } else {
+            console.log('No test tasks to create.');
+        }
         
         console.log('\n📊 Summary:');
-        console.log(`Total tasks: ${createdTasks.length}`);
+        console.log(`Total tasks: ${testTasks.length}`);
         console.log(`Project ID: 6843b71886120f0a9f6fe07e`);
         console.log('All tasks have proper start and due dates for Gantt chart');
         

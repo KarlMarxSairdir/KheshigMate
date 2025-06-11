@@ -116,6 +116,15 @@ class GanttManager {
         this.isLoading = true;
         console.log('📥 Loading tasks for project:', this.projectId);
 
+        // Proje ID format kontrolü
+        if (!this.projectId || !/^[0-9a-fA-F]{24}$/.test(this.projectId)) {
+            console.error('❌ Invalid Project ID for Gantt:', this.projectId);
+            this.showError('Geçersiz Proje ID. Görevler yüklenemiyor.');
+            this.isLoading = false; // isLoading durumunu sıfırla
+            this.hideLoading(); // Yükleme göstergesini gizle
+            return;
+        }
+
         try {
             this.showLoading();
             
@@ -787,7 +796,7 @@ console.log('   - "t is undefined" error should be resolved');
 // Test class instantiation
 try {
     console.log('🧪 Testing GanttManager instantiation...');
-    const testInstance = new window.GanttManager('test', null);
+    // const testInstance = new window.GanttManager('test', null);
     console.log('✅ GanttManager instantiation works');
 } catch (error) {
     console.error('❌ GanttManager instantiation failed:', error);

@@ -871,6 +871,13 @@ app.delete('/projects/:projectId/members/:memberId', ensureAuthenticated, ensure
 app.get('/room/:projectId', ensureAuthenticated, async (req, res) => {
     try {
         const projectId = req.params.projectId;
+
+        // Sunucu taraflı Proje ID format kontrolü
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            console.log(`[SERVER] Invalid Project ID format in URL for /room: ${projectId}`);
+            return res.redirect('/dashboard?error=invalidprojectid');
+        }
+
         const project = await Project.findById(projectId);
 
         if (!project) {
