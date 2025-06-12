@@ -274,6 +274,29 @@
                                 <div class="column-content" id="done-column">
                                     <!-- Tasks will be loaded here -->
                                 </div>
+                            </div>                        </div>
+
+                        <!-- AI Task Suggestions Panel -->
+                        <div class="ai-suggestions-panel">
+                            <div class="ai-panel-header">
+                                <div class="ai-title">
+                                    <span class="ai-icon">✨</span>
+                                    Akıllı Öneriler
+                                </div>
+                                <div class="ai-controls">
+                                    <button id="ai-refresh-btn" class="ai-refresh-btn">
+                                        <i class="fas fa-sync-alt"></i>
+                                        Önerileri Yükle
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="ai-status" class="ai-status empty">
+                                <!-- Status messages will be shown here -->
+                            </div>
+                            
+                            <div id="ai-suggestions-list" class="ai-suggestions-list" style="display: none;">
+                                <!-- AI suggestions will be rendered here -->
                             </div>
                         </div>
                     </div>                </div>                <!-- Workflow Tab Panel (BPMN Control Panel) -->
@@ -359,9 +382,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.6/quill.min.js"></script>
     
     <!-- FullCalendar JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-    <script src="/js/calendar.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
-    <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>    <!-- ✅ Quill.js Rich Text Notes Manager -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>    <script src="/js/calendar.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
+    <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
+    <script src="/js/ai-suggestions.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
+    <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script><!-- ✅ Quill.js Rich Text Notes Manager -->
     <script src="/js/quill-notes.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     
     <!-- CRITICAL: Multi-Strategy Gantt.js Loading System -->
@@ -565,14 +589,14 @@
                         taskModal.style.opacity = '0';
                         taskModal.classList.remove('show');
                     }
-                    
-                    // Only initialize once and when socket is ready
-                    if (!window.kanbanInitialized && window.socket && window.KanbanBoard) {
-                        try {
+                      // Only initialize once and when socket is ready
+                    if (!window.kanbanInitialized && window.socket && window.KanbanBoard) {                        try {
                             console.log('🎯 Initializing Kanban board on first tasks tab click');
                             window.roomKanbanBoard = new KanbanBoard('<%= project._id %>', window.socket);
                             window.kanbanInitialized = true;
                             console.log('✅ Kanban board initialized successfully');
+                            
+                            // AI suggestions will be automatically initialized by KanbanBoard.initializeAISuggestions()
                         } catch (error) {
                             console.error('❌ Kanban initialization failed:', error);
                         }

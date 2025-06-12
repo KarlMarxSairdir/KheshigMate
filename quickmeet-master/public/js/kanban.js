@@ -20,12 +20,14 @@ class KanbanBoard {
             setTimeout(() => this.ensureModalClosed(), 100);
             setTimeout(() => this.ensureModalClosed(), 500);
             setTimeout(() => this.ensureModalClosed(), 1000);
-            
-            await this.loadTasks();
+              await this.loadTasks();
             await this.loadProjectMembers();
             this.setupEventListeners();
             this.setupSocketListeners();
             console.log('✅ Kanban board initialized successfully');
+            
+            // Initialize AI suggestions after kanban board is fully ready
+            this.initializeAISuggestions();
         } catch (error) {
             console.error('❌ Kanban initialization error:', error);
             this.showError('Kanban tahtası yüklenirken hata oluştu');
@@ -91,8 +93,23 @@ class KanbanBoard {
         } catch (error) {
             console.error('Project members loading error:', error);
             this.projectMembers = [];
-            this.populateAssigneeDropdown();
-        }
+            this.populateAssigneeDropdown();        }
+    }
+
+    populateAssigneeDropdown() {
+        const assigneeSelect = document.getElementById('task-assigned-to');
+        if (!assigneeSelect) return;
+
+        // Clear existing options except the first one
+        assigneeSelect.innerHTML = '<option value="">Atanmamış</option>';
+
+        // Add project members as options
+        this.projectMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member._id;
+            option.textContent = member.username;
+            assigneeSelect.appendChild(option);
+        });
     }
 
     async createTask(taskData) {
@@ -677,68 +694,22 @@ class KanbanBoard {
         // ...diğer eski eventler (task-created, task-deleted, task-status-updated) gerekirse kaldırılabilir...
     }
 
-    // ==================== UTILITY METHODS ====================
-    updateTaskCounts() {
-        const counts = {
-            'todo': this.tasks.filter(t => t.status === 'todo').length,
-            'in-progress': this.tasks.filter(t => t.status === 'in-progress').length,
-            'done': this.tasks.filter(t => t.status === 'done').length
-        };
-
-        Object.entries(counts).forEach(([status, count]) => {
-            const countElement = document.getElementById(`${status}-count`);
-            if (countElement) {
-                countElement.textContent = count;
-            }
-        });
-    }
-
-    populateAssigneeDropdown() {
-        const select = document.getElementById('task-assigned-to');
-        if (!select) return;
-        
-        select.innerHTML = '<option value="">Atanmamış</option>';
-        
-        this.projectMembers.forEach(member => {
-            const option = document.createElement('option');
-            option.value = member._id;
-            option.textContent = member.username;
-            select.appendChild(option);
-        });
-    }
-
-    getDueDateClass(dueDate) {
-        const now = new Date();
-        const due = new Date(dueDate);
-        const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < 0) return 'overdue';
-        if (diffDays <= 3) return 'due-soon';
-        return '';
-    }
-
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('tr-TR', {
-            day: 'numeric',
-            month: 'short'
-        });
-    }
-
-    getStatusDisplayName(status) {
-        const names = {
-            'todo': 'Yapılacaklar',
-            'in-progress': 'Devam Ediyor',
-            'done': 'Tamamlandı'
-        };
-        return names[status] || status;
-    }
-
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    // ==================== AI INTEGRATION ====================
+    initializeAISuggestions() {
+        // AI suggestions'ı bu kanban instance'ı ile initialize et
+        if (window.AITaskSuggestions && window.initAITaskSuggestions) {
+            setTimeout(() => {
+                try {
+                    console.log('🤖 Kanban-triggered AI initialization starting...');
+                    window.initAITaskSuggestions(this.projectId, this);
+                    console.log('✅ Kanban-triggered AI initialization completed');
+                } catch (error) {
+                    console.error('❌ Kanban-triggered AI initialization failed:', error);
+                }
+            }, 100); // Kısa bir delay ile AI'yi başlat
+        } else {
+            console.warn('⚠️ AI Task Suggestions not available yet');
+        }
     }
 
     // ==================== NOTIFICATION METHODS ====================
@@ -794,9 +765,58 @@ class KanbanBoard {
                     if (toast.parentNode) {
                         document.body.removeChild(toast);
                     }
-                }, 300);
-            }, 3000);
+                }, 300);            }, 3000);
         }
+    }
+
+    // Utility methods
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('tr-TR', {
+            day: 'numeric',
+            month: 'short'
+        });
+    }
+
+    getDueDateClass(dueDate) {
+        const today = new Date();
+        const due = new Date(dueDate);
+        const diffTime = due - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return 'overdue';
+        if (diffDays <= 1) return 'due-soon';
+        if (diffDays <= 3) return 'due-warning';
+        return 'due-normal';
+    }
+
+    getStatusDisplayName(status) {
+        const names = {
+            'todo': 'Yapılacaklar',
+            'in-progress': 'Devam Ediyor',
+            'done': 'Tamamlandı'
+        };
+        return names[status] || status;
+    }
+
+    updateTaskCounts() {
+        const counts = {
+            todo: this.tasks.filter(t => t.status === 'todo').length,
+            'in-progress': this.tasks.filter(t => t.status === 'in-progress').length,
+            done: this.tasks.filter(t => t.status === 'done').length
+        };
+
+        Object.entries(counts).forEach(([status, count]) => {
+            const countEl = document.getElementById(`${status}-count`);
+            if (countEl) countEl.textContent = count;
+        });
     }
 }
 

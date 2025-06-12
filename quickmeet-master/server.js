@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 const path = require('path');
 const express = require('express')
 const http = require('http')
@@ -20,6 +23,7 @@ const CalendarEvent = require('./models/CalendarEvent'); // Added CalendarEvent 
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
+const aiTaskFinder = require('./services/aiTaskFinder'); // AI servisini import et
 
 const PORT = process.env.PORT || 3000;
 
@@ -1274,8 +1278,7 @@ app.delete('/projects/:projectId/events/:eventId', ensureAuthenticated, async (r
         
         // Soft delete
         await CalendarEvent.findByIdAndUpdate(eventId, { isActive: false });
-        
-        console.log(`✅ Calendar event deleted: ${event.title}`);
+          console.log(`✅ Calendar event deleted: ${event.title}`);
         res.json({ message: 'Etkinlik başarıyla silindi' });
     } catch (error) {
         console.error('Calendar event deletion error:', error);
@@ -1283,7 +1286,29 @@ app.delete('/projects/:projectId/events/:eventId', ensureAuthenticated, async (r
     }
 });
 
-// BPMN Workflow API Routes ---
+// --- AI API ROUTES ---
+
+// AI destekli görev önerileri al
+app.get('/projects/:projectId/ai-suggestions', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        // Proje ID format kontrolü
+        if (!mongoose.Types.ObjectId.isValid(projectId)) {
+            console.log(`[AI API] Invalid Project ID format: ${projectId}`);
+            return res.status(400).json({ message: 'Geçersiz Proje ID formatı.' });
+        }        console.log(`[AI API] Fetching AI suggestions for project: ${projectId} by user: ${req.user.username}`);
+        const suggestions = await aiTaskFinder.findPotentialTasks(projectId);
+        console.log(`[AI API] Found ${suggestions.length} AI suggestions for project: ${projectId}`);
+        
+        res.json({ suggestions: suggestions });
+    } catch (error) {
+        console.error(`[AI API] Error fetching AI suggestions for project ${req.params.projectId}:`, error);
+        res.status(500).json({ message: 'AI önerileri alınırken sunucu hatası oluştu.', error: error.message });
+    }
+});
+
+// --- BPMN Workflow API Routes ---
 
 // Proje BPMN diyagramlarını listele
 app.get('/projects/:projectId/bpmn', ensureAuthenticated, async (req, res) => {
