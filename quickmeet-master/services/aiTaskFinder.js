@@ -14,27 +14,27 @@ class AITaskFinder {
         const memberInfo = projectMembers.map(m => `${m.username} (Skills: ${m.skills.join(', ') || 'Belirtilmemiş'})`).join('; ');
         
         // Mevcut görevlerin başlıklarını topla
-        const existingTaskTitles = existingTasks.map(task => task.title).join('; ');
-
-        const prompt = `
-            You are a project management assistant. Analyze the following text from a project collaboration tool.
-            Your goal is to identify if the text contains an actionable task that is NOT already completed or in progress.
+        const existingTaskTitles = existingTasks.map(task => task.title).join('; ');        const prompt = `
+            Sen bir proje yönetim asistanısın. Aşağıdaki metni bir proje işbirliği aracından analiz et.
+            Amacın, metnin henüz tamamlanmamış veya başlamamış yapılabilir bir görev içerip içermediğini tespit etmek.
             
-            IMPORTANT: The following tasks already exist in this project, DO NOT suggest these again:
-            Existing Tasks: [${existingTaskTitles}]
+            ÖNEMLİ: Aşağıdaki görevler bu projede zaten mevcut, bunları TEKRAR ÖNERMEYİN:
+            Mevcut Görevler: [${existingTaskTitles}]
             
-            If the text contains a NEW actionable task that doesn't duplicate existing ones, respond ONLY with a single, valid JSON object. If not, respond ONLY with {"isTask": false}.
+            Eğer metin mevcut görevlerle çakışmayan YENİ bir yapılabilir görev içeriyorsa, SADECE tek bir geçerli JSON nesnesi ile yanıt ver. Aksi takdirde SADECE {"isTask": false} yanıtını ver.
 
-            JSON Output Format:
+            JSON Çıktı Formatı:
             {
               "isTask": true,
-              "title": "A short, clear title for the task (max 15 words).",
-              "description": "A brief description of the task based on the text.",
-              "suggestedAssigneeUsername": "If a person's name from this list [${memberInfo}] is mentioned, put their username here. Otherwise, null.",
-              "requiredSkills": ["Based on the text, predict 1-3 essential skills to complete this task (e.g., 'CSS', 'API')."]
+              "title": "Görev için kısa ve net bir başlık (maksimum 15 kelime).",
+              "description": "Metne dayalı görevin kısa bir açıklaması.",
+              "suggestedAssigneeUsername": "Eğer bu listeden [${memberInfo}] bir kişinin ismi geçiyorsa, kullanıcı adını buraya yaz. Aksi takdirde null.",
+              "requiredSkills": ["Metne dayalı olarak, bu görevi tamamlamak için gerekli 1-3 temel yetkinliği tahmin et (örn: 'CSS', 'API')."]
             }
 
-            Analyze this text: "${text}"
+            Bu metni analiz et: "${text}"
+            
+            UNUTMA: Tüm yanıtlarını Türkçe olarak ver.
         `;
 
         try {
@@ -56,26 +56,22 @@ class AITaskFinder {
             // Yanıtın geçerli bir JSON olup olmadığını kontrol et
             let parsedResponse;
             try {
-                parsedResponse = JSON.parse(cleanedResponse);
-            } catch (e) {
-                console.error("AI response is not valid JSON:", responseText);
-                console.error("Cleaned response:", cleanedResponse);
-                return { isTask: false, error: "Invalid JSON response from AI." };
+                parsedResponse = JSON.parse(cleanedResponse);            } catch (e) {
+                console.error("AI yanıtı geçerli JSON değil:", responseText);
+                console.error("Temizlenmiş yanıt:", cleanedResponse);
+                return { isTask: false, error: "AI'dan geçersiz JSON yanıtı." };
             }
-            return parsedResponse;
-
-        } catch (error) {
-            console.error("Error calling Gemini API:", error);
-            return { isTask: false, error: "API call failed." };
+            return parsedResponse;        } catch (error) {
+            console.error("Gemini API çağrısında hata:", error);
+            return { isTask: false, error: "API çağrısı başarısız." };
         }
     }
 
     async findPotentialTasks(projectId) {
         try {
             // Proje bilgilerini ve üyelerin skills bilgilerini çek
-            const project = await Project.findById(projectId).populate('members.user', 'username skills');
-            if (!project) {
-                console.error("Project not found for AI task finding:", projectId);
+            const project = await Project.findById(projectId).populate('members.user', 'username skills');            if (!project) {
+                console.error("AI görev bulma için proje bulunamadı:", projectId);
                 return [];
             }
 
@@ -119,14 +115,11 @@ class AITaskFinder {
                 if (msg.message && msg.message.trim() !== "") {
                     textsToAnalyze.push(msg.message);
                 }
-            });
-
-            if (textsToAnalyze.length === 0) {
-                console.log(`No texts to analyze for project ${projectId}`);
+            });            if (textsToAnalyze.length === 0) {
+                console.log(`${projectId} projesi için analiz edilecek metin bulunamadı`);
                 return [];
-            }
-              console.log(`[AI] Analyzing ${textsToAnalyze.length} texts for project ${projectId}`);
-            console.log(`[AI] Existing tasks count: ${existingTasks.length}`);
+            }              console.log(`[AI] ${projectId} projesi için ${textsToAnalyze.length} metin analiz ediliyor`);
+            console.log(`[AI] Mevcut görev sayısı: ${existingTasks.length}`);
             
             // Her metin için AI analizi yap
             const potentialTasks = [];
@@ -152,12 +145,10 @@ class AITaskFinder {
                 // API limitlerini aşmamak için küçük bir gecikme
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
-            
-            console.log(`[AI] Found ${potentialTasks.length} potential tasks for project ${projectId}`);
+              console.log(`[AI] ${projectId} projesi için ${potentialTasks.length} potansiyel görev bulundu`);
             return potentialTasks.slice(0, 10); // Maksimum 10 öneri döndür
-            
-        } catch (error) {
-            console.error("Error in findPotentialTasks:", error);
+              } catch (error) {
+            console.error("findPotentialTasks'da hata:", error);
             return [];
         }
     }
