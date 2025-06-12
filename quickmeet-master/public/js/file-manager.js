@@ -4,21 +4,22 @@
 console.log('📁 file-manager.js loading...');
 
 class FileManager {
-    constructor(projectId, currentUser) {
+    constructor(projectId, currentUser, socket = null) {
         console.log('📁 FileManager constructor called:', { projectId, currentUser });
         this.projectId = projectId;
         this.currentUser = currentUser;
+        this.socket = socket || window.socket; // Use provided socket or global socket
         this.files = [];
         this.isLoading = false;
         this.isUploading = false;
         
         this.init();
     }
-    
-    init() {
+      init() {
         console.log('📁 Initializing File Manager for project:', this.projectId);
         this.render();
         this.setupEventListeners();
+        this.setupSocketListeners();
         this.loadFiles();
     }
     
@@ -146,8 +147,40 @@ class FileManager {
                 this.deleteFile(fileId, fileName);
             }
         });
+          console.log('✅ File manager event listeners setup completed');
+    }
+    
+    setupSocketListeners() {
+        if (!this.socket) {
+            console.warn('⚠️ Socket not available for file manager');
+            return;
+        }
         
-        console.log('✅ File manager event listeners setup completed');
+        console.log('🔧 Setting up file manager socket listeners...');
+        
+        // Listen for file upload events from other users
+        this.socket.on('fileUploaded', (data) => {
+            console.log('📡 File uploaded event received:', data);
+            if (data.uploadedBy !== this.currentUser.username) {
+                // Only show notification for other users' uploads
+                this.showInfo(`📁 ${data.uploadedBy} tarafından yeni dosya yüklendi: ${data.file.originalName}`);
+            }
+            // Refresh file list to show new file
+            this.loadFiles();
+        });
+        
+        // Listen for file deletion events from other users
+        this.socket.on('fileDeleted', (data) => {
+            console.log('📡 File deleted event received:', data);
+            if (data.deletedBy !== this.currentUser.username) {
+                // Only show notification for other users' deletions
+                this.showInfo(`🗑️ ${data.deletedBy} tarafından dosya silindi: ${data.fileName}`);
+            }
+            // Refresh file list to remove deleted file
+            this.loadFiles();
+        });
+        
+        console.log('✅ File manager socket listeners setup completed');
     }
     
     async loadFiles() {
@@ -459,8 +492,34 @@ class FileManager {
         setTimeout(() => {
             if (successDiv.parentNode) {
                 successDiv.parentNode.removeChild(successDiv);
-            }
-        }, 3000);
+            }        }, 3000);
+    }
+    
+    showInfo(message) {
+        // Create temporary info message
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'file-info-notification';
+        infoDiv.style.cssText = `
+            margin-top: 1rem; padding: 1rem; 
+            background: rgba(59, 130, 246, 0.1); 
+            border: 1px solid #3b82f6; 
+            border-radius: 8px; 
+            color: #3b82f6; 
+            font-size: 0.875rem;
+        `;
+        infoDiv.innerHTML = `<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>${message}`;
+        
+        const fileManager = document.querySelector('.file-manager');
+        if (fileManager) {
+            fileManager.appendChild(infoDiv);
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                if (infoDiv.parentNode) {
+                    infoDiv.parentNode.removeChild(infoDiv);
+                }
+            }, 4000);
+        }
     }
 }
 
@@ -468,13 +527,13 @@ class FileManager {
 let fileManager = null;
 
 // Initialize file manager
-function initFileManager(projectId, currentUser) {
+function initFileManager(projectId, currentUser, socket = null) {
     if (fileManager) {
         console.log('🔄 Reinitializing File Manager');
         fileManager = null;
     }
     
-    fileManager = new FileManager(projectId, currentUser);
+    fileManager = new FileManager(projectId, currentUser, socket);
     window.fileManager = fileManager;
     console.log('✅ File Manager initialized');
     

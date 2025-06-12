@@ -1374,11 +1374,20 @@ app.post('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberO
         });
         
         await projectFile.save();
-        
-        // Populate user data for response
+          // Populate user data for response
         await projectFile.populate('uploadedBy', 'username fullName');
         
         console.log('✅ File uploaded successfully:', projectFile.originalName);
+        
+        // Emit WebSocket event for real-time updates
+        if (io) {
+            io.to(projectId).emit('fileUploaded', {
+                file: projectFile,
+                uploadedBy: req.user.username
+            });
+            console.log('📡 File upload event emitted to project:', projectId);
+        }
+        
         res.status(201).json({ 
             message: 'Dosya başarıyla yüklendi', 
             file: projectFile 
@@ -1471,11 +1480,21 @@ app.delete('/projects/:projectId/files/:fileId', ensureAuthenticated, ensureProj
         if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
-        
-        // Delete from database
+          // Delete from database
         await ProjectFile.findByIdAndDelete(fileId);
         
         console.log('🗑️ File deleted:', file.originalName, 'by', req.user.username);
+        
+        // Emit WebSocket event for real-time updates
+        if (io) {
+            io.to(projectId).emit('fileDeleted', {
+                fileId: fileId,
+                fileName: file.originalName,
+                deletedBy: req.user.username
+            });
+            console.log('📡 File deletion event emitted to project:', projectId);
+        }
+        
         res.json({ message: 'Dosya başarıyla silindi' });
         
     } catch (error) {

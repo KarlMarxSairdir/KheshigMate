@@ -1111,8 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('🚀 Files tab clicked, checking FileManager availability...');
                 console.log('📁 window.FileManager:', typeof window.FileManager);
                 console.log('📁 file-manager.js loaded:', !!window.FileManager);
-                
-                if (!window.fileManager && window.FileManager) {
+                  if (!window.fileManager && window.FileManager) {
                     console.log('🚀 Initializing File Manager...');
                     try {
                         const currentUser = {
@@ -1120,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             username: USER_USERNAME,
                             role: 'owner' // Bu proje üyelik rolü kontrol edilecek
                         };
-                        window.fileManager = new window.FileManager(ROOM_ID, currentUser);
+                        window.fileManager = new window.FileManager(ROOM_ID, currentUser, socket);
                         console.log('✅ File Manager initialized successfully');
                     } catch (error) {
                         console.error('❌ File Manager initialization failed:', error);
