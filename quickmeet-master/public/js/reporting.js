@@ -444,30 +444,76 @@ class ReportingManager {
             });
         }
     }
-    
-    exportReport() {
+      exportReport() {
         try {
-            const reportData = {
-                projectInfo: this.reportData.projectInfo,
-                taskStatistics: this.reportData.taskStatistics,
-                memberStatistics: this.reportData.memberStatistics,
-                fileStatistics: this.reportData.fileStatistics,
-                exportDate: new Date().toISOString()
+            // PDF export için html2pdf kullan
+            const reportElement = document.getElementById('report-content');
+            if (!reportElement) {
+                this.showError('Rapor içeriği bulunamadı');
+                return;
+            }            // Export butonunu geçici olarak gizle
+            const exportBtn = document.getElementById('export-report-btn');
+            const refreshBtn = document.getElementById('refresh-report-btn');
+            if (exportBtn) exportBtn.style.display = 'none';
+            if (refreshBtn) refreshBtn.style.display = 'none';
+
+            // PDF export için özel CSS class'ı ekle
+            const reportDashboard = reportElement.querySelector('.report-dashboard');
+            if (reportDashboard) {
+                reportDashboard.classList.add('html2pdf-optimized');
+            }// PDF ayarları - A1 Landscape Format
+            const opt = {
+                margin: 0.5, // Daha küçük margin
+                filename: `proje-raporu-${this.reportData.projectInfo.name}-${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 1.5, // Biraz daha düşük scale A1 için
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    width: 3370, // A1 genişliği (pixels)
+                    height: 2384 // A1 yüksekliği (pixels)
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a1', // A1 format
+                    orientation: 'landscape' // Yatay düzen
+                }
             };
-            
-            const dataStr = JSON.stringify(reportData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `proje-raporu-${this.projectId}-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            this.showSuccess('Rapor başarıyla dışa aktarıldı');
+
+            // Loading göster
+            this.showLoading('PDF oluşturuluyor...');            // PDF oluştur ve indir
+            html2pdf().set(opt).from(reportElement).save().then(() => {
+                this.showSuccess('Rapor PDF olarak başarıyla dışa aktarıldı');
+                
+                // Butonları geri göster
+                if (exportBtn) exportBtn.style.display = 'flex';
+                if (refreshBtn) refreshBtn.style.display = 'flex';
+                
+                // PDF CSS class'ını kaldır
+                if (reportDashboard) {
+                    reportDashboard.classList.remove('html2pdf-optimized');
+                }
+                
+                // Loading'i gizle
+                this.hideLoading();
+            }).catch((error) => {
+                console.error('❌ PDF Export error:', error);
+                this.showError('PDF oluşturulurken hata oluştu');
+                
+                // Butonları geri göster
+                if (exportBtn) exportBtn.style.display = 'flex';
+                if (refreshBtn) refreshBtn.style.display = 'flex';
+                
+                // PDF CSS class'ını kaldır
+                if (reportDashboard) {
+                    reportDashboard.classList.remove('html2pdf-optimized');
+                }
+                
+                // Loading'i gizle
+                this.hideLoading();
+            });
+
         } catch (error) {
             console.error('❌ Export error:', error);
             this.showError('Rapor dışa aktarılırken hata oluştu');
@@ -524,8 +570,7 @@ class ReportingManager {
         const errorContainer = document.getElementById('report-error');
         errorContainer.style.display = 'none';
     }
-    
-    showSuccess(message) {
+      showSuccess(message) {
         // Create temporary success message
         const successDiv = document.createElement('div');
         successDiv.className = 'report-success';
@@ -548,6 +593,41 @@ class ReportingManager {
                 successDiv.parentNode.removeChild(successDiv);
             }
         }, 3000);
+    }
+    
+    showLoading(message = 'İşlem yapılıyor...') {
+        // Create loading overlay
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'pdf-loading-overlay';
+        loadingDiv.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; color: white; font-size: 1.1rem;
+        `;
+        loadingDiv.innerHTML = `
+            <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; border: 4px solid #ffffff30; border-top: 4px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                <div>${message}</div>
+            </div>
+        `;
+        
+        // Add CSS animation
+        if (!document.querySelector('#spin-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'spin-animation-style';
+            style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(loadingDiv);
+    }
+    
+    hideLoading() {
+        const loadingDiv = document.getElementById('pdf-loading-overlay');
+        if (loadingDiv && loadingDiv.parentNode) {
+            loadingDiv.parentNode.removeChild(loadingDiv);
+        }
     }
 }
 

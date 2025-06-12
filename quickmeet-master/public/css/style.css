@@ -9605,4 +9605,110 @@ navbar .logo {
   animation: fadeInUp 0.8s ease-out 0.6s both;
 }
 
+@media print {
+  .report-dashboard .dashboard-charts {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
+    page-break-inside: avoid;
+  }
+  .report-dashboard .dashboard-charts .chart-container {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-dashboard .dashboard-charts .chart-container .chart-content {
+    min-height: 400px !important;
+  }
+  .report-dashboard .dashboard-charts .chart-container .chart-content canvas {
+    max-height: 350px !important;
+    width: 100% !important;
+  }
+  .report-dashboard .stats-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 3rem !important;
+    page-break-inside: avoid;
+  }
+  .report-dashboard .project-details {
+    page-break-before: avoid;
+    margin-top: 3rem !important;
+  }
+  .report-dashboard .dashboard-actions {
+    display: none !important;
+  }
+}
+.html2pdf-optimized .report-dashboard {
+  width: 100% !important;
+  max-width: none !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 2rem !important;
+  margin-bottom: 3rem !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts .chart-container {
+  width: 100% !important;
+  min-height: 450px !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts .chart-container .chart-header {
+  padding: 1.5rem !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts .chart-container .chart-header h3 {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts .chart-container .chart-content {
+  padding: 2rem !important;
+  min-height: 350px !important;
+}
+.html2pdf-optimized .report-dashboard .dashboard-charts .chart-container .chart-content canvas {
+  max-width: 100% !important;
+  max-height: 300px !important;
+  width: auto !important;
+  height: auto !important;
+}
+.html2pdf-optimized .report-dashboard .stats-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 2rem !important;
+  margin-bottom: 3rem !important;
+}
+.html2pdf-optimized .report-dashboard .stats-row .stat-card {
+  padding: 2rem !important;
+  min-height: 120px !important;
+}
+.html2pdf-optimized .report-dashboard .stats-row .stat-card .stat-value {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+}
+.html2pdf-optimized .report-dashboard .stats-row .stat-card .stat-label {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+.html2pdf-optimized .report-dashboard .project-details {
+  margin-top: 3rem !important;
+}
+.html2pdf-optimized .report-dashboard .project-details .details-card {
+  padding: 2rem !important;
+}
+.html2pdf-optimized .report-dashboard .project-details .details-card h4 {
+  font-size: 1.5rem !important;
+  margin-bottom: 2rem !important;
+}
+.html2pdf-optimized .report-dashboard .project-details .details-card .detail-item {
+  margin-bottom: 1.5rem !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+  background: #f8fafc !important;
+}
+.html2pdf-optimized .report-dashboard .project-details .details-card .detail-item .detail-label {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+.html2pdf-optimized .report-dashboard .project-details .details-card .detail-item .detail-value {
+  font-size: 1rem !important;
+}
+
 /*# sourceMappingURL=style.css.map */
