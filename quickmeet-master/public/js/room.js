@@ -903,18 +903,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetContent = document.getElementById(`${targetTab}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
-            }
-
-            // --- YENİ EKLENEN KISIM: Gantt tam ekran modu için --- 
+            }            // --- YENİ EKLENEN KISIM: Genişletme modları (Gantt ve Reports) için --- 
             const videoArea = document.querySelector('.video-section');
             const mainContentGrid = document.querySelector('.modern-room-container');
 
             if (targetTab === 'gantt') {
                 if(videoArea) videoArea.classList.add('hidden');
-                if(mainContentGrid) mainContentGrid.classList.add('gantt-mode'); 
+                if(mainContentGrid) {
+                    mainContentGrid.classList.add('gantt-mode');
+                    mainContentGrid.classList.remove('reports-mode');
+                }
+            } else if (targetTab === 'reports') {
+                if(videoArea) videoArea.classList.add('hidden');
+                if(mainContentGrid) {
+                    mainContentGrid.classList.add('reports-mode');
+                    mainContentGrid.classList.remove('gantt-mode');
+                }
             } else {
                 if(videoArea) videoArea.classList.remove('hidden');
-                if(mainContentGrid) mainContentGrid.classList.remove('gantt-mode');
+                if(mainContentGrid) {
+                    mainContentGrid.classList.remove('gantt-mode');
+                    mainContentGrid.classList.remove('reports-mode');
+                }
             }
             // --- YENİ EKLENEN KISIM SONU ---
 

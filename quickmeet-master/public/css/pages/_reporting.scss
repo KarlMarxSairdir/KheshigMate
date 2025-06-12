@@ -388,6 +388,80 @@
     }
 }
 
+@keyframes expandReports {
+    from {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes chartPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
 .report-dashboard {
     animation: fadeInUp 0.5s ease-out;
+    
+    // Enhanced animations for expanded mode
+    .modern-room-container.reports-mode & {
+        animation: expandReports 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        .chart-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            &:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                
+                .chart-body canvas {
+                    animation: chartPulse 2s ease-in-out infinite;
+                }
+            }
+        }
+        
+        .stats-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            &:hover {
+                transform: translateY(-5px) scale(1.02);
+                box-shadow: 0 15px 30px rgba(75, 81, 126, 0.2);
+            }
+        }
+        
+        // Staggered animation for chart cards
+        .chart-card:nth-child(1) { animation-delay: 0.1s; }
+        .chart-card:nth-child(2) { animation-delay: 0.2s; }
+        .chart-card:nth-child(3) { animation-delay: 0.3s; }
+        .chart-card:nth-child(4) { animation-delay: 0.4s; }
+    }
+}
+
+// Enhanced transitions for reports expansion
+.tab-panel#reports-tab {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    .modern-room-container.reports-mode & {
+        .report-dashboard {
+            .stats-row {
+                animation: fadeInUp 0.6s ease-out 0.2s both;
+            }
+            
+            .charts-container {
+                animation: fadeInUp 0.7s ease-out 0.4s both;
+            }
+            
+            .project-details {
+                animation: fadeInUp 0.8s ease-out 0.6s both;
+            }
+        }
+    }
 }
