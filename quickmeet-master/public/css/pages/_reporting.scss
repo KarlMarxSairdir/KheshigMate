@@ -449,6 +449,25 @@
 .tab-panel#reports-tab {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     
+    // Scroll styling için WebKit tarayıcıları
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: rgba(76, 89, 128, 0.1);
+        border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: rgba(76, 89, 128, 0.3);
+        border-radius: 4px;
+        
+        &:hover {
+            background: rgba(76, 89, 128, 0.5);
+        }
+    }
+    
     .modern-room-container.reports-mode & {
         .report-dashboard {
             .stats-row {
@@ -457,6 +476,26 @@
             
             .charts-container {
                 animation: fadeInUp 0.7s ease-out 0.4s both;
+                
+                // Reports modunda chartlar için daha iyi spacing
+                .chart-row {
+                    gap: 20px;
+                    margin-bottom: 25px;
+                    
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+                }
+                
+                .chart-card {
+                    min-height: 350px; // Chart'ların yeterli yüksekliğe sahip olması
+                    
+                    .chart-container {
+                        canvas {
+                            max-height: 280px !important; // Canvas yüksekliğini sınırla
+                        }
+                    }
+                }
             }
             
             .project-details {

@@ -486,8 +486,7 @@
     .sidebar-content {
         flex: 1;
         overflow: hidden; // Alt öğelerin bu container'ı taşırmasını engeller (önemli!)
-        position: relative;
-        // display: flex; // .tab-panel position:absolute olduğu için bu gerekli olmayabilir
+        position: relative;        // display: flex; // .tab-panel position:absolute olduğu için bu gerekli olmayabilir
         // flex-direction: column;
 
         .tab-panel {
@@ -502,6 +501,7 @@
             pointer-events: none;
             display: flex;
             flex-direction: column;
+            overflow-y: auto; // Dikey scroll desteği
 
             &.active {
                 opacity: 1;
@@ -795,12 +795,37 @@
 
                         &.offline {
                             background: #95a5a6;
-                        }
-
-                        &.away {
+                        }                        &.away {
                             background: #f39c12;
                         }
                     }
+                }
+            }
+        }
+
+        // Reports tab - Özel scroll davranışı
+        #reports-tab {
+            padding: 0; // Padding'i kaldır, içerideki containerlar kendi padding'lerini yönetsin
+            overflow-y: auto; // Dikey scroll aktif
+            overflow-x: hidden; // Yatay scroll gizle
+            
+            .report-dashboard {
+                padding: 20px; // İçerik için padding
+                padding-bottom: 40px; // Alt kısımda ekstra boşluk
+                
+                // Scroll'u yumuşat
+                scroll-behavior: smooth;
+                
+                // Her bileşen arasında boşluk
+                .stats-row,
+                .charts-container,
+                .project-details {
+                    margin-bottom: 20px;
+                }
+                
+                // Son elementi alt kenardan uzaklaştır
+                > *:last-child {
+                    margin-bottom: 0;
                 }
             }
         }
