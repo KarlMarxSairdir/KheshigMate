@@ -21,11 +21,66 @@ const Task = require('./models/Task'); // Added Task model
 const BPMNDiagram = require('./models/BPMNDiagram'); // Added BPMN model
 const CalendarEvent = require('./models/CalendarEvent'); // Added CalendarEvent model
 const ProjectFile = require('./models/ProjectFile'); // Added ProjectFile model
+const Notification = require('./models/Notification'); // Added Notification model for Faz 4
 const multer = require('multer'); // Multer for file uploads
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
 const aiTaskFinder = require('./services/aiTaskFinder'); // AI servisini import et
+
+// Import cron jobs for automated notifications
+require('./services/cronJobs'); // Cron job'ları başlat
+
+// ===== NOTIFICATION HELPER FUNCTIONS =====
+
+// Bildirim oluşturma ve WebSocket event'i gönderen yardımcı fonksiyon
+async function createNotification(userId, projectId, type, message, link, triggeredBy = null) {
+    try {
+        const notification = new Notification({
+            user: userId,
+            project: projectId,
+            type: type,
+            message: message,
+            link: link,
+            triggeredBy: triggeredBy
+        });
+        
+        await notification.save();
+        
+        // WebSocket ile anlık bildirim gönder
+        if (typeof io !== 'undefined' && io) {
+            // Kullanıcının socket ID'sini bul ve anlık bildirim gönder
+            const userSocket = findUserSocket(userId);
+            if (userSocket) {
+                io.to(userSocket).emit('new-notification', {
+                    _id: notification._id,
+                    type: notification.type,
+                    message: notification.message,
+                    link: notification.link,
+                    timeAgo: notification.timeAgo,
+                    isRead: notification.isRead
+                });
+                console.log(`📢 Notification sent to user ${userId}: ${type}`);
+            }
+        }
+        
+        return notification;
+    } catch (error) {
+        console.error('Notification creation error:', error);
+        throw error;
+    }
+}
+
+// Kullanıcının aktif socket ID'sini bulan fonksiyon
+function findUserSocket(userId) {
+    // socketToUserMap'te kullanıcının socket ID'sini ara
+    for (const [socketId, userInfo] of Object.entries(socketToUserMap)) {
+        if (userInfo.userId === userId.toString()) {
+            return socketId;
+        }
+    }
+    return null;
+}
 
 const PORT = process.env.PORT || 3000;
 
@@ -1118,11 +1173,57 @@ app.put('/projects/:projectId/tasks/:taskId', ensureAuthenticated, async (req, r
             if (updateData[field]) {
                 updateData[field] = new Date(updateData[field]);
             }
-        });
-        // --- BİTTİ ---
+        });        // --- BİTTİ ---
         const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: updateData }, { new: true, runValidators: true })
             .populate('assignedTo', 'username email skills')
             .populate('createdBy', 'username email');
+
+        // --- GÖREV ATAMA BİLDİRİMİ (FAZ 4) ---
+        if (updateData.assignedTo && task.assignedTo?.toString() !== updateData.assignedTo) {
+            try {
+                const assignedUser = await User.findById(updateData.assignedTo);
+                if (assignedUser && assignedUser._id.toString() !== req.user._id.toString()) {
+                    const message = `${req.user.username} size "${updatedTask.title}" görevini atadı.`;
+                    const link = `/room/${projectId}?tab=tasks&highlight=${updatedTask._id}`;
+                    await createNotification(
+                        assignedUser._id, 
+                        projectId, 
+                        'new-task-assigned', 
+                        message, 
+                        link, 
+                        req.user._id
+                    );
+                    console.log(`📢 Task assignment notification sent to ${assignedUser.username}`);
+                }
+            } catch (notificationError) {
+                console.error('Task assignment notification error:', notificationError);
+                // Notification hatası, ana işlemi etkilemez
+            }
+        }
+
+        // --- GÖREV TAMAMLANMA BİLDİRİMİ (FAZ 4) ---
+        if (updateData.status === 'done' && task.status !== 'done') {
+            try {
+                // Görev tamamlandığında proje sahibine bildirim gönder
+                const projectData = await Project.findById(projectId).populate('owner', 'username');
+                if (projectData && projectData.owner._id.toString() !== req.user._id.toString()) {
+                    const message = `${req.user.username} "${updatedTask.title}" görevini tamamladı.`;
+                    const link = `/room/${projectId}?tab=tasks&highlight=${updatedTask._id}`;
+                    await createNotification(
+                        projectData.owner._id,
+                        projectId,
+                        'task-completed',
+                        message,
+                        link,
+                        req.user._id
+                    );
+                    console.log(`📢 Task completion notification sent to project owner`);
+                }
+            } catch (notificationError) {
+                console.error('Task completion notification error:', notificationError);
+            }
+        }
+
         // --- WEBSOCKET BİLDİRİMİ ---
         if (typeof io !== 'undefined' && io && io.to) {
             io.to(projectId).emit('task-updated', updatedTask);
@@ -1406,8 +1507,43 @@ app.post('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberO
         await projectFile.save();
           // Populate user data for response
         await projectFile.populate('uploadedBy', 'username fullName');
+          console.log('✅ File uploaded successfully:', projectFile.originalName);
         
-        console.log('✅ File uploaded successfully:', projectFile.originalName);
+        // --- DOSYA YÜKLEME BİLDİRİMİ (FAZ 4) ---
+        try {
+            const project = await Project.findById(projectId).populate('members.user', 'username');
+            if (project) {
+                // Proje üyelerine bildirim gönder (dosyayı yükleyen hariç)
+                const memberIds = project.members
+                    .filter(member => member.user._id.toString() !== req.user._id.toString())
+                    .map(member => member.user._id);
+                
+                // Proje sahibine de bildirim gönder (eğer üye değilse)
+                if (project.owner.toString() !== req.user._id.toString() && 
+                    !memberIds.includes(project.owner)) {
+                    memberIds.push(project.owner);
+                }
+                
+                const message = `${req.user.username} projeye "${projectFile.originalName}" dosyasını yükledi.`;
+                const link = `/room/${projectId}?tab=files`;
+                
+                for (const memberId of memberIds) {
+                    await createNotification(
+                        memberId,
+                        projectId,
+                        'file-uploaded',
+                        message,
+                        link,
+                        req.user._id
+                    );
+                }
+                
+                console.log(`📢 File upload notifications sent to ${memberIds.length} project members`);
+            }
+        } catch (notificationError) {
+            console.error('File upload notification error:', notificationError);
+            // Notification hatası, ana işlemi etkilemez
+        }
         
         // Emit WebSocket event for real-time updates
         if (io) {
@@ -2186,15 +2322,39 @@ function setupSocketHandlers(io) {
                 console.error('project message: User info not found. Socket ID:', socket.id, 'Project ID:', projectId);
                 return;
             }
-            const { userId, username } = userInfo;
-
-            try {
+            const { userId, username } = userInfo;            try {
                 const chatMessage = new ChatMessage({
                     project: projectId,
                     user: userId,
                     message: msg
                 });
                 await chatMessage.save();
+                
+                // --- CHAT MENTION BİLDİRİMİ (FAZ 4) ---
+                const mentions = msg.match(/@(\w+)/g); // @ ile başlayan kelimeleri bul
+                if (mentions) {
+                    for (const mention of mentions) {
+                        const mentionedUsername = mention.substring(1); // @ işaretini kaldır
+                        try {
+                            const mentionedUser = await User.findOne({ username: mentionedUsername });
+                            if (mentionedUser && mentionedUser._id.toString() !== userId.toString()) {
+                                const message = `${username} sizi bir mesajda bahsetti: "${msg.length > 50 ? msg.substring(0, 50) + '...' : msg}"`;
+                                const link = `/room/${projectId}?tab=chat`;
+                                await createNotification(
+                                    mentionedUser._id,
+                                    projectId,
+                                    'chat-mention',
+                                    message,
+                                    link,
+                                    userId
+                                );
+                                console.log(`📢 Chat mention notification sent to ${mentionedUser.username}`);
+                            }
+                        } catch (mentionError) {
+                            console.error(`Error processing mention ${mention}:`, mentionError);
+                        }
+                    }
+                }
                 
                 io.to(projectId).emit('project message', {
                     user: { _id: userId, username },
@@ -2501,6 +2661,155 @@ app.get('/debug/users', ensureAuthenticated, async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ===== NOTIFICATION API ROUTES (FAZ 4) =====
+
+// Get user notifications
+app.get('/notifications', ensureAuthenticated, async (req, res) => {
+    try {
+        const { limit = 20, offset = 0, unreadOnly = false } = req.query;
+        
+        // Build query
+        const query = { user: req.user._id };
+        if (unreadOnly === 'true') {
+            query.isRead = false;
+        }
+        
+        // Get notifications with pagination
+        const notifications = await Notification.find(query)
+            .populate('project', 'name')
+            .populate('triggeredBy', 'username fullName')
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip(parseInt(offset));
+        
+        // Get unread count
+        const unreadCount = await Notification.getUnreadCount(req.user._id);
+        
+        // Add timeAgo virtual field to response
+        const notificationsWithTime = notifications.map(notification => ({
+            _id: notification._id,
+            type: notification.type,
+            message: notification.message,
+            link: notification.link,
+            isRead: notification.isRead,
+            timeAgo: notification.timeAgo,
+            project: notification.project,
+            triggeredBy: notification.triggeredBy,
+            createdAt: notification.createdAt
+        }));
+        
+        res.json({
+            notifications: notificationsWithTime,
+            unreadCount: unreadCount,
+            total: notifications.length,
+            hasMore: notifications.length === parseInt(limit)
+        });
+        
+    } catch (error) {
+        console.error('Get notifications error:', error);
+        res.status(500).json({ error: 'Bildirimler alınırken hata oluştu' });
+    }
+});
+
+// Mark notifications as read
+app.post('/notifications/mark-as-read', ensureAuthenticated, async (req, res) => {
+    try {
+        const { notificationIds, markAll = false } = req.body;
+        
+        let updateQuery = { user: req.user._id };
+        
+        if (markAll) {
+            // Mark all user notifications as read
+            await Notification.updateMany(updateQuery, { isRead: true });
+            console.log(`📖 All notifications marked as read for user ${req.user.username}`);
+        } else if (notificationIds && Array.isArray(notificationIds)) {
+            // Mark specific notifications as read
+            updateQuery._id = { $in: notificationIds };
+            await Notification.updateMany(updateQuery, { isRead: true });
+            console.log(`📖 ${notificationIds.length} notifications marked as read for user ${req.user.username}`);
+        } else {
+            return res.status(400).json({ error: 'notificationIds array or markAll flag required' });
+        }
+        
+        // Get updated unread count
+        const unreadCount = await Notification.getUnreadCount(req.user._id);
+        
+        res.json({ 
+            success: true, 
+            unreadCount: unreadCount,
+            message: 'Bildirimler okundu olarak işaretlendi' 
+        });
+        
+    } catch (error) {
+        console.error('Mark as read error:', error);
+        res.status(500).json({ error: 'Bildirimler güncellenirken hata oluştu' });
+    }
+});
+
+// Delete notification
+app.delete('/notifications/:notificationId', ensureAuthenticated, async (req, res) => {
+    try {
+        const { notificationId } = req.params;
+        
+        const notification = await Notification.findOne({
+            _id: notificationId,
+            user: req.user._id
+        });
+        
+        if (!notification) {
+            return res.status(404).json({ error: 'Bildirim bulunamadı' });
+        }
+        
+        await Notification.findByIdAndDelete(notificationId);
+        
+        const unreadCount = await Notification.getUnreadCount(req.user._id);
+        
+        res.json({ 
+            success: true, 
+            unreadCount: unreadCount,
+            message: 'Bildirim silindi' 
+        });
+        
+    } catch (error) {
+        console.error('Delete notification error:', error);
+        res.status(500).json({ error: 'Bildirim silinirken hata oluştu' });
+    }
+});
+
+// Get notification statistics
+app.get('/notifications/stats', ensureAuthenticated, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        
+        const stats = await Notification.aggregate([
+            { $match: { user: userId } },
+            {
+                $group: {
+                    _id: '$type',
+                    count: { $sum: 1 },
+                    unreadCount: {
+                        $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] }
+                    }
+                }
+            },
+            { $sort: { count: -1 } }
+        ]);
+        
+        const totalUnread = await Notification.getUnreadCount(userId);
+        const totalNotifications = await Notification.countDocuments({ user: userId });
+        
+        res.json({
+            totalNotifications,
+            totalUnread,
+            byType: stats
+        });
+        
+    } catch (error) {
+        console.error('Notification stats error:', error);
+        res.status(500).json({ error: 'Bildirim istatistikleri alınırken hata oluştu' });
     }
 });
 

@@ -30,6 +30,7 @@
     "moment": "^2.27.0",
     "mongoose": "^8.4.0",
     "multer": "^2.0.1",
+    "node-cron": "^4.1.0",
     "nodemon": "^2.0.4",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
