@@ -10,14 +10,20 @@ class AITaskFinder {
     constructor() {
         // Model yapılandırması - Gemini 1.5 Flash kullan
         this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    }
-
-    async getSuggestionFromText(text, projectMembers) {
+    }    async getSuggestionFromText(text, projectMembers, existingTasks = []) {
         const memberInfo = projectMembers.map(m => `${m.username} (Skills: ${m.skills.join(', ') || 'Belirtilmemiş'})`).join('; ');
+        
+        // Mevcut görevlerin başlıklarını topla
+        const existingTaskTitles = existingTasks.map(task => task.title).join('; ');
 
         const prompt = `
             You are a project management assistant. Analyze the following text from a project collaboration tool.
-            Your goal is to identify if the text contains an actionable task. If it does, respond ONLY with a single, valid JSON object. If not, respond ONLY with {"isTask": false}.
+            Your goal is to identify if the text contains an actionable task that is NOT already completed or in progress.
+            
+            IMPORTANT: The following tasks already exist in this project, DO NOT suggest these again:
+            Existing Tasks: [${existingTaskTitles}]
+            
+            If the text contains a NEW actionable task that doesn't duplicate existing ones, respond ONLY with a single, valid JSON object. If not, respond ONLY with {"isTask": false}.
 
             JSON Output Format:
             {
@@ -81,13 +87,15 @@ class AITaskFinder {
             const notes = await ProjectNote.find({
                 project: projectId,
                 updatedAt: { $gte: sevenDaysAgo }
-            }).sort({ updatedAt: -1 });
-
-            // Chat mesajlarını çek
+            }).sort({ updatedAt: -1 });            // Chat mesajlarını çek
             const messages = await ChatMessage.find({
                 project: projectId,
                 createdAt: { $gte: sevenDaysAgo }
             }).sort({ createdAt: -1 });
+
+            // Mevcut görevleri getir (duplicateları engellemek için)
+            const Task = require('../models/Task');
+            const existingTasks = await Task.find({ project: projectId }).select('title description');
 
             // Analiz edilecek metinleri topla
             const textsToAnalyze = [];
@@ -117,14 +125,14 @@ class AITaskFinder {
                 console.log(`No texts to analyze for project ${projectId}`);
                 return [];
             }
-            
-            console.log(`[AI] Analyzing ${textsToAnalyze.length} texts for project ${projectId}`);
+              console.log(`[AI] Analyzing ${textsToAnalyze.length} texts for project ${projectId}`);
+            console.log(`[AI] Existing tasks count: ${existingTasks.length}`);
             
             // Her metin için AI analizi yap
             const potentialTasks = [];
             for (const text of textsToAnalyze) {
                 if (text && text.trim() !== "") {
-                    const suggestion = await this.getSuggestionFromText(text, project.members.map(m => m.user));
+                    const suggestion = await this.getSuggestionFromText(text, project.members.map(m => m.user), existingTasks);
                     if (suggestion && suggestion.isTask) {
                         // Benzerlikleri önlemek için basit kontrol
                         const isDuplicate = potentialTasks.some(task => 
