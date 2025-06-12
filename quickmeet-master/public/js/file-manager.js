@@ -244,8 +244,7 @@ class FileManager {
                 <div class="file-info">
                     <div class="file-type-icon ${fileType.class}">
                         ${fileType.icon}
-                    </div>
-                    <div class="file-details">
+                    </div>                    <div class="file-details">
                         <div class="file-name">${this.escapeHtml(file.originalName)}</div>
                         <div class="file-type">${fileType.name}</div>
                     </div>
@@ -258,7 +257,7 @@ class FileManager {
                         <i class="fas fa-download"></i>
                     </button>
                     ${canDelete ? `
-                        <button class="action-button delete-btn" data-file-id="${file._id}" data-file-name="${this.escapeHtml(file.originalName)}" title="Dosyayı Sil">
+                        <button class="action-button delete-btn" data-file-id="${file._id}" data-file-name="${this.safeAttribute(file.originalName)}" title="Dosyayı Sil">
                             <i class="fas fa-trash"></i>
                         </button>
                     ` : ''}
@@ -447,11 +446,28 @@ class FileManager {
             minute: '2-digit'
         });
     }
-    
-    escapeHtml(text) {
+      escapeHtml(text) {
+        if (!text) return '';
+        
+        // Create a temporary text node to properly escape HTML while preserving UTF-8 characters
+        const textNode = document.createTextNode(text);
         const div = document.createElement('div');
-        div.textContent = text;
+        div.appendChild(textNode);
         return div.innerHTML;
+    }
+    
+    // Safe method for attributes that preserves Turkish characters
+    safeAttribute(text) {
+        if (!text) return '';
+        
+        // For attributes, we need to escape quotes and other dangerous characters
+        // but preserve Turkish characters
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
     
     showError(message) {

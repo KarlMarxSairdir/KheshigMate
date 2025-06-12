@@ -148,6 +148,36 @@ const upload = multer({
     }
 });
 
+// Türkçe karakterleri düzeltmek için middleware
+app.use('/projects/:projectId/files', (req, res, next) => {
+    const originalSend = res.send;
+    
+    // Dosya yükleme işleminde originalname'i düzelt
+    if (req.method === 'POST') {
+        upload.single('file')(req, res, (err) => {
+            if (err) {
+                return next(err);
+            }
+            
+            // Türkçe karakterleri düzelt
+            if (req.file && req.file.originalname) {
+                try {
+                    // Buffer'dan düzgün UTF-8 string'e çevir
+                    const originalBuffer = Buffer.from(req.file.originalname, 'latin1');
+                    req.file.originalname = originalBuffer.toString('utf8');
+                } catch (e) {
+                    // Eğer çeviri başarısız olursa, orijinal ismi koru
+                    console.warn('⚠️ Could not fix encoding for filename:', req.file.originalname);
+                }
+            }
+            
+            next();
+        });
+    } else {
+        next();
+    }
+});
+
 console.log('✅ Multer file upload middleware configured');
 
 // Ana Sayfa Route
@@ -1340,7 +1370,7 @@ app.delete('/projects/:projectId/events/:eventId', ensureAuthenticated, async (r
 // --- FILE MANAGEMENT API ROUTES ---
 
 // Dosya yükleme (sadece owner ve editor)
-app.post('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberOrOwner, upload.single('file'), async (req, res) => {
+app.post('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
     try {
         const { projectId } = req.params;
         
@@ -1443,10 +1473,11 @@ app.get('/projects/:projectId/files/:fileId/download', ensureAuthenticated, ensu
         if (!fs.existsSync(file.path)) {
             return res.status(404).json({ error: 'Dosya disk üzerinde bulunamadı' });
         }
+          console.log('📥 File download:', file.originalName, 'by', req.user.username);
         
-        console.log('📥 File download:', file.originalName, 'by', req.user.username);
-        
-        res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
+        // Properly encode filename for Turkish characters
+        const encodedFilename = encodeURIComponent(file.originalName);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}; filename="${file.originalName}"`);
         res.setHeader('Content-Type', file.mimetype);
         res.sendFile(path.resolve(file.path));
         
