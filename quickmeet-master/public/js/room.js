@@ -1093,8 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).catch(error => {
                         console.error('❌ BPMN initialization failed:', error);
                     });
-                }
-            } else if (targetTab === 'calendar') {
+                }            } else if (targetTab === 'calendar') {
                 // Initialize Calendar manager when calendar tab is opened
                 if (!window.calendarManager && window.CalendarManager) {
                     console.log('🚀 Initializing Calendar Manager...');
@@ -1107,6 +1106,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (window.calendarManager && typeof window.calendarManager.loadEvents === 'function') {
                     console.log('♻️ Calendar Manager already exists, refreshing...');
                     window.calendarManager.loadEvents();
+                }            } else if (targetTab === 'files') {
+                // Initialize File Manager when files tab is opened
+                console.log('🚀 Files tab clicked, checking FileManager availability...');
+                console.log('📁 window.FileManager:', typeof window.FileManager);
+                console.log('📁 file-manager.js loaded:', !!window.FileManager);
+                
+                if (!window.fileManager && window.FileManager) {
+                    console.log('🚀 Initializing File Manager...');
+                    try {
+                        const currentUser = {
+                            _id: USER_ID,
+                            username: USER_USERNAME,
+                            role: 'owner' // Bu proje üyelik rolü kontrol edilecek
+                        };
+                        window.fileManager = new window.FileManager(ROOM_ID, currentUser);
+                        console.log('✅ File Manager initialized successfully');
+                    } catch (error) {
+                        console.error('❌ File Manager initialization failed:', error);
+                    }
+                } else if (window.fileManager && typeof window.fileManager.loadFiles === 'function') {
+                    console.log('♻️ File Manager already exists, refreshing...');
+                    window.fileManager.loadFiles();
+                } else if (!window.FileManager) {
+                    console.error('❌ FileManager class not found! file-manager.js may not be loaded properly');
+                    const fileManagerContent = document.getElementById('file-manager-content');
+                    if (fileManagerContent) {
+                        fileManagerContent.innerHTML = `
+                            <div class="error-state">
+                                <div class="error-icon">⚠️</div>
+                                <h3>Dosya Yöneticisi Yüklenemedi</h3>
+                                <p>FileManager JavaScript dosyası yüklenemedi. Sayfayı yenileyin.</p>
+                                <button onclick="location.reload()" class="retry-btn">Sayfayı Yenile</button>
+                            </div>
+                        `;
+                    }
                 }
             }
         });

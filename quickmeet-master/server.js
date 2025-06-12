@@ -20,6 +20,8 @@ const ProjectNote = require('./models/ProjectNote'); // Added ProjectNote model
 const Task = require('./models/Task'); // Added Task model
 const BPMNDiagram = require('./models/BPMNDiagram'); // Added BPMN model
 const CalendarEvent = require('./models/CalendarEvent'); // Added CalendarEvent model
+const ProjectFile = require('./models/ProjectFile'); // Added ProjectFile model
+const multer = require('multer'); // Multer for file uploads
 const { ExpressPeerServer } = require('peer'); // PeerJS sunucusu için
 const cors = require('cors'); // CORS paketi eklendi
 const { ensureAuthenticated, ensureProjectOwner, ensureProjectMemberOrOwner } = require('./middleware/auth'); // Auth middleware'leri
@@ -98,6 +100,55 @@ app.use(session({
 // Passport middleware (MOVED UP)
 app.use(passport.initialize());
 app.use(passport.session());
+
+// --- Multer Configuration for File Uploads ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const projectId = req.params.projectId;
+        const uploadPath = path.join(__dirname, 'uploads', projectId);
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename with timestamp and random string
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileExtension = path.extname(file.originalname);
+        const baseName = path.basename(file.originalname, fileExtension);
+        cb(null, baseName + '-' + uniqueSuffix + fileExtension);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Allow common file types
+    const allowedMimeTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain', 'text/csv', 'application/zip', 'application/x-rar-compressed'
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Desteklenmeyen dosya türü. İzin verilen türler: resim, PDF, Word, Excel, PowerPoint, metin ve arşiv dosyaları.'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
+
+console.log('✅ Multer file upload middleware configured');
 
 // Ana Sayfa Route
 app.get('/', (req, res) => {
@@ -1283,6 +1334,153 @@ app.delete('/projects/:projectId/events/:eventId', ensureAuthenticated, async (r
     } catch (error) {
         console.error('Calendar event deletion error:', error);
         res.status(500).json({ error: 'Etkinlik silinirken hata oluştu' });
+    }
+});
+
+// --- FILE MANAGEMENT API ROUTES ---
+
+// Dosya yükleme (sadece owner ve editor)
+app.post('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberOrOwner, upload.single('file'), async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        if (!req.file) {
+            return res.status(400).json({ error: 'Dosya seçilmedi' });
+        }
+        
+        // User role check - only owner and editor can upload
+        if (req.userRole === 'member') {
+            // Remove uploaded file if user doesn't have permission
+            fs.unlinkSync(req.file.path);
+            return res.status(403).json({ error: 'Dosya yükleme için yeterli yetkiniz yok' });
+        }
+        
+        console.log('📁 File upload request:', {
+            originalName: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            uploadedBy: req.user.username
+        });
+        
+        // Create file record in database
+        const projectFile = new ProjectFile({
+            originalName: req.file.originalname,
+            serverFilename: req.file.filename,
+            path: req.file.path,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            project: projectId,
+            uploadedBy: req.user._id
+        });
+        
+        await projectFile.save();
+        
+        // Populate user data for response
+        await projectFile.populate('uploadedBy', 'username fullName');
+        
+        console.log('✅ File uploaded successfully:', projectFile.originalName);
+        res.status(201).json({ 
+            message: 'Dosya başarıyla yüklendi', 
+            file: projectFile 
+        });
+        
+    } catch (error) {
+        console.error('File upload error:', error);
+        
+        // Clean up uploaded file if database save failed
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Dosya boyutu çok büyük (maksimum 10MB)' });
+        }
+        
+        res.status(500).json({ error: 'Dosya yüklenirken hata oluştu' });
+    }
+});
+
+// Proje dosyalarını listele
+app.get('/projects/:projectId/files', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        
+        const files = await ProjectFile.getByProject(projectId);
+        
+        console.log(`📁 Files loaded for project ${projectId}: ${files.length} files`);
+        res.json({ files });
+        
+    } catch (error) {
+        console.error('Files list error:', error);
+        res.status(500).json({ error: 'Dosya listesi alınırken hata oluştu' });
+    }
+});
+
+// Dosya indirme
+app.get('/projects/:projectId/files/:fileId/download', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
+    try {
+        const { projectId, fileId } = req.params;
+        
+        const file = await ProjectFile.findById(fileId);
+        
+        if (!file) {
+            return res.status(404).json({ error: 'Dosya bulunamadı' });
+        }
+        
+        if (file.project.toString() !== projectId) {
+            return res.status(403).json({ error: 'Bu dosyaya erişim izniniz yok' });
+        }
+        
+        if (!fs.existsSync(file.path)) {
+            return res.status(404).json({ error: 'Dosya disk üzerinde bulunamadı' });
+        }
+        
+        console.log('📥 File download:', file.originalName, 'by', req.user.username);
+        
+        res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
+        res.setHeader('Content-Type', file.mimetype);
+        res.sendFile(path.resolve(file.path));
+        
+    } catch (error) {
+        console.error('File download error:', error);
+        res.status(500).json({ error: 'Dosya indirilirken hata oluştu' });
+    }
+});
+
+// Dosya silme (sadece yükleyen veya proje sahibi)
+app.delete('/projects/:projectId/files/:fileId', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {
+    try {
+        const { projectId, fileId } = req.params;
+        
+        const file = await ProjectFile.findById(fileId);
+        
+        if (!file) {
+            return res.status(404).json({ error: 'Dosya bulunamadı' });
+        }
+        
+        if (file.project.toString() !== projectId) {
+            return res.status(403).json({ error: 'Bu dosyaya erişim izniniz yok' });
+        }
+        
+        // Check if user can delete (owner or uploader)
+        if (!file.canDeleteBy(req.user._id, req.userRole)) {
+            return res.status(403).json({ error: 'Bu dosyayı silme yetkiniz yok' });
+        }
+        
+        // Delete file from disk
+        if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+        }
+        
+        // Delete from database
+        await ProjectFile.findByIdAndDelete(fileId);
+        
+        console.log('🗑️ File deleted:', file.originalName, 'by', req.user.username);
+        res.json({ message: 'Dosya başarıyla silindi' });
+        
+    } catch (error) {
+        console.error('File deletion error:', error);
+        res.status(500).json({ error: 'Dosya silinirken hata oluştu' });
     }
 });
 

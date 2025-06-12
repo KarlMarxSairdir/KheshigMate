@@ -192,10 +192,13 @@
                     <button class="sidebar-tab" data-tab="workflow">
                         <i class="fas fa-project-diagram"></i>
                         <span>İş Akışı</span>
-                    </button>
-                    <button class="sidebar-tab" data-tab="notes">
+                    </button>                    <button class="sidebar-tab" data-tab="notes">
                         <i class="fas fa-sticky-note"></i>
                         <span>Notlar</span>
+                    </button>
+                    <button class="sidebar-tab" data-tab="files">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Dosyalar</span>
                     </button>
                     <button class="sidebar-tab" data-tab="attendees">
                         <i class="fas fa-users"></i>
@@ -366,6 +369,23 @@
                             </button>
                         </div>
                         <div id="calendar"></div>
+                    </div>                </div>
+
+                <!-- Files Tab Panel -->
+                <div class="tab-panel" id="files-tab">
+                    <div class="file-manager-container" id="file-manager-container">
+                        <div class="file-manager-header">
+                            <h3><i class="fas fa-folder-open"></i> Proje Dosyaları</h3>
+                            <p>Proje dosyalarınızı yönetin, yükleyin ve paylaşın</p>
+                        </div>
+                        
+                        <!-- File Manager will be initialized here -->
+                        <div id="file-manager-content">
+                            <div class="loading-state">
+                                <div class="spinner"></div>
+                                <p>Dosya yöneticisi yükleniyor...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -385,6 +405,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>    <script src="/js/calendar.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     <script src="/js/kanban.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     <script src="/js/ai-suggestions.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
+    <script src="/js/file-manager.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     <script src="/js/bpmn.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script><!-- ✅ Quill.js Rich Text Notes Manager -->
     <script src="/js/quill-notes.js?v=<%= Date.now() %>&r=<%= Math.random() %>"></script>
     
