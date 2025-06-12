@@ -112,9 +112,7 @@ class AITaskSuggestions {
                 e.preventDefault();
                 this.loadSuggestions();
             }
-        });
-
-        // Görev ekle butonları (event delegation)
+        });        // Görev ekle butonları (event delegation)
         document.addEventListener('click', async (e) => {
             if (e.target.closest('.add-task-btn[data-suggestion-index]')) {
                 console.log('➕ Add task from suggestion button clicked!');
@@ -122,6 +120,15 @@ class AITaskSuggestions {
                 const button = e.target.closest('.add-task-btn[data-suggestion-index]');
                 const suggestionIndex = parseInt(button.dataset.suggestionIndex);
                 await this.addTaskFromSuggestion(suggestionIndex, button);
+            }
+        });        // Öneri reddet butonları (event delegation)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.dismiss-suggestion-btn[data-suggestion-index]')) {
+                console.log('❌ Dismiss suggestion button clicked!');
+                e.preventDefault();
+                const button = e.target.closest('.dismiss-suggestion-btn[data-suggestion-index]');
+                const suggestionIndex = parseInt(button.dataset.suggestionIndex);
+                this.dismissSuggestion(suggestionIndex, button);
             }
         });
         
@@ -237,12 +244,15 @@ class AITaskSuggestions {
                         </div>
                     </div>
                 ` : ''}
-                
-                <div class="suggestion-footer">
+                  <div class="suggestion-footer">
                     <div class="suggestion-actions">
                         <button class="add-task-btn" data-suggestion-index="${index}">
                             <i class="fas fa-plus btn-icon"></i>
                             Görevi Ekle
+                        </button>
+                        <button class="dismiss-suggestion-btn" data-suggestion-index="${index}" title="Bu öneriyi reddet">
+                            <i class="fas fa-times btn-icon"></i>
+                            Reddet
                         </button>
                     </div>
                     
@@ -338,7 +348,26 @@ class AITaskSuggestions {
             buttonElement.innerHTML = '<i class="fas fa-plus btn-icon"></i> Görevi Ekle';
             card.classList.remove('adding');
         }
-    }
+    }    dismissSuggestion(suggestionIndex, buttonElement) {
+        const suggestion = this.suggestions[suggestionIndex];
+        if (!suggestion) return;
+
+        const card = buttonElement.closest('.ai-suggestion-card');
+        
+        // UI feedback - kartı animasyonla gizle
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        card.style.pointerEvents = 'none';
+        
+        // Öneriden kaldır
+        setTimeout(() => {
+            this.suggestions.splice(suggestionIndex, 1);
+            this.renderSuggestionsAfterAdd();
+        }, 300);
+
+        // Basit bilgi mesajı
+        console.log(`📝 Öneri kaldırıldı: ${suggestion.title}`);    }
 
     renderSuggestionsAfterAdd() {
         const container = document.getElementById('ai-suggestions-container');

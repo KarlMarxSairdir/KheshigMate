@@ -381,11 +381,9 @@
             font-weight: 500;
             border: 1px solid #e2e8f0;
         }
-    }
-
-    .suggestion-actions {
+    }    .suggestion-actions {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
         gap: 1rem;
         margin-top: 1rem;
@@ -409,6 +407,40 @@
             &:hover {
                 transform: translateY(-1px);
                 box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            }
+
+            &:active {
+                transform: translateY(0);
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .btn-icon {
+                font-size: 0.875rem;
+            }
+        }
+
+        .dismiss-suggestion-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            &:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
             }
 
             &:active {
