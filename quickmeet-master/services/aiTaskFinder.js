@@ -11,19 +11,25 @@ class AITaskFinder {
         // Model yapılandırması - Gemini 1.5 Flash kullan
         this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     }    async getSuggestionFromText(text, projectMembers, existingTasks = []) {
-        const memberInfo = projectMembers.map(m => `${m.username} (Skills: ${m.skills.join(', ') || 'Belirtilmemiş'})`).join('; ');
-        
-        // Mevcut görevlerin başlıklarını topla
+        const memberInfo = projectMembers.map(m => `${m.username} (Skills: ${m.skills.join(', ') || 'Belirtilmemiş'})`).join('; ');        // Mevcut görevlerin başlıklarını ve açıklamalarını topla
+        const existingTaskDetails = existingTasks.map(task => `"${task.title}" (${task.description || 'Açıklama yok'})`).join('; ');
         const existingTaskTitles = existingTasks.map(task => task.title).join('; ');
+        
+        // Debug: AI'ya gönderilen mevcut görevleri logla
+        console.log(`[AI] Mevcut görevler AI'ya gönderiliyor: [${existingTaskTitles}]`);
 
         const prompt = `
             Sen gelişmiş bir proje yönetim AI asistanısın. Aşağıdaki metni analiz ederek görev tespiti ve yetenek bazlı otomatik atama yapacaksın.
             
             PROJE ÜYELERİ ve YETENEKLERİ:
             ${memberInfo}
+              MEVCUT GÖREVLER (TEKRAR ÖNERMEYİN):
+            ${existingTaskDetails}
             
-            MEVCUT GÖREVLER (TEKRAR ÖNERMEYİN):
-            [${existingTaskTitles}]
+            ÖNEMLİ UYARILAR:
+            - Yukarıdaki mevcut görevlerle benzer, aynı ya da çakışan hiçbir görev önerme!
+            - Mevcut görev başlıklarını ve açıklamalarını dikkatlice incele!
+            - Sadece tamamen YENİ ve farklı görevler öner!
             
             GÖREV ANALIZ KRİTERLERİ:
             1. Metin bir yapılabilir görev içeriyor mu?
@@ -145,20 +151,34 @@ class AITaskFinder {
             });            if (textsToAnalyze.length === 0) {
                 console.log(`${projectId} projesi için analiz edilecek metin bulunamadı`);
                 return [];
-            }              console.log(`[AI] ${projectId} projesi için ${textsToAnalyze.length} metin analiz ediliyor`);
+            }            console.log(`[AI] ${projectId} projesi için ${textsToAnalyze.length} metin analiz ediliyor`);
             console.log(`[AI] Mevcut görev sayısı: ${existingTasks.length}`);
+            
+            // Debug: Mevcut görevleri listele
+            if (existingTasks.length > 0) {
+                console.log(`[AI] Mevcut görevler:`, existingTasks.map(task => task.title));
+            } else {
+                console.log(`[AI] Bu projede henüz hiç görev yok`);
+            }
             
             // Her metin için AI analizi yap
             const potentialTasks = [];
             for (const text of textsToAnalyze) {
-                if (text && text.trim() !== "") {
-                    const suggestion = await this.getSuggestionFromText(text, project.members.map(m => m.user), existingTasks);
+                if (text && text.trim() !== "") {                    const suggestion = await this.getSuggestionFromText(text, project.members.map(m => m.user), existingTasks);
                     if (suggestion && suggestion.isTask) {
+                        console.log(`[AI] Yeni öneri oluşturuldu: "${suggestion.title}"`);
+                        
                         // Benzerlikleri önlemek için basit kontrol
                         const isDuplicate = potentialTasks.some(task => 
                             task.title && suggestion.title && 
                             task.title.toLowerCase().includes(suggestion.title.toLowerCase().substring(0, 10))
                         );
+                        
+                        if (isDuplicate) {
+                            console.log(`[AI] Duplikasyon tespit edildi, öneri atlanıyor: "${suggestion.title}"`);
+                        } else {
+                            console.log(`[AI] Öneri kabul edildi: "${suggestion.title}"`);
+                        }
                         
                         if (!isDuplicate) {
                             potentialTasks.push({
