@@ -1534,6 +1534,154 @@ app.delete('/projects/:projectId/files/:fileId', ensureAuthenticated, ensureProj
     }
 });
 
+// --- PROJECT REPORTING API ROUTES ---
+
+// Proje raporlama verileri - MongoDB Aggregation kullanarak
+app.get('/projects/:projectId/report', ensureAuthenticated, ensureProjectMemberOrOwner, async (req, res) => {    try {
+        const { projectId } = req.params;
+        
+        console.log('📊 Generating report for project:', projectId);
+        
+        // Proje varlığını kontrol et
+        const projectDoc = await Project.findById(projectId);
+        if (!projectDoc) {
+            console.log('❌ Project not found:', projectId);
+            return res.status(404).json({ error: 'Proje bulunamadı' });
+        }
+        console.log('✅ Project found:', projectDoc.name);
+          // 1. Toplam görev sayısı ve durum dağılımı
+        console.log('🔍 Step 1: Fetching task statistics...');
+        const taskStats = await Task.aggregate([
+            { $match: { project: new mongoose.Types.ObjectId(projectId) } },
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        console.log('✅ Task stats:', taskStats);
+        
+        // 2. Öncelik dağılımı
+        console.log('🔍 Step 2: Fetching priority statistics...');
+        const priorityStats = await Task.aggregate([
+            { $match: { project: new mongoose.Types.ObjectId(projectId) } },
+            {
+                $group: {
+                    _id: '$priority',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);        console.log('✅ Priority stats:', priorityStats);
+          
+        // 3. Üye başına görev dağılımı
+        console.log('🔍 Step 3: Fetching member task statistics...');
+        const memberTaskStats = await Task.aggregate([
+            { $match: { project: new mongoose.Types.ObjectId(projectId) } },
+            { $unwind: '$assignedTo' },
+            {
+                $group: {
+                    _id: '$assignedTo',
+                    taskCount: { $sum: 1 },                    completedTasks: {
+                        $sum: { $cond: [{ $eq: ['$status', 'done'] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    taskCount: 1,
+                    completedTasks: 1,
+                    username: { $arrayElemAt: ['$user.username', 0] }
+                }
+            }
+        ]);
+        console.log('✅ Member task stats:', memberTaskStats);
+          // 4. Genel ilerleme hesaplama
+        console.log('🔍 Step 4: Calculating overall progress...');
+        const totalTasks = await Task.countDocuments({ 
+            project: projectId 
+        });
+        console.log('✅ Total tasks:', totalTasks);
+          const completedTasks = await Task.countDocuments({ 
+            project: projectId,
+            status: 'done'
+        });
+        
+        const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+          // 5. Dosya istatistikleri
+        const fileStats = await ProjectFile.aggregate([
+            { $match: { project: new mongoose.Types.ObjectId(projectId) } },
+            {
+                $group: {
+                    _id: null,
+                    totalFiles: { $sum: 1 },
+                    totalSize: { $sum: '$size' }
+                }
+            }
+        ]);
+        
+        // 6. Üye sayısı
+        const project = await Project.findById(projectId).populate('members.user', 'username');
+        const memberCount = project.members.length;
+        
+        // 7. Son aktivite tarihi
+        const lastActivity = await Task.findOne({ 
+            project: projectId, 
+            isActive: true 
+        }).sort({ updatedAt: -1 }).select('updatedAt');
+        
+        // Veri formatla ve döndür
+        const reportData = {
+            projectInfo: {
+                name: project.name,
+                description: project.description,
+                memberCount: memberCount,
+                createdAt: project.createdAt,
+                lastActivity: lastActivity ? lastActivity.updatedAt : project.createdAt
+            },
+            taskStatistics: {
+                totalTasks: totalTasks,
+                statusCounts: taskStats.reduce((acc, stat) => {
+                    acc[stat._id] = stat.count;
+                    return acc;
+                }, {}),
+                priorityCounts: priorityStats.reduce((acc, stat) => {
+                    acc[stat._id] = stat.count;
+                    return acc;
+                }, {}),
+                overallProgress: overallProgress
+            },
+            memberStatistics: memberTaskStats,
+            fileStatistics: {
+                totalFiles: fileStats.length > 0 ? fileStats[0].totalFiles : 0,
+                totalSize: fileStats.length > 0 ? fileStats[0].totalSize : 0
+            }
+        };
+        
+        console.log(`✅ Report generated for project ${projectId}:`, {
+            totalTasks,
+            completedTasks,
+            overallProgress: `${overallProgress}%`,
+            memberCount
+        });
+        
+        res.json(reportData);
+        
+    } catch (error) {
+        console.error('Project report error:', error);
+        res.status(500).json({ error: 'Proje raporu oluşturulurken hata oluştu' });
+    }
+});
+
 // --- AI API ROUTES ---
 
 // AI destekli görev önerileri al

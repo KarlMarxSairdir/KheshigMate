@@ -50,7 +50,7 @@
 
 ## BÖLÜM 2: DİNAMİK PROJE RAPORLAMASI
 
-**Durum:** ⏳ BEKLİYOR
+**Durum:** 🚀 BAŞLANIYOR
 
 **Hedef:** Her proje için, görevlerin durumunu, üye bazında görev dağılımını ve genel ilerlemeyi gösteren basit ama etkili bir raporlama sayfası oluşturmak.
 
@@ -88,15 +88,15 @@
 **Son Güncelleme:** 12 Haziran 2025
 
 ### ⏳ Devam Eden Görevler:
-- **Bölüm 1: Proje Bazlı Dosya Paylaşımı** (Başlangıç aşaması)
-  - Multer kurulumu ve yapılandırması
-  - ProjectFile modeli oluşturulması
+- **Bölüm 2: Dinamik Proje Raporlaması** (Başlangıç aşaması)
+  - Chart.js kurulumu ve yapılandırması
+  - Raporlama API endpoint'i geliştirimi
 
 ### 🎯 Sonraki Adımlar:
-1. Multer dependency kurulumu
-2. ProjectFile modeli oluşturulması
-3. Backend API endpoint'leri geliştirimi
-4. Frontend dosya yöneticisi arayüzü
+1. Chart.js dependency kurulumu
+2. Raporlama API endpoint'i oluşturulması
+3. MongoDB Aggregation Framework kullanımı
+4. Frontend raporlama arayüzü
 
 ---
 

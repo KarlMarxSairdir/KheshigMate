@@ -1141,6 +1141,37 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     }
                 }
+            } else if (targetTab === 'reports') {
+                // Initialize Reporting Manager when reports tab is opened
+                console.log('📊 Reports tab clicked, checking ReportingManager availability...');
+                console.log('📊 window.ReportingManager:', typeof window.ReportingManager);
+                console.log('📊 reporting.js loaded:', !!window.ReportingManager);
+                
+                if (!window.reportingManager && window.ReportingManager) {
+                    console.log('📊 Initializing Reporting Manager...');
+                    try {
+                        window.reportingManager = new window.ReportingManager(ROOM_ID);
+                        console.log('✅ Reporting Manager initialized successfully');
+                    } catch (error) {
+                        console.error('❌ Reporting Manager initialization failed:', error);
+                    }
+                } else if (window.reportingManager && typeof window.reportingManager.loadReport === 'function') {
+                    console.log('♻️ Reporting Manager already exists, refreshing...');
+                    window.reportingManager.loadReport();
+                } else if (!window.ReportingManager) {
+                    console.error('❌ ReportingManager class not found! reporting.js may not be loaded properly');
+                    const reportsTab = document.getElementById('reports-tab');
+                    if (reportsTab) {
+                        reportsTab.innerHTML = `
+                            <div class="error-state">
+                                <div class="error-icon">⚠️</div>
+                                <h3>Raporlama Sistemi Yüklenemedi</h3>
+                                <p>ReportingManager JavaScript dosyası yüklenemedi. Sayfayı yenileyin.</p>
+                                <button onclick="location.reload()" class="retry-btn">Sayfayı Yenile</button>
+                            </div>
+                        `;
+                    }
+                }
             }
         });
     });
