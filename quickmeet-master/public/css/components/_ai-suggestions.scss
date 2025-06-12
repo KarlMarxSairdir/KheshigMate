@@ -212,6 +212,149 @@
         }
     }
 
+    .suggested-assignee {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+
+        .assignee-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+
+            .fas {
+                color: #059669;
+                font-size: 0.875rem;
+            }
+
+            .assignee-name {
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            .skill-match-score {
+                background: #dcfce7;
+                color: #16a34a;
+                padding: 0.25rem 0.5rem;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-left: auto;
+            }
+        }
+
+        .assignment-reason {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+
+            .fas {
+                color: #6366f1;
+                margin-top: 0.1rem;
+                flex-shrink: 0;
+            }
+        }
+    }
+
+    .suggestion-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .suggestion-metrics {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+
+        .confidence-metric,
+        .skill-metric {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+
+            .metric-label {
+                font-weight: 500;
+            }
+
+            .metric-value {
+                font-weight: 600;
+                color: #374151;
+            }
+        }
+
+        .confidence-bar,
+        .skill-bar {
+            display: inline-block;
+            width: 40px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+
+            &::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                border-radius: 2px;
+                transition: width 0.3s ease;
+            }
+
+            &.high::after {
+                width: 85%;
+                background: #16a34a;
+            }
+
+            &.medium::after {
+                width: 65%;
+                background: #d97706;
+            }
+
+            &.low::after {
+                width: 35%;
+                background: #64748b;
+            }
+
+            &.unknown::after {
+                width: 20%;
+                background: #94a3b8;
+            }
+        }
+
+        .skill-bar {
+            &::after {
+                background: #8b5cf6;
+            }
+
+            &.high::after {
+                background: #059669;
+            }
+
+            &.medium::after {
+                background: #f59e0b;
+            }
+
+            &.low::after {
+                background: #ef4444;
+            }
+        }
+    }
+
     .suggestion-skills {
         margin-bottom: 1rem;
 

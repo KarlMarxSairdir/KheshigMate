@@ -14,30 +14,54 @@ class AITaskFinder {
         const memberInfo = projectMembers.map(m => `${m.username} (Skills: ${m.skills.join(', ') || 'Belirtilmemiş'})`).join('; ');
         
         // Mevcut görevlerin başlıklarını topla
-        const existingTaskTitles = existingTasks.map(task => task.title).join('; ');        const prompt = `
-            Sen bir proje yönetim asistanısın. Aşağıdaki metni bir proje işbirliği aracından analiz et.
-            Amacın, metnin henüz tamamlanmamış veya başlamamış yapılabilir bir görev içerip içermediğini tespit etmek.
+        const existingTaskTitles = existingTasks.map(task => task.title).join('; ');
+
+        const prompt = `
+            Sen gelişmiş bir proje yönetim AI asistanısın. Aşağıdaki metni analiz ederek görev tespiti ve yetenek bazlı otomatik atama yapacaksın.
             
-            ÖNEMLİ: Aşağıdaki görevler bu projede zaten mevcut, bunları TEKRAR ÖNERMEYİN:
-            Mevcut Görevler: [${existingTaskTitles}]
+            PROJE ÜYELERİ ve YETENEKLERİ:
+            ${memberInfo}
             
-            Eğer metin mevcut görevlerle çakışmayan YENİ bir yapılabilir görev içeriyorsa, SADECE tek bir geçerli JSON nesnesi ile yanıt ver. Aksi takdirde SADECE {"isTask": false} yanıtını ver.            JSON Çıktı Formatı:
+            MEVCUT GÖREVLER (TEKRAR ÖNERMEYİN):
+            [${existingTaskTitles}]
+            
+            GÖREV ANALIZ KRİTERLERİ:
+            1. Metin bir yapılabilir görev içeriyor mu?
+            2. Bu görev mevcut görevlerle çakışıyor mu?
+            3. Hangi yetenekler gerekli?
+            4. Hangi üye en uygun?
+            
+            YETENEK BAZLI ATAMA ALGORİTMASI:
+            - Görevin gerektirdiği yetenekleri belirle
+            - Üyelerin skills listesini analiz et
+            - En yüksek yetenek eşleşmesine sahip üyeyi öner
+            - Eğer hiçbir üyenin ilgili yeteneği yoksa, genel deneyime göre en uygun üyeyi seç
+            - Metin içinde özel olarak bir isim geçiyorsa onu öncelik ver
+            - MUTLAKA bir üye ata, "null" bırakma!
+            
+            ÇIKTI FORMATI:
+            Eğer geçerli bir görev tespit edersen, SADECE şu JSON formatında yanıt ver:
             {
               "isTask": true,
-              "title": "Görev için kısa ve net bir başlık (maksimum 15 kelime).",
-              "description": "Metne dayalı görevin kısa bir açıklaması.",
+              "title": "Kısa ve açık görev başlığı (max 15 kelime)",
+              "description": "Görevin detaylı açıklaması ve neyin yapılacağı",
               "confidence": 0.85,
-              "priority": "medium",
-              "suggestedAssigneeUsername": "Eğer bu listeden [${memberInfo}] bir kişinin ismi geçiyorsa, kullanıcı adını buraya yaz. Aksi takdirde null.",
-              "requiredSkills": ["Metne dayalı olarak, bu görevi tamamlamak için gerekli 1-3 temel yetkinliği tahmin et (örn: 'CSS', 'API')."]
+              "priority": "low|medium|high",
+              "suggestedAssigneeUsername": "En uygun üyenin username'i (MUTLAKA bir üye seç!)",
+              "requiredSkills": ["Gerekli yetenek 1", "Gerekli yetenek 2"],
+              "assignmentReason": "Bu üyenin neden seçildiğinin kısa açıklaması",
+              "skillMatchScore": 0.8
             }
-
-            Confidence: 0.0-1.0 arası güven skoru (ne kadar kesin olduğun).
-            Priority: "low", "medium" veya "high" öncelik seviyesi.
-
-            Bu metni analiz et: "${text}"
             
-            UNUTMA: Tüm yanıtlarını Türkçe olarak ver.
+            Eğer görev tespit edilmezse SADECE: {"isTask": false}
+            
+            CONFIDENCE SKORU: 0.0-1.0 (ne kadar emin olduğun)
+            SKILL MATCH SCORE: 0.0-1.0 (önerilen üyenin yetenek uyumu)
+            ASSIGNMENT REASON: Neden bu üyeyi önerdiğinin açıklaması
+            
+            ANALİZ EDİLECEK METİN: "${text}"
+            
+            UNUTMA: Tüm yanıtları Türkçe olarak ver ve MUTLAKA bir üye ata!
         `;
 
         try {

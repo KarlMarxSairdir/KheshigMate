@@ -188,11 +188,10 @@ class AITaskSuggestions {
                 ${this.suggestions.map((suggestion, index) => this.renderSuggestionCard(suggestion, index)).join('')}
             </div>
         `;
-    }
-
-    renderSuggestionCard(suggestion, index) {
+    }    renderSuggestionCard(suggestion, index) {
         const confidence = this.getConfidenceLevel(suggestion.confidence);
         const priorityClass = (suggestion.priority || 'medium').toLowerCase();
+        const skillMatchScore = Math.round((suggestion.skillMatchScore || 0) * 100);
         
         return `
             <div class="ai-suggestion-card" data-suggestion-index="${index}">
@@ -205,30 +204,32 @@ class AITaskSuggestions {
                     ${this.escapeHtml(suggestion.description)}
                 </div>
                 
-                <div class="suggestion-meta">
-                    ${suggestion.assignedTo ? `
-                        <div class="meta-item">
-                            <i class="fas fa-user meta-icon"></i>
-                            <span>${this.escapeHtml(suggestion.assignedTo)}</span>
+                ${suggestion.suggestedAssigneeUsername ? `
+                    <div class="suggested-assignee">
+                        <div class="assignee-info">
+                            <i class="fas fa-user-check"></i>
+                            <span class="assignee-name">Önerilen: ${this.escapeHtml(suggestion.suggestedAssigneeUsername)}</span>
+                            ${suggestion.skillMatchScore ? `
+                                <span class="skill-match-score" title="Yetenek Uyumu">
+                                    ${skillMatchScore}% uyum
+                                </span>
+                            ` : ''}
                         </div>
-                    ` : ''}
-                    ${suggestion.estimatedHours ? `
-                        <div class="meta-item">
-                            <i class="fas fa-clock meta-icon"></i>
-                            <span>${suggestion.estimatedHours} saat</span>
-                        </div>
-                    ` : ''}
-                    ${suggestion.deadline ? `
-                        <div class="meta-item">
-                            <i class="fas fa-calendar meta-icon"></i>
-                            <span>${this.formatDate(suggestion.deadline)}</span>
-                        </div>
-                    ` : ''}
-                </div>
+                        ${suggestion.assignmentReason ? `
+                            <div class="assignment-reason">
+                                <i class="fas fa-info-circle"></i>
+                                ${this.escapeHtml(suggestion.assignmentReason)}
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
                 
                 ${suggestion.requiredSkills && suggestion.requiredSkills.length > 0 ? `
                     <div class="suggestion-skills">
-                        <span class="skills-label">Gereken Yetenekler:</span>
+                        <span class="skills-label">
+                            <i class="fas fa-tools"></i>
+                            Gereken Yetenekler:
+                        </span>
                         <div class="skills-list">
                             ${suggestion.requiredSkills.map(skill => 
                                 `<span class="skill-tag">${this.escapeHtml(skill)}</span>`
@@ -237,13 +238,27 @@ class AITaskSuggestions {
                     </div>
                 ` : ''}
                 
-                <div class="suggestion-actions">
-                    <button class="add-task-btn" data-suggestion-index="${index}">
-                        <i class="fas fa-plus btn-icon"></i>
-                        Görevi Ekle
-                    </button>                    <div class="suggestion-confidence">
-                        Güven: ${Math.round((suggestion.confidence || 0.5) * 100)}%
-                        <span class="confidence-bar ${confidence}"></span>
+                <div class="suggestion-footer">
+                    <div class="suggestion-actions">
+                        <button class="add-task-btn" data-suggestion-index="${index}">
+                            <i class="fas fa-plus btn-icon"></i>
+                            Görevi Ekle
+                        </button>
+                    </div>
+                    
+                    <div class="suggestion-metrics">
+                        <div class="confidence-metric">
+                            <span class="metric-label">Güven:</span>
+                            <span class="metric-value">${Math.round((suggestion.confidence || 0.5) * 100)}%</span>
+                            <div class="confidence-bar ${confidence}"></div>
+                        </div>
+                        ${suggestion.skillMatchScore ? `
+                            <div class="skill-metric">
+                                <span class="metric-label">Yetenek Uyumu:</span>
+                                <span class="metric-value">${skillMatchScore}%</span>
+                                <div class="skill-bar ${this.getSkillMatchLevel(suggestion.skillMatchScore)}"></div>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -265,6 +280,20 @@ class AITaskSuggestions {
             // Kanban board'a görev ekle
             if (!this.kanbanBoard) {
                 throw new Error('Kanban board bulunamadı');
+            }            // Önerilen kullanıcının ID'sini bul
+            let assignedUserId = undefined;
+            if (suggestion.suggestedAssigneeUsername) {
+                // Proje üyelerinden önerilen kullanıcıyı bul
+                const projectMembers = this.kanbanBoard.projectMembers || [];
+                const assignedUser = projectMembers.find(member => 
+                    member.username === suggestion.suggestedAssigneeUsername
+                );
+                if (assignedUser) {
+                    assignedUserId = assignedUser._id;
+                    console.log(`👤 AI önerisi: ${suggestion.suggestedAssigneeUsername} (${assignedUserId}) kullanıcısına atanacak`);
+                } else {
+                    console.warn(`⚠️ Önerilen kullanıcı bulunamadı: ${suggestion.suggestedAssigneeUsername}`);
+                }
             }
 
             // Görev verisini hazırla
@@ -272,7 +301,7 @@ class AITaskSuggestions {
                 title: suggestion.title,
                 description: suggestion.description,
                 priority: suggestion.priority || 'medium',
-                assignedTo: suggestion.assignedToId || undefined,
+                assignedTo: assignedUserId,
                 requiredSkills: suggestion.requiredSkills || [],
                 status: 'todo'
             };
@@ -320,6 +349,13 @@ class AITaskSuggestions {
         } else {
             container.innerHTML = this.renderSuggestionsList();
         }    }
+
+    getSkillMatchLevel(score) {
+        if (!score || isNaN(score)) return 'unknown';
+        if (score >= 0.8) return 'high';
+        if (score >= 0.5) return 'medium';
+        return 'low';
+    }
 
     // Utility methods
     getConfidenceLevel(confidence) {
