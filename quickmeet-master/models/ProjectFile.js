@@ -36,7 +36,9 @@ const projectFileSchema = new mongoose.Schema({
         required: true
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 // Compound index for better query performance

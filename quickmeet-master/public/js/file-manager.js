@@ -250,7 +250,7 @@ class FileManager {
                         <div class="file-type">${fileType.name}</div>
                     </div>
                 </div>
-                <div class="file-size">${file.sizeFormatted}</div>
+                <div class="file-size">${file.sizeFormatted || this.formatFileSize(file.size || 0)}</div>
                 <div class="file-uploader">${this.escapeHtml(file.uploadedBy.username)}</div>
                 <div class="file-date">${this.formatDate(file.createdAt)}</div>
                 <div class="file-actions">
