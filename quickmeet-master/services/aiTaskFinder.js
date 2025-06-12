@@ -21,16 +21,19 @@ class AITaskFinder {
             ÖNEMLİ: Aşağıdaki görevler bu projede zaten mevcut, bunları TEKRAR ÖNERMEYİN:
             Mevcut Görevler: [${existingTaskTitles}]
             
-            Eğer metin mevcut görevlerle çakışmayan YENİ bir yapılabilir görev içeriyorsa, SADECE tek bir geçerli JSON nesnesi ile yanıt ver. Aksi takdirde SADECE {"isTask": false} yanıtını ver.
-
-            JSON Çıktı Formatı:
+            Eğer metin mevcut görevlerle çakışmayan YENİ bir yapılabilir görev içeriyorsa, SADECE tek bir geçerli JSON nesnesi ile yanıt ver. Aksi takdirde SADECE {"isTask": false} yanıtını ver.            JSON Çıktı Formatı:
             {
               "isTask": true,
               "title": "Görev için kısa ve net bir başlık (maksimum 15 kelime).",
               "description": "Metne dayalı görevin kısa bir açıklaması.",
+              "confidence": 0.85,
+              "priority": "medium",
               "suggestedAssigneeUsername": "Eğer bu listeden [${memberInfo}] bir kişinin ismi geçiyorsa, kullanıcı adını buraya yaz. Aksi takdirde null.",
               "requiredSkills": ["Metne dayalı olarak, bu görevi tamamlamak için gerekli 1-3 temel yetkinliği tahmin et (örn: 'CSS', 'API')."]
             }
+
+            Confidence: 0.0-1.0 arası güven skoru (ne kadar kesin olduğun).
+            Priority: "low", "medium" veya "high" öncelik seviyesi.
 
             Bu metni analiz et: "${text}"
             

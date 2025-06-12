@@ -241,9 +241,8 @@ class AITaskSuggestions {
                     <button class="add-task-btn" data-suggestion-index="${index}">
                         <i class="fas fa-plus btn-icon"></i>
                         Görevi Ekle
-                    </button>
-                    <div class="suggestion-confidence">
-                        Güven: ${Math.round(suggestion.confidence * 100)}%
+                    </button>                    <div class="suggestion-confidence">
+                        Güven: ${Math.round((suggestion.confidence || 0.5) * 100)}%
                         <span class="confidence-bar ${confidence}"></span>
                     </div>
                 </div>
@@ -320,13 +319,13 @@ class AITaskSuggestions {
             container.innerHTML = this.getEmptyStateHTML();
         } else {
             container.innerHTML = this.renderSuggestionsList();
-        }
-    }
+        }    }
 
     // Utility methods
     getConfidenceLevel(confidence) {
-        if (confidence >= 0.8) return 'high';
-        if (confidence >= 0.6) return 'medium';
+        const conf = confidence || 0.5; // Varsayılan değer
+        if (conf >= 0.8) return 'high';
+        if (conf >= 0.6) return 'medium';
         return 'low';
     }
 
