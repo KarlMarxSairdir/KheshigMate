@@ -263,7 +263,7 @@
 }
 
 // Task Modal Styles - Use specific selector to override dashboard modal CSS
-#task-modal.modal {
+body.room-page #task-modal.modal {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -286,16 +286,7 @@
     }
 }
 
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-#task-modal .modal-content {
+body.room-page #task-modal .modal-content {
     background: white;
     border-radius: 16px;
     width: 90%;
@@ -304,7 +295,14 @@
     overflow-y: auto;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     transform: scale(0.95);
-    animation: modalSlideUp 0.3s ease forwards;    #task-modal .modal-header {
+    animation: modalSlideUp 0.3s ease forwards;    
+    
+    // .modal-header, form, .form-group, .modal-actions vb. alt seçiciler
+    // bu üst seçicinin (body.room-page #task-modal .modal-content) altında kaldığı için
+    // otomatik olarak doğru şekilde kapsanacaktır.
+    // Ancak daha fazla netlik için bazılarını ayrıca belirtebiliriz.
+
+    .modal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -446,6 +444,15 @@
         @media (max-width: 480px) {
             flex-direction: column;
         }
+    }
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 
@@ -635,5 +642,83 @@
     }
     .kanban-column-body::-webkit-scrollbar-thumb:hover {
         background: var(--dark-text-secondary);
+    }
+
+    // Task Modal Dark Theme (Kapsamlı Güncelleme)
+    body.room-page.dark-theme #task-modal {
+        // .modal-content için genel koyu tema stilleri
+        .modal-content {
+            background: var(--dark-bg-secondary, #2c2c38);
+            color: var(--dark-text-primary, #e0e0e0);
+            border: 1px solid var(--dark-border-color, #444);
+        }
+
+        // .modal-header için koyu tema stilleri
+        .modal-header {
+            background: var(--dark-bg-tertiary, #353543); // Önceki linear-gradient yerine düz renk veya koyu gradient
+            border-bottom: 1px solid var(--dark-border-color, #444);
+
+            h3 {
+                color: var(--dark-text-primary, #e0e0e0);
+            }
+
+            .close {
+                color: var(--dark-text-secondary, #b0b0b0);
+
+                &:hover {
+                    color: var(--dark-text-primary, #e0e0e0);
+                    background: var(--dark-hover-bg, #4a4a5a); // Önceki rgba(255,255,255,0.1) yerine
+                }
+            }
+        }
+
+        // form içindeki elemanlar için koyu tema
+        .form-group {
+            label {
+                color: var(--dark-text-primary, #e0e0e0);
+            }
+
+            input, textarea, select {
+                background: var(--dark-input-bg, #3b3b4a);
+                color: var(--dark-text-primary, #e0e0e0);
+                border: 2px solid var(--dark-border-color, #555);
+
+                &:focus {
+                    border-color: var(--primary-color); // Odak rengi açık temadaki gibi kalabilir
+                    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 74, 144, 226), 0.25);
+                }
+
+                &::placeholder {
+                    color: var(--dark-text-placeholder, #888);
+                }
+            }
+        }
+
+        // .modal-actions ve içindeki butonlar için koyu tema
+        .modal-actions {
+            border-top: 1px solid var(--dark-border-color, #444);
+
+            .btn {
+                // .btn-primary ve .btn-danger stilleri genellikle koyu temada da iyi çalışır.
+                // Gerekirse burada override edilebilirler.
+                // Örneğin:
+                // &.btn-primary {
+                //     background: linear-gradient(135deg, var(--primary-color-dark, #0056b3), var(--secondary-color-dark, #004085));
+                //     &:hover {
+                //         box-shadow: 0 4px 12px rgba(var(--primary-color-rgb, 74, 144, 226), 0.4);
+                //     }
+                // }
+
+                &.btn-secondary {
+                    background: var(--dark-button-secondary-bg, #4a4a5a);
+                    color: var(--dark-button-secondary-text, #e0e0e0);
+
+                    &:hover {
+                        background: var(--dark-button-secondary-hover-bg, #5a5a6a);
+                        color: var(--dark-button-secondary-hover-text, #f0f0f0);
+                    }
+                }
+            }
+        }
     }
 }

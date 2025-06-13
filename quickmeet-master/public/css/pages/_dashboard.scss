@@ -685,7 +685,7 @@
 }
 
 // Modal styling improvements
-.modal {
+body.dashboard-page .modal { // Yeni, dashboard kapsamlı seçici
     position: fixed;
     top: 0;
     left: 0;
@@ -699,7 +699,7 @@
     justify-content: center;
 }
 
-.modal-content {
+body.dashboard-page .modal-content { // Yeni, dashboard kapsamlı seçici
     background: linear-gradient(135deg, 
         rgba(253, 246, 227, 0.98) 0%,
         rgba(248, 239, 186, 0.95) 100%);
@@ -712,7 +712,7 @@
     overflow-y: auto;
 }
 
-.modal-header {
+body.dashboard-page .modal-header { // Yeni, dashboard kapsamlı seçici
     padding: var(--space-xl);
     border-bottom: 2px solid rgba(212, 175, 55, 0.3);
     display: flex;

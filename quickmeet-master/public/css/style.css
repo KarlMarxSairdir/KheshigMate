@@ -2146,7 +2146,7 @@ navbar .logo {
   border: 1px solid #e2e8f0;
 }
 
-#task-modal.modal {
+body.room-page #task-modal.modal {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -2159,7 +2159,7 @@ navbar .logo {
   z-index: 10000;
   backdrop-filter: blur(4px);
 }
-#task-modal.modal.show {
+body.room-page #task-modal.modal.show {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -2168,15 +2168,7 @@ navbar .logo {
   animation: modalFadeIn 0.3s ease;
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-#task-modal .modal-content {
+body.room-page #task-modal .modal-content {
   background: white;
   border-radius: 16px;
   width: 90%;
@@ -2187,7 +2179,7 @@ navbar .logo {
   transform: scale(0.95);
   animation: modalSlideUp 0.3s ease forwards;
 }
-#task-modal .modal-content #task-modal .modal-header {
+body.room-page #task-modal .modal-content .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2196,12 +2188,12 @@ navbar .logo {
   background: linear-gradient(135deg, #f8fafc, #f1f5f9);
   border-radius: 16px 16px 0 0;
 }
-#task-modal .modal-content #task-modal .modal-header h3 {
+body.room-page #task-modal .modal-content .modal-header h3 {
   margin: 0;
   color: var(--text-primary);
   font-weight: 600;
 }
-#task-modal .modal-content #task-modal .modal-header .close {
+body.room-page #task-modal .modal-content .modal-header .close {
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
@@ -2213,25 +2205,25 @@ navbar .logo {
   justify-content: center;
   border-radius: 50%;
 }
-#task-modal .modal-content #task-modal .modal-header .close:hover {
+body.room-page #task-modal .modal-content .modal-header .close:hover {
   color: var(--text-primary);
   background: #e2e8f0;
   transform: scale(1.1);
 }
-#task-modal .modal-content form {
+body.room-page #task-modal .modal-content form {
   padding: 1.5rem;
 }
-#task-modal .modal-content .form-group {
+body.room-page #task-modal .modal-content .form-group {
   margin-bottom: 1.2rem;
 }
-#task-modal .modal-content .form-group label {
+body.room-page #task-modal .modal-content .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
   color: var(--text-primary);
   font-size: 0.9rem;
 }
-#task-modal .modal-content .form-group input, #task-modal .modal-content .form-group textarea, #task-modal .modal-content .form-group select {
+body.room-page #task-modal .modal-content .form-group input, body.room-page #task-modal .modal-content .form-group textarea, body.room-page #task-modal .modal-content .form-group select {
   width: 100%;
   padding: 0.8rem;
   border: 2px solid #e2e8f0;
@@ -2240,41 +2232,41 @@ navbar .logo {
   transition: all 0.3s ease;
   font-family: inherit;
 }
-#task-modal .modal-content .form-group input:focus, #task-modal .modal-content .form-group textarea:focus, #task-modal .modal-content .form-group select:focus {
+body.room-page #task-modal .modal-content .form-group input:focus, body.room-page #task-modal .modal-content .form-group textarea:focus, body.room-page #task-modal .modal-content .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
   transform: translateY(-1px);
 }
-#task-modal .modal-content .form-group input::placeholder, #task-modal .modal-content .form-group textarea::placeholder, #task-modal .modal-content .form-group select::placeholder {
+body.room-page #task-modal .modal-content .form-group input::placeholder, body.room-page #task-modal .modal-content .form-group textarea::placeholder, body.room-page #task-modal .modal-content .form-group select::placeholder {
   color: #9ca3af;
 }
-#task-modal .modal-content .form-group textarea {
+body.room-page #task-modal .modal-content .form-group textarea {
   resize: vertical;
   min-height: 90px;
   line-height: 1.5;
 }
-#task-modal .modal-content .form-group select {
+body.room-page #task-modal .modal-content .form-group select {
   cursor: pointer;
 }
-#task-modal .modal-content .form-row {
+body.room-page #task-modal .modal-content .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 @media (max-width: 480px) {
-  #task-modal .modal-content .form-row {
+  body.room-page #task-modal .modal-content .form-row {
     grid-template-columns: 1fr;
   }
 }
-#task-modal .modal-content .modal-actions {
+body.room-page #task-modal .modal-content .modal-actions {
   display: flex;
   gap: 0.8rem;
   justify-content: flex-end;
   padding-top: 1.2rem;
   border-top: 1px solid #e2e8f0;
 }
-#task-modal .modal-content .modal-actions .btn {
+body.room-page #task-modal .modal-content .modal-actions .btn {
   padding: 0.8rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -2283,36 +2275,44 @@ navbar .logo {
   transition: all 0.3s ease;
   font-size: 0.9rem;
 }
-#task-modal .modal-content .modal-actions .btn.btn-secondary {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-secondary {
   background: #f1f5f9;
   color: var(--text-secondary);
 }
-#task-modal .modal-content .modal-actions .btn.btn-secondary:hover {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-secondary:hover {
   background: #e2e8f0;
   color: var(--text-primary);
 }
-#task-modal .modal-content .modal-actions .btn.btn-primary {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-primary {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
 }
-#task-modal .modal-content .modal-actions .btn.btn-primary:hover {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
-#task-modal .modal-content .modal-actions .btn.btn-danger {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
 }
-#task-modal .modal-content .modal-actions .btn.btn-danger:hover {
+body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 @media (max-width: 480px) {
-  #task-modal .modal-content .modal-actions {
+  body.room-page #task-modal .modal-content .modal-actions {
     flex-direction: column;
   }
 }
 
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes modalSlideUp {
   from {
     transform: scale(0.95) translateY(20px);
@@ -2471,6 +2471,51 @@ navbar .logo {
 }
 .dark-theme .kanban-column-body::-webkit-scrollbar-thumb:hover {
   background: var(--dark-text-secondary);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-content {
+  background: var(--dark-bg-secondary, #2c2c38);
+  color: var(--dark-text-primary, #e0e0e0);
+  border: 1px solid var(--dark-border-color, #444);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-header {
+  background: var(--dark-bg-tertiary, #353543);
+  border-bottom: 1px solid var(--dark-border-color, #444);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-header h3 {
+  color: var(--dark-text-primary, #e0e0e0);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-header .close {
+  color: var(--dark-text-secondary, #b0b0b0);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-header .close:hover {
+  color: var(--dark-text-primary, #e0e0e0);
+  background: var(--dark-hover-bg, #4a4a5a);
+}
+.dark-theme body.room-page.dark-theme #task-modal .form-group label {
+  color: var(--dark-text-primary, #e0e0e0);
+}
+.dark-theme body.room-page.dark-theme #task-modal .form-group input, .dark-theme body.room-page.dark-theme #task-modal .form-group textarea, .dark-theme body.room-page.dark-theme #task-modal .form-group select {
+  background: var(--dark-input-bg, #3b3b4a);
+  color: var(--dark-text-primary, #e0e0e0);
+  border: 2px solid var(--dark-border-color, #555);
+}
+.dark-theme body.room-page.dark-theme #task-modal .form-group input:focus, .dark-theme body.room-page.dark-theme #task-modal .form-group textarea:focus, .dark-theme body.room-page.dark-theme #task-modal .form-group select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 74, 144, 226), 0.25);
+}
+.dark-theme body.room-page.dark-theme #task-modal .form-group input::placeholder, .dark-theme body.room-page.dark-theme #task-modal .form-group textarea::placeholder, .dark-theme body.room-page.dark-theme #task-modal .form-group select::placeholder {
+  color: var(--dark-text-placeholder, #888);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-actions {
+  border-top: 1px solid var(--dark-border-color, #444);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-actions .btn.btn-secondary {
+  background: var(--dark-button-secondary-bg, #4a4a5a);
+  color: var(--dark-button-secondary-text, #e0e0e0);
+}
+.dark-theme body.room-page.dark-theme #task-modal .modal-actions .btn.btn-secondary:hover {
+  background: var(--dark-button-secondary-hover-bg, #5a5a6a);
+  color: var(--dark-button-secondary-hover-text, #f0f0f0);
 }
 
 .ai-suggestions-panel {
@@ -7489,7 +7534,7 @@ navbar .logo {
     transform: rotate(360deg);
   }
 }
-.modal {
+body.dashboard-page .modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -7503,7 +7548,7 @@ navbar .logo {
   justify-content: center;
 }
 
-.modal-content {
+body.dashboard-page .modal-content {
   background: linear-gradient(135deg, rgba(253, 246, 227, 0.98) 0%, rgba(248, 239, 186, 0.95) 100%);
   border-radius: var(--radius-xl);
   border: 3px solid var(--kheshig-gold);
@@ -7514,20 +7559,20 @@ navbar .logo {
   overflow-y: auto;
 }
 
-.modal-header {
+body.dashboard-page .modal-header {
   padding: var(--space-xl);
   border-bottom: 2px solid rgba(212, 175, 55, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.modal-header h3 {
+body.dashboard-page .modal-header h3 {
   color: var(--kheshig-navy);
   font-family: var(--font-serif);
   font-size: 1.5rem;
   margin: 0;
 }
-.modal-header .close {
+body.dashboard-page .modal-header .close {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -7537,7 +7582,7 @@ navbar .logo {
   border-radius: 50%;
   transition: all 0.3s ease;
 }
-.modal-header .close:hover {
+body.dashboard-page .modal-header .close:hover {
   background: rgba(212, 175, 55, 0.2);
   color: var(--kheshig-navy);
 }

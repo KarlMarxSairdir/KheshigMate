@@ -12,182 +12,182 @@
         const CURRENT_USERNAME = "<%= user.username %>";
     </script>
 </head>
-
-<body class="modern-dashboard-page">
-    <!-- Modern Dashboard Header -->
-    <header class="modern-dashboard-header">
-        <div class="header-content">            <div class="header-left">
-                <div class="dashboard-logo">
-                    <i class="fas fa-horse-head"></i>
-                    KheshigMate
-                </div>
-                <div class="breadcrumb">
-                    <i class="fas fa-home"></i>
-                    <span>Kheshig Merkezi</span>
-                </div>
-            </div>            <div class="header-right">
-                <!-- Notification Bell -->
-                <div class="notification-bell" id="notificationBell">
-                    <div class="bell-icon">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-counter" id="notificationCounter" style="display: none;">0</span>
+<body class="dashboard-page">
+    <div class="dashboard-container">
+        <!-- Modern Dashboard Header -->
+        <header class="modern-dashboard-header">
+            <div class="header-content">            <div class="header-left">
+                    <div class="dashboard-logo">
+                        <i class="fas fa-horse-head"></i>
+                        KheshigMate
                     </div>
-                    
-                    <!-- Notification Dropdown -->
-                    <div class="notification-dropdown" id="notificationDropdown">
-                        <div class="notification-header">
-                            <h4>Bildirimler</h4>
-                            <button class="mark-all-read-btn" id="markAllReadBtn">
-                                <i class="fas fa-check-double"></i>
-                                Tümünü Okundu İşaretle
-                            </button>
+                    <div class="breadcrumb">
+                        <i class="fas fa-home"></i>
+                        <span>Kheshig Merkezi</span>
+                    </div>
+                </div>            <div class="header-right">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell" id="notificationBell">
+                        <div class="bell-icon">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-counter" id="notificationCounter" style="display: none;">0</span>
                         </div>
-                        <div class="notification-list" id="notificationList">
-                            <div class="no-notifications">
-                                <i class="fas fa-bell-slash"></i>
-                                <p>Henüz bildirim yok</p>
+                        
+                        <!-- Notification Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <h4>Bildirimler</h4>
+                                <button class="mark-all-read-btn" id="markAllReadBtn">
+                                    <i class="fas fa-check-double"></i>
+                                    Tümünü Okundu İşaretle
+                                </button>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="no-notifications">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>Henüz bildirim yok</p>
+                                </div>
+                            </div>
+                            <div class="notification-footer">
+                                <a href="#" class="view-all-link">Tüm bildirimleri görüntüle</a>
                             </div>
                         </div>
-                        <div class="notification-footer">
-                            <a href="#" class="view-all-link">Tüm bildirimleri görüntüle</a>
-                        </div>
                     </div>
-                </div>
 
-                <!-- User Profile Dropdown -->
-                <div class="user-profile-dropdown">
-                    <div class="user-profile-trigger" id="userProfileTrigger">
-                        <div class="user-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="user-details">
-                            <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
-                            <span class="user-role">Elite Haberleşme Uzmanı</span>
-                        </div>
-                        <div class="dropdown-arrow">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- Dropdown Menu -->
-                    <div class="user-dropdown-menu" id="userDropdownMenu">
-                        <div class="dropdown-header">
-                            <div class="user-info">
-                                <div class="user-avatar-large">
-                                    <i class="fas fa-user-circle"></i>
-                                </div>
-                                <div class="user-meta">
-                                    <h4><%= user ? user.username : 'Kheshig Üyesi' %></h4>
-                                    <p><%= user ? user.email : 'email@example.com' %></p>
-                                </div>
+                    <!-- User Profile Dropdown -->
+                    <div class="user-profile-dropdown">
+                        <div class="user-profile-trigger" id="userProfileTrigger">
+                            <div class="user-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="user-details">
+                                <span class="username"><%= user ? user.username : 'Kheshig Üyesi' %></span>
+                                <span class="user-role">Elite Haberleşme Uzmanı</span>
+                            </div>
+                            <div class="dropdown-arrow">
+                                <i class="fas fa-chevron-down"></i>
                             </div>
                         </div>
                         
-                        <div class="dropdown-divider"></div>
-                          <div class="dropdown-items">
-                            <a href="/profile" class="dropdown-item">
-                                <i class="fas fa-user-cog"></i>
-                                <span>Profil Ayarları</span>
-                            </a>
-                            <a href="/dashboard" class="dropdown-item active">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <span>Dashboard</span>
-                            </a>                            <button type="button" class="dropdown-item logout-item" id="logoutButton">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>Çıkış Yap</span>
+                        <!-- Dropdown Menu -->
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <div class="dropdown-header">
+                                <div class="user-info">
+                                    <div class="user-avatar-large">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="user-meta">
+                                        <h4><%= user ? user.username : 'Kheshig Üyesi' %></h4>
+                                        <p><%= user ? user.email : 'email@example.com' %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-divider"></div>
+                              <div class="dropdown-items">
+                                <a href="/profile" class="dropdown-item">
+                                    <i class="fas fa-user-cog"></i>
+                                    <span>Profil Ayarları</span>
+                                </a>
+                                <a href="/dashboard" class="dropdown-item active">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>Dashboard</span>
+                                </a>                            <button type="button" class="dropdown-item logout-item" id="logoutButton">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Çıkış Yap</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>    <!-- Modern Dashboard Main Content -->
+        <main class="modern-dashboard-main">
+            <div class="dashboard-hero">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <i class="fas fa-horse-head"></i>
+                        Bozkıra Hoş Geldiniz!
+                    </h1>
+                    <p class="hero-subtitle">
+                        Projelerinizi yönetin, elite ekibinizle işbirliği yapın ve Orta Asya bozkırlarında başarıya ulaşın
+                    </p>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="total-projects"><%= projects ? projects.length : 0 %></div>
+                            <div class="stat-label">Toplam Proje</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Aktif Destek</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">∞</div>
+                            <div class="stat-label">Sınırsız İmkan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Yeni Proje Oluşturma Kartı -->
+                <div class="modern-card create-project-card">
+                    <div class="card-icon-header">
+                        <div class="card-icon create-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <h2>Yeni Proje Oluştur</h2>
+                        <p>Hemen başlayın ve yeni bir proje yaratın</p>
+                    </div>
+                    <div class="card-content">
+                        <form id="create-project-form" action="/projects" method="POST">
+                            <div class="modern-form-group">
+                                <label for="project-name">
+                                    <i class="fas fa-project-diagram"></i>
+                                    Proje Adı
+                                </label>
+                                <input type="text" id="project-name" name="projectName" 
+                                       placeholder="Örn: Web Tasarım Projesi" required>
+                            </div>
+                            <div class="modern-form-group">
+                                <label for="project-desc">
+                                    <i class="fas fa-file-alt"></i>
+                                    Proje Açıklaması
+                                </label>
+                                <textarea id="project-desc" name="projectDescription" 
+                                          placeholder="Projenizin detaylarını açıklayın..." rows="4"></textarea>
+                            </div>                        <button type="submit" id="create-project" class="modern-primary-btn create-btn">
+                                <i class="fas fa-rocket"></i>
+                                <span>Proje Oluştur</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>            <!-- Projeler Listesi -->
+                <div class="modern-card projects-list-card">
+                    <div class="card-icon-header">
+                        <div class="card-icon projects-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div class="header-with-action">
+                            <div>
+                                <h2>Projeleriniz</h2>
+                                <p>Mevcut projelerinizi görüntüleyin ve yönetin</p>
+                            </div>
+                            <button id="refresh-projects" class="modern-secondary-btn refresh-btn">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Yenile</span>
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </header>    <!-- Modern Dashboard Main Content -->
-    <main class="modern-dashboard-main">
-        <div class="dashboard-hero">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    <i class="fas fa-horse-head"></i>
-                    Bozkıra Hoş Geldiniz!
-                </h1>
-                <p class="hero-subtitle">
-                    Projelerinizi yönetin, elite ekibinizle işbirliği yapın ve Orta Asya bozkırlarında başarıya ulaşın
-                </p>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-number" id="total-projects"><%= projects ? projects.length : 0 %></div>
-                        <div class="stat-label">Toplam Proje</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">24/7</div>
-                        <div class="stat-label">Aktif Destek</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">∞</div>
-                        <div class="stat-label">Sınırsız İmkan</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <!-- Yeni Proje Oluşturma Kartı -->
-            <div class="modern-card create-project-card">
-                <div class="card-icon-header">
-                    <div class="card-icon create-icon">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <h2>Yeni Proje Oluştur</h2>
-                    <p>Hemen başlayın ve yeni bir proje yaratın</p>
-                </div>
-                <div class="card-content">
-                    <form id="create-project-form" action="/projects" method="POST">
-                        <div class="modern-form-group">
-                            <label for="project-name">
-                                <i class="fas fa-project-diagram"></i>
-                                Proje Adı
-                            </label>
-                            <input type="text" id="project-name" name="projectName" 
-                                   placeholder="Örn: Web Tasarım Projesi" required>
+                    <div class="card-content">
+                        <div id="project-list-loading" class="modern-loading" style="display:none">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                            <span>Projeler yükleniyor...</span>
                         </div>
-                        <div class="modern-form-group">
-                            <label for="project-desc">
-                                <i class="fas fa-file-alt"></i>
-                                Proje Açıklaması
-                            </label>
-                            <textarea id="project-desc" name="projectDescription" 
-                                      placeholder="Projenizin detaylarını açıklayın..." rows="4"></textarea>
-                        </div>                        <button type="submit" id="create-project" class="modern-primary-btn create-btn">
-                            <i class="fas fa-rocket"></i>
-                            <span>Proje Oluştur</span>
-                        </button>
-                    </form>
-                </div>
-            </div>            <!-- Projeler Listesi -->
-            <div class="modern-card projects-list-card">
-                <div class="card-icon-header">
-                    <div class="card-icon projects-icon">
-                        <i class="fas fa-folder-open"></i>
-                    </div>
-                    <div class="header-with-action">
-                        <div>
-                            <h2>Projeleriniz</h2>
-                            <p>Mevcut projelerinizi görüntüleyin ve yönetin</p>
-                        </div>
-                        <button id="refresh-projects" class="modern-secondary-btn refresh-btn">
-                            <i class="fas fa-sync-alt"></i>
-                            <span>Yenile</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div id="project-list-loading" class="modern-loading" style="display:none">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
-                        <span>Projeler yükleniyor...</span>
-                    </div>
-                    
-                    <div id="project-list" class="projects-grid">                        <% if (projects && projects.length > 0) { %>
+                        
+                        <div id="project-list" class="projects-grid">                        <% if (projects && projects.length > 0) { %>
                             <% projects.forEach(function(project) { %>
                                 <% 
                                 // Kullanıcının bu projedeki rolünü kontrol et
@@ -260,29 +260,30 @@
                             <i class="fas fa-plus"></i>
                             <span>İlk Projenizi Oluşturun</span>
                         </button>                    </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <!-- Proje Silme Onay Modal -->
-    <div id="delete-modal" class="modal" style="display:none">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Projeyi Sil</h3>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>Bu projeyi silmek istediğinizden emin misiniz?</p>
-                <p class="warning"><strong>Bu işlem geri alınamaz!</strong></p>
-            </div>
-            <div class="modal-footer">
-                <button id="confirm-delete" class="danger-btn">Sil</button>
-                <button id="cancel-delete" class="secondary-btn">İptal</button>
-            </div>
-        </div>    </div>    <!-- dashboard.js script'i /js/dashboard.js olarak public klasöründen yüklenecek -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/notifications.js?v=1.0.0"></script>
-    <script src="/js/dashboard.js"></script>
+        <!-- Proje Silme Onay Modal -->
+        <div id="delete-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Projeyi Sil</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Bu projeyi silmek istediğinizden emin misiniz?</p>
+                    <p class="warning"><strong>Bu işlem geri alınamaz!</strong></p>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirm-delete" class="danger-btn">Sil</button>
+                    <button id="cancel-delete" class="secondary-btn">İptal</button>
+                </div>
+            </div>    </div>    <!-- dashboard.js script'i /js/dashboard.js olarak public klasöründen yüklenecek -->
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/js/notifications.js?v=1.0.0"></script>
+        <script src="/js/dashboard.js"></script>
+    </div>
 </body>
 </html>
