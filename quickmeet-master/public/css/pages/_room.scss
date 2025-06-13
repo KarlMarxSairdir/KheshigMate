@@ -823,19 +823,21 @@
             .notes-list-modern {
                 display: flex;
                 flex-direction: column;
-                gap: 15px;
-
-                .note-item {
-                    background: rgba(52, 73, 94, 0.8); // Dark note background
+                gap: 15px;                .note-item {
+                    background: rgba(76, 89, 128, 0.6); // Daha parlak dark note background
+                    border: 1px solid rgba(102, 126, 234, 0.2); // Hafif mavi border
                     border-radius: 15px;
                     padding: 15px;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
                     &:hover {
-                        background: rgba(52, 73, 94, 0.9);
+                        background: rgba(76, 89, 128, 0.8); // Hover'da daha parlak
+                        border-color: rgba(102, 126, 234, 0.4);
                         transform: translateY(-2px);
-                    }                    .note-preview {
+                        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+                    }.note-preview {
                         color: var(--room-text-primary); // Light text for dark theme
                         font-size: 14px;
                         line-height: 1.4;
@@ -849,13 +851,12 @@
                         margin-top: 8px;
                     }
                 }
-            }
-
-            .note-editor-modern {
-                background: rgba(52, 73, 94, 0.9); // Dark editor background
+            }            .note-editor-modern {
+                background: rgba(76, 89, 128, 0.7); // Daha parlak dark editor background
+                border: 1px solid rgba(102, 126, 234, 0.3); // Mavi border
                 border-radius: 15px;
                 padding: 20px;
-                box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
                 margin-top: 20px;
 
                 .note-editor-header {
@@ -882,7 +883,8 @@
                             box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
                         }
                     }                    .cancel-note-btn-modern {
-                        background: rgba(44, 62, 80, 0.8); // Dark cancel button
+                        background: rgba(76, 89, 128, 0.6); // Daha parlak cancel button
+                        border: 1px solid rgba(102, 126, 234, 0.2);
                         color: var(--room-text-secondary); // Light text
                         border: none;
                         padding: 8px 16px;
@@ -896,8 +898,9 @@
                         transition: all 0.3s ease;
 
                         &:hover {
-                            background: rgba(44, 62, 80, 0.9);
-                            color: #ecf0f1;
+                            background: rgba(76, 89, 128, 0.8);
+                            border-color: rgba(102, 126, 234, 0.4);
+                            color: var(--room-text-primary);
                         }
                     }
                 }                .note-textarea-modern {
@@ -910,7 +913,8 @@
                     font-family: inherit;
                     outline: none;
                     resize: vertical;
-                    transition: all 0.3s ease;                    background: rgba(44, 62, 80, 0.8); // Dark textarea background
+                    transition: all 0.3s ease;                    background: rgba(52, 73, 94, 0.9); // Daha koyu textarea background
+                    border: 1px solid rgba(102, 126, 234, 0.3); // Mavi border
                     color: var(--room-text-primary); // Light text
 
                     &::placeholder {
@@ -919,8 +923,9 @@
 
                     &:focus {
                         border-color: #667eea;
+                        background: rgba(52, 73, 94, 1); // Focus'ta daha koyu
                         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-                    }                }
+                    }}
             }
         }
 
@@ -1263,5 +1268,54 @@
     100% {
         transform: scale(1);
         opacity: 1;
+    }
+}
+
+// Force override for quill notes in room page
+.room-page {
+    .quill-notes-container,
+    [class*="quill-notes-container"] {
+        background: rgba(76, 89, 128, 0.7) !important;
+        border: 1px solid rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+        border-radius: 16px !important;
+    }
+    
+    .notes-header-quill,
+    [class*="notes-header-quill"] {
+        background: rgba(52, 73, 94, 0.9) !important;
+        border: 1px solid rgba(102, 126, 234, 0.2) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .note-item-quill,
+    [class*="note-item-quill"] {
+        background: rgba(52, 73, 94, 0.8) !important;
+        border: 1px solid rgba(102, 126, 234, 0.2) !important;
+        border-left: 4px solid #667eea !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+        
+        &:hover {
+            background: rgba(52, 73, 94, 0.9) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+        }
+    }
+    
+    .notes-title {
+        color: var(--room-text-primary) !important;
+    }
+    
+    .note-author {
+        color: var(--room-text-primary) !important;
+    }
+    
+    .note-date {
+        color: var(--room-text-secondary) !important;
+    }
+    
+    .note-content-quill {
+        color: var(--room-text-primary) !important;
     }
 }

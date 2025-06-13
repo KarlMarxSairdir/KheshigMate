@@ -4885,6 +4885,12 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
   padding: 20px;
   box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
 }
+.room-page .quill-notes-container {
+  background: rgba(76, 89, 128, 0.7) !important;
+  border: 1px solid rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 16px !important;
+}
 
 .notes-header-quill {
   display: flex;
@@ -4897,6 +4903,12 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
 }
+.room-page .notes-header-quill {
+  background: rgba(52, 73, 94, 0.9) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
 .notes-header-quill .notes-title {
   display: flex;
   align-items: center;
@@ -4908,6 +4920,9 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
 .notes-header-quill .notes-title i {
   color: #667eea;
   font-size: 20px;
+}
+.room-page .notes-header-quill .notes-title {
+  color: var(--room-text-primary) !important;
 }
 .notes-header-quill .notes-actions {
   display: flex;
@@ -4960,6 +4975,15 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
 .notes-list-quill::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+.room-page .notes-list-quill::-webkit-scrollbar-track {
+  background: rgba(44, 62, 80, 0.5) !important;
+}
+.room-page .notes-list-quill::-webkit-scrollbar-thumb {
+  background: rgba(76, 89, 128, 0.8) !important;
+}
+.room-page .notes-list-quill::-webkit-scrollbar-thumb:hover {
+  background: rgb(76, 89, 128) !important;
+}
 
 .note-item-quill {
   background: rgba(255, 255, 255, 0.95);
@@ -4974,6 +4998,19 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
 .note-item-quill:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+}
+.room-page .note-item-quill {
+  background: rgba(52, 73, 94, 0.8) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-left: 4px solid #667eea !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+.room-page .note-item-quill:hover {
+  background: rgba(52, 73, 94, 0.9) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-2px) !important;
 }
 .note-item-quill .note-header-quill {
   display: flex;
@@ -4999,9 +5036,15 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
 .note-item-quill .note-header-quill .note-meta .note-author i {
   color: #667eea;
 }
+.room-page .note-item-quill .note-header-quill .note-meta .note-author {
+  color: var(--room-text-primary) !important;
+}
 .note-item-quill .note-header-quill .note-meta .note-date {
   font-size: 12px;
   color: #718096;
+}
+.room-page .note-item-quill .note-header-quill .note-meta .note-date {
+  color: var(--room-text-secondary) !important;
 }
 .note-item-quill .note-header-quill .note-actions-quill {
   display: flex;
@@ -5043,6 +5086,9 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
 .note-item-quill .note-content-quill {
   color: #2d3748;
   line-height: 1.6;
+}
+.room-page .note-item-quill .note-content-quill {
+  color: var(--room-text-primary) !important;
 }
 .note-item-quill .note-content-quill .ql-editor {
   padding: 0;
@@ -5387,6 +5433,27 @@ body.room-page #task-modal .modal-content .modal-actions .btn.btn-danger:hover {
     justify-content: center;
   }
 }
+.room-page [class*=quill-notes-container] {
+  background: rgba(76, 89, 128, 0.7) !important;
+  border: 1px solid rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+}
+
+.room-page [class*=notes-header-quill] {
+  background: rgba(52, 73, 94, 0.9) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+}
+
+.room-page [class*=note-item-quill] {
+  background: rgba(52, 73, 94, 0.8) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-left: 4px solid #667eea !important;
+}
+
+.room-page [class*=note-item-quill]:hover {
+  background: rgba(52, 73, 94, 0.9) !important;
+}
+
 .file-manager {
   background: var(--card-bg);
   border-radius: 12px;
@@ -8871,15 +8938,19 @@ body.dashboard-page .modal-header .close:hover {
   gap: 15px;
 }
 .sidebar-content #notes-tab .notes-list-modern .note-item {
-  background: rgba(52, 73, 94, 0.8);
+  background: rgba(76, 89, 128, 0.6);
+  border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 15px;
   padding: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 .sidebar-content #notes-tab .notes-list-modern .note-item:hover {
-  background: rgba(52, 73, 94, 0.9);
+  background: rgba(76, 89, 128, 0.8);
+  border-color: rgba(102, 126, 234, 0.4);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .sidebar-content #notes-tab .notes-list-modern .note-item .note-preview {
   color: var(--room-text-primary);
@@ -8894,10 +8965,11 @@ body.dashboard-page .modal-header .close:hover {
   margin-top: 8px;
 }
 .sidebar-content #notes-tab .note-editor-modern {
-  background: rgba(52, 73, 94, 0.9);
+  background: rgba(76, 89, 128, 0.7);
+  border: 1px solid rgba(102, 126, 234, 0.3);
   border-radius: 15px;
   padding: 20px;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   margin-top: 20px;
 }
 .sidebar-content #notes-tab .note-editor-modern .note-editor-header {
@@ -8924,7 +8996,8 @@ body.dashboard-page .modal-header .close:hover {
   box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
 }
 .sidebar-content #notes-tab .note-editor-modern .note-editor-header .cancel-note-btn-modern {
-  background: rgba(44, 62, 80, 0.8);
+  background: rgba(76, 89, 128, 0.6);
+  border: 1px solid rgba(102, 126, 234, 0.2);
   color: var(--room-text-secondary);
   border: none;
   padding: 8px 16px;
@@ -8938,8 +9011,9 @@ body.dashboard-page .modal-header .close:hover {
   transition: all 0.3s ease;
 }
 .sidebar-content #notes-tab .note-editor-modern .note-editor-header .cancel-note-btn-modern:hover {
-  background: rgba(44, 62, 80, 0.9);
-  color: #ecf0f1;
+  background: rgba(76, 89, 128, 0.8);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: var(--room-text-primary);
 }
 .sidebar-content #notes-tab .note-editor-modern .note-textarea-modern {
   width: 100%;
@@ -8952,7 +9026,8 @@ body.dashboard-page .modal-header .close:hover {
   outline: none;
   resize: vertical;
   transition: all 0.3s ease;
-  background: rgba(44, 62, 80, 0.8);
+  background: rgba(52, 73, 94, 0.9);
+  border: 1px solid rgba(102, 126, 234, 0.3);
   color: var(--room-text-primary);
 }
 .sidebar-content #notes-tab .note-editor-modern .note-textarea-modern::placeholder {
@@ -8960,6 +9035,7 @@ body.dashboard-page .modal-header .close:hover {
 }
 .sidebar-content #notes-tab .note-editor-modern .note-textarea-modern:focus {
   border-color: #667eea;
+  background: rgb(52, 73, 94);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 .sidebar-content #attendees-tab {
@@ -9258,6 +9334,46 @@ body.dashboard-page .modal-header .close:hover {
     opacity: 1;
   }
 }
+.room-page .quill-notes-container,
+.room-page [class*=quill-notes-container] {
+  background: rgba(76, 89, 128, 0.7) !important;
+  border: 1px solid rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 16px !important;
+}
+.room-page .notes-header-quill,
+.room-page [class*=notes-header-quill] {
+  background: rgba(52, 73, 94, 0.9) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
+.room-page .note-item-quill,
+.room-page [class*=note-item-quill] {
+  background: rgba(52, 73, 94, 0.8) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-left: 4px solid #667eea !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+}
+.room-page .note-item-quill:hover,
+.room-page [class*=note-item-quill]:hover {
+  background: rgba(52, 73, 94, 0.9) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+.room-page .notes-title {
+  color: var(--room-text-primary) !important;
+}
+.room-page .note-author {
+  color: var(--room-text-primary) !important;
+}
+.room-page .note-date {
+  color: var(--room-text-secondary) !important;
+}
+.room-page .note-content-quill {
+  color: var(--room-text-primary) !important;
+}
+
 .modern-dashboard-page {
   background: var(--gradient-steppe);
   min-height: 100vh;
