@@ -75,6 +75,16 @@ $opensans: "Open Sans", sans-serif;
   --shadow-md: 0 4px 8px rgba(44, 62, 80, 0.15);
   --shadow-lg: 0 8px 16px rgba(44, 62, 80, 0.2);
   --shadow-xl: 0 12px 24px rgba(44, 62, 80, 0.25);
+
+  // --- YENİ KOYU TEMA RENKLERİ ---
+  --dark-bg-primary: #1a1d24;      // Ana koyu arka plan
+  --dark-bg-secondary: #252831;   // Panel ve kartlar için biraz daha açık
+  --dark-bg-tertiary: #313541;    // Header gibi vurgu alanları için
+  --dark-border-color: #404452;    // Ayırıcı çizgiler ve sınırlar
+  --dark-text-primary: #f0f2f5;     // Ana metin rengi (neredeyse beyaz)
+  --dark-text-secondary: #a0a7b4;  // İkincil, soluk metinler
+  --dark-accent-gold: #D4AF37;     // Vurgu rengi (mevcut altın)
+  --dark-accent-green: #27ae60;    // Vurgu rengi (mevcut yeşil)
 }
 
 // Font Imports

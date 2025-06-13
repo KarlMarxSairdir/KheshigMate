@@ -147,6 +147,34 @@
             }
         }
     }
+
+    &.dark-theme {
+        // Bu class altındaki her şey koyu tema renklerini kullanacak
+        background-color: var(--dark-bg-primary);
+        color: var(--dark-text-primary);
+
+        .sidebar-panel {
+            background-color: var(--dark-bg-secondary);
+            border-left-color: var(--dark-border-color);
+        }
+
+        .sidebar-header {
+            border-bottom-color: var(--dark-border-color);
+        }
+        
+        .project-title-modern, .sidebar-tab {
+            color: var(--dark-text-primary);
+        }
+        
+        .sidebar-tabs {
+             background-color: var(--dark-bg-primary);
+             .sidebar-tab.active {
+                background-color: var(--dark-bg-tertiary);
+             }
+        }
+
+        // Diğer tüm bileşenler için benzer şekilde devam edilecek...
+    }
 }
 
 // Video section (left side) - Fixed layout

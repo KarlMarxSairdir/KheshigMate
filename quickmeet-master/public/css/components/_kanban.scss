@@ -553,3 +553,87 @@
         height: 100%;
     }
 }
+
+.dark-theme {
+    .kanban-board-container {
+        background-color: var(--dark-bg-primary); // Ana koyu tema arkaplanı
+        // Gerekirse padding veya diğer stiller eklenebilir.
+    }
+
+    .kanban-column {
+        background-color: var(--dark-bg-secondary); // Sütunlar için ikincil koyu arkaplan
+        border: 1px solid var(--dark-border-color);
+
+        .kanban-column-header {
+            background-color: var(--dark-bg-tertiary); // Sütun başlıkları için üçüncül koyu arkaplan
+            border-bottom: 1px solid var(--dark-border-color);
+            
+            .kanban-column-title {
+                color: var(--dark-text-primary);
+            }
+            .task-count {
+                color: var(--dark-text-secondary);
+                background-color: var(--dark-bg-primary); // Görev sayısı için farklı bir arkaplan
+            }
+        }
+    }
+
+    .task-card {
+        background-color: var(--dark-bg-tertiary); // Görev kartları için üçüncül koyu arkaplan
+        border: 1px solid var(--dark-border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2); // Koyu temada gölgeyi biraz daha belirgin yapabiliriz
+
+        .task-title {
+            color: var(--dark-text-primary);
+        }
+        .task-description {
+            color: var(--dark-text-secondary);
+        }
+        .task-priority {
+            // Öncelik göstergelerinin koyu temada okunabilir olması için:
+            // Örnek: Eğer .priority-low, .priority-medium, .priority-high gibi sınıflar varsa
+            // Onları burada hedefleyebiliriz.
+            // Genel bir stil olarak, öncelik etiketinin metin rengini açık yapalım.
+            color: var(--dark-text-primary);
+
+            &.priority-high {
+                background-color: var(--bs-danger); // Mevcut Bootstrap kırmızı değişkeni
+                color: var(--dark-text-primary); // Yüksek öncelik metni
+            }
+            &.priority-medium {
+                background-color: var(--bs-warning); // Mevcut Bootstrap sarı değişkeni
+                color: var(--dark-bg-primary);    // Orta öncelik metni (koyu arka planda daha iyi okunur)
+            }
+            &.priority-low {
+                background-color: var(--bs-success); // Mevcut Bootstrap yeşil değişkeni
+                color: var(--dark-text-primary);  // Düşük öncelik metni
+            }
+            // Eğer öncelikler sadece renkli noktalar ise, border veya farklı bir yaklaşım gerekebilir.
+            // Şimdilik metin tabanlı öncelik etiketleri için bu şekilde bırakalım.
+        }
+        .task-due-date {
+            color: var(--dark-text-secondary);
+        }
+        .task-assignees img {
+            border-color: var(--dark-bg-secondary); // Atananların avatar çerçevesi
+        }
+    }
+
+    .add-task-btn {
+        background-color: var(--dark-accent-green); // Vurgu rengi
+        color: var(--dark-text-primary); // Buton metni için açık renk
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+
+    .kanban-column-body::-webkit-scrollbar-track {
+        background: var(--dark-bg-primary);
+    }
+    .kanban-column-body::-webkit-scrollbar-thumb {
+        background: var(--dark-border-color);
+    }
+    .kanban-column-body::-webkit-scrollbar-thumb:hover {
+        background: var(--dark-text-secondary);
+    }
+}

@@ -72,6 +72,14 @@
   --shadow-md: 0 4px 8px rgba(44, 62, 80, 0.15);
   --shadow-lg: 0 8px 16px rgba(44, 62, 80, 0.2);
   --shadow-xl: 0 12px 24px rgba(44, 62, 80, 0.25);
+  --dark-bg-primary: #1a1d24;
+  --dark-bg-secondary: #252831;
+  --dark-bg-tertiary: #313541;
+  --dark-border-color: #404452;
+  --dark-text-primary: #f0f2f5;
+  --dark-text-secondary: #a0a7b4;
+  --dark-accent-gold: #D4AF37;
+  --dark-accent-green: #27ae60;
 }
 
 * {
@@ -2396,6 +2404,73 @@ navbar .logo {
 }
 .tab-panel#tasks-tab .kanban-content {
   height: 100%;
+}
+
+.dark-theme .kanban-board-container {
+  background-color: var(--dark-bg-primary);
+}
+.dark-theme .kanban-column {
+  background-color: var(--dark-bg-secondary);
+  border: 1px solid var(--dark-border-color);
+}
+.dark-theme .kanban-column .kanban-column-header {
+  background-color: var(--dark-bg-tertiary);
+  border-bottom: 1px solid var(--dark-border-color);
+}
+.dark-theme .kanban-column .kanban-column-header .kanban-column-title {
+  color: var(--dark-text-primary);
+}
+.dark-theme .kanban-column .kanban-column-header .task-count {
+  color: var(--dark-text-secondary);
+  background-color: var(--dark-bg-primary);
+}
+.dark-theme .task-card {
+  background-color: var(--dark-bg-tertiary);
+  border: 1px solid var(--dark-border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.dark-theme .task-card .task-title {
+  color: var(--dark-text-primary);
+}
+.dark-theme .task-card .task-description {
+  color: var(--dark-text-secondary);
+}
+.dark-theme .task-card .task-priority {
+  color: var(--dark-text-primary);
+}
+.dark-theme .task-card .task-priority.priority-high {
+  background-color: var(--bs-danger);
+  color: var(--dark-text-primary);
+}
+.dark-theme .task-card .task-priority.priority-medium {
+  background-color: var(--bs-warning);
+  color: var(--dark-bg-primary);
+}
+.dark-theme .task-card .task-priority.priority-low {
+  background-color: var(--bs-success);
+  color: var(--dark-text-primary);
+}
+.dark-theme .task-card .task-due-date {
+  color: var(--dark-text-secondary);
+}
+.dark-theme .task-card .task-assignees img {
+  border-color: var(--dark-bg-secondary);
+}
+.dark-theme .add-task-btn {
+  background-color: var(--dark-accent-green);
+  color: var(--dark-text-primary);
+}
+.dark-theme .add-task-btn:hover {
+  opacity: 0.9;
+}
+.dark-theme .kanban-column-body::-webkit-scrollbar-track {
+  background: var(--dark-bg-primary);
+}
+.dark-theme .kanban-column-body::-webkit-scrollbar-thumb {
+  background: var(--dark-border-color);
+}
+.dark-theme .kanban-column-body::-webkit-scrollbar-thumb:hover {
+  background: var(--dark-text-secondary);
 }
 
 .ai-suggestions-panel {
@@ -7980,6 +8055,26 @@ navbar .logo {
   .modern-room-container.reports-mode .sidebar-panel .tab-panel#reports-tab .report-dashboard .charts-container .chart-row {
     grid-template-columns: 1fr 1fr 1fr;
   }
+}
+.modern-room-container.dark-theme {
+  background-color: var(--dark-bg-primary);
+  color: var(--dark-text-primary);
+}
+.modern-room-container.dark-theme .sidebar-panel {
+  background-color: var(--dark-bg-secondary);
+  border-left-color: var(--dark-border-color);
+}
+.modern-room-container.dark-theme .sidebar-header {
+  border-bottom-color: var(--dark-border-color);
+}
+.modern-room-container.dark-theme .project-title-modern, .modern-room-container.dark-theme .sidebar-tab {
+  color: var(--dark-text-primary);
+}
+.modern-room-container.dark-theme .sidebar-tabs {
+  background-color: var(--dark-bg-primary);
+}
+.modern-room-container.dark-theme .sidebar-tabs .sidebar-tab.active {
+  background-color: var(--dark-bg-tertiary);
 }
 
 .video-section {
