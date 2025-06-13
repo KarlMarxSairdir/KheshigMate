@@ -30,14 +30,8 @@
                 KheshigMate
             </div>
             <div class="room-project-info">
-                <span class="room-project-name"><%= project.name %></span>
-                <span class="room-code-display">
-                    <i class="fas fa-key"></i>
-                    Kheshig Kodu: <%= project._id %>
-                    <button class="copy-code-btn" onclick="copyRoomId()" title="Kodu Kopyala">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </span>
+                <% // Proje adı kaldırıldı %>
+                <% // Kheshig Kodu bölümü kaldırıldı %>
             </div>
         </div>        <div class="room-header-right">
             <!-- Notification Bell -->
@@ -800,7 +794,7 @@
             </form>
               <div class="modal-actions">
                 <button type="button" id="cancel-task-btn" class="btn btn-secondary">İptal</button>
-                <button type="button" id="save-task-btn" class="btn btn-primary">Kaydet</button>
+                <button type="button" id="save-task-btn" class="btn btn-success">Kaydet</button>
                 <button type="button" id="delete-task-btn" class="btn btn-danger" style="display: none;">Sil</button>
             </div>
         </div>
