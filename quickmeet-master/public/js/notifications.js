@@ -70,7 +70,9 @@ class NotificationManager {
     setupSocketListeners() {
         // Socket.io connection
         if (typeof io !== 'undefined') {
-            this.socket = io();
+            // Bağlantı protokolüne göre socket adresini belirle
+            const socketUrl = window.location.protocol + '//' + window.location.hostname + ':3000';
+            this.socket = io(socketUrl);
             
             // Listen for new notifications
             this.socket.on('new-notification', (notification) => {

@@ -346,9 +346,7 @@ function logout() {
                     '<a href="/room/' + project._id + '" class="modern-primary-btn join-btn">' +
                     '    <i class="fas fa-video"></i>' +
                     '    <span>Katıl</span>' +
-                    '</a>' +
-                    '<a href="/projects/' + project._id + '/settings" class="modern-secondary-btn settings-btn" ' +
-                    '   style="background: blue !important; color: white !important; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; display: inline-block; margin: 0 0.25rem;" ' +
+                    '</a>' +                    '<a href="/projects/' + project._id + '/settings" class="modern-secondary-btn settings-btn" ' +
                     '   title="Proje Ayarları">' +
                     '    <i class="fas fa-cog"></i>' +
                     '    AYARLAR' +

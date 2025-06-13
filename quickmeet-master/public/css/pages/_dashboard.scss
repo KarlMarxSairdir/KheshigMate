@@ -139,6 +139,10 @@
     border: 3px solid rgba(212, 175, 55, 0.3);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .hero-title {
@@ -209,9 +213,14 @@
 // Dashboard Grid
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: 1fr 1fr; // İki kartı eşit genişlikte yapar
     gap: var(--space-xl);
     margin-bottom: var(--space-xxl);
+    align-items: stretch; // Kartların aynı hizada ve yükseklikte olmasını sağlar
+    
+    @media (max-width: 1024px) {
+        grid-template-columns: 1fr; // Küçük ekranlarda tek sütun
+    }
 }
 
 // Modern Cards - removed duplicate definition (exists in _cards.scss)
@@ -456,14 +465,13 @@
             box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
         }
     }
-    
-    .settings-btn {
-        background: linear-gradient(135deg, var(--kheshig-navy), var(--kheshig-bronze)) !important;
+      .settings-btn {
+        background: linear-gradient(135deg, var(--kheshig-gold), var(--kheshig-bronze)) !important;
         color: white !important;
-        box-shadow: 0 4px 15px rgba(15, 76, 117, 0.3);
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
         
         &:hover {
-            box-shadow: 0 6px 20px rgba(15, 76, 117, 0.4);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
         }
     }
     
@@ -787,6 +795,31 @@
     }
 }
 
+// Modern cards için hero ile aynı stil
+.modern-card {
+    background: rgba(253, 246, 227, 0.9);
+    border-radius: var(--radius-xl);
+    border: 3px solid rgba(212, 175, 55, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+    transition: all 0.3s ease;
+    
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
+    }
+}
+
+.modern-card.create-project-card,
+.modern-card.projects-list-card {
+    min-height: 380px; // Hero ile aynı yükseklik
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    padding: var(--space-xxl); // Hero ile aynı padding
+}
+
 // Responsive design
 @media (max-width: 768px) {
     .header-content {
@@ -828,6 +861,22 @@
       .modal-content {
         margin: var(--space-lg);
         width: calc(100% - 2rem);
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-hero,
+    .modern-card.create-project-card,
+    .modern-card.projects-list-card {
+        min-height: 320px;
+        padding: var(--space-xl);
+    }
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .modern-card.create-project-card,
+    .modern-card.projects-list-card {
+        min-height: 400px;
     }
 }
 

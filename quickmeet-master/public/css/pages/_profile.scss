@@ -55,16 +55,15 @@
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
   }
-  
-  .info-item {
+    .info-item {
     padding: 1rem;
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
+    background: rgba(253, 246, 227, 0.9);
+    border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 8px;
     transition: all 0.3s ease;
     
     &:hover {
-      border-color: var(--primary);
+      border-color: var(--kheshig-gold);
       transform: translateY(-2px);
     }
     
