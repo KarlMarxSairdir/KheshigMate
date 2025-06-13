@@ -1415,12 +1415,13 @@ navbar .logo {
   gap: var(--space-sm);
 }
 
+/* Animasyonlu at kaldırıldı
 .room-logo::before {
-  content: "🐎";
-  font-size: 1.6rem;
-  filter: sepia(1) hue-rotate(25deg) saturate(2);
+    content: "🐎";
+    font-size: 1.6rem;
+    filter: sepia(1) hue-rotate(25deg) saturate(2);
 }
-
+*/
 .room-project-info {
   display: flex;
   flex-direction: column;
