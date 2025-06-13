@@ -98,42 +98,80 @@
                             <h3>Proje Kronik Bilgileri</h3>
                             <p>Temel proje detayları ve durum bilgileri</p>
                         </div>
-                    </div>
-                    <div class="card-content">
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="fas fa-tag"></i>
-                                    Proje Adı
+                    </div>                    <div class="card-content">
+                        <!-- Bilgi Görünümü -->
+                        <div id="project-info-display" class="info-display">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-tag"></i>
+                                        Proje Adı
+                                    </div>
+                                    <div class="info-value"><%= project.name %></div>
                                 </div>
-                                <div class="info-value"><%= project.name %></div>
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-align-left"></i>
+                                        Açıklama
+                                    </div>
+                                    <div class="info-value"><%= project.description || 'Henüz proje hikayesi yazılmamış' %></div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Kuruluş Tarihi
+                                    </div>
+                                    <div class="info-value"><%= new Date(project.createdAt).toLocaleDateString('tr-TR') %></div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">
+                                        <i class="fas fa-crown"></i>
+                                        Elite Komutan
+                                    </div>
+                                    <div class="info-value">
+                                        <span class="owner-badge">
+                                            <i class="fas fa-horse-head"></i>
+                                            <%= project.owner.username %>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="fas fa-align-left"></i>
-                                    Açıklama
-                                </div>
-                                <div class="info-value"><%= project.description || 'Henüz proje hikaayesi yazılmamış' %></div>
+                            <div class="form-actions">
+                                <button type="button" id="edit-project-info-btn" class="modern-secondary-btn">
+                                    <i class="fas fa-edit"></i>
+                                    <span>Düzenle</span>
+                                </button>
                             </div>
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    Kuruluş Tarihi
+                        </div>
+
+                        <!-- Düzenleme Formu -->
+                        <div id="project-info-edit" class="info-edit" style="display: none;">
+                            <form id="project-info-form">
+                                <div class="form-group">
+                                    <label for="project-name-edit">
+                                        <i class="fas fa-tag"></i>
+                                        Proje Adı
+                                    </label>
+                                    <input type="text" id="project-name-edit" name="name" value="<%= project.name %>" required>
                                 </div>
-                                <div class="info-value"><%= new Date(project.createdAt).toLocaleDateString('tr-TR') %></div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">
-                                    <i class="fas fa-crown"></i>
-                                    Elite Komutan
+                                <div class="form-group">
+                                    <label for="project-description-edit">
+                                        <i class="fas fa-align-left"></i>
+                                        Proje Açıklaması
+                                    </label>
+                                    <textarea id="project-description-edit" name="description" rows="4" placeholder="Projenizin hikayesini yazın..."><%= project.description || '' %></textarea>
                                 </div>
-                                <div class="info-value">
-                                    <span class="owner-badge">
-                                        <i class="fas fa-horse-head"></i>
-                                        <%= project.owner.username %>
-                                    </span>
+                                <div class="form-actions">
+                                    <button type="submit" class="modern-primary-btn">
+                                        <i class="fas fa-save"></i>
+                                        <span>Kaydet</span>
+                                    </button>
+                                    <button type="button" id="cancel-project-edit-btn" class="modern-secondary-btn">
+                                        <i class="fas fa-times"></i>
+                                        <span>İptal</span>
+                                    </button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -349,6 +387,85 @@
                     console.error('Logout failed');
                 }        } catch (error) {
                 console.error('Logout error:', error);
+            }        });
+
+        // Project info edit functionality - wrapped in DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const editBtn = document.getElementById('edit-project-info-btn');
+            const cancelBtn = document.getElementById('cancel-project-edit-btn');
+            const displayDiv = document.getElementById('project-info-display');
+            const editDiv = document.getElementById('project-info-edit');
+            const form = document.getElementById('project-info-form');
+
+            console.log('Elements found:', {
+                editBtn: !!editBtn,
+                cancelBtn: !!cancelBtn,
+                displayDiv: !!displayDiv,
+                editDiv: !!editDiv,
+                form: !!form
+            });            if (editBtn) {
+                editBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation(); // Tüm event propagation'ı durdur
+                    console.log('Edit button clicked');
+                    
+                    // Dropdown'ı kapat
+                    if (typeof closeUserDropdown === 'function') {
+                        closeUserDropdown();
+                    }
+                    
+                    if (displayDiv && editDiv) {
+                        displayDiv.style.display = 'none';
+                        editDiv.style.display = 'block';
+                    }
+                });
+            } else {
+                console.error('Edit button not found');
+            }            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation(); // Tüm event propagation'ı durdur
+                    console.log('Cancel button clicked');
+                    if (displayDiv && editDiv) {
+                        editDiv.style.display = 'none';
+                        displayDiv.style.display = 'block';
+                    }
+                });
+            }            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Form submitted');
+                    
+                    const formData = new FormData(this);
+                    const projectData = {
+                        name: formData.get('name'),
+                        description: formData.get('description')
+                    };
+
+                    try {
+                        const response = await fetch('/projects/<%= project._id %>', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(projectData)
+                        });
+
+                        if (response.ok) {
+                            // Sayfayı yenile
+                            window.location.reload();
+                        } else {
+                            const errorData = await response.json();
+                            alert('Hata: ' + (errorData.message || 'Proje güncellenemedi'));
+                        }
+                    } catch (error) {
+                        console.error('Update error:', error);
+                        alert('Bağlantı hatası: ' + error.message);
+                    }
+                });
             }
         });
     </script>

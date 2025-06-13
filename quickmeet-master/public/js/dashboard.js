@@ -643,6 +643,17 @@ document.addEventListener('click', function(e) {
     const dropdownMenu = e.target.closest('.user-dropdown-menu');
     const dropdownItem = e.target.closest('.dropdown-item');
     
+    // Project settings düzenleme butonlarına özel istisna
+    const isProjectEditBtn = e.target.closest('#edit-project-info-btn') || 
+                            e.target.closest('#cancel-project-edit-btn') ||
+                            e.target.closest('#project-info-form');
+    
+    // Eğer project settings düzenleme butonlarından biriyse, dropdown'ı kapat ve event'i durdurma
+    if (isProjectEditBtn) {
+        closeUserDropdown();
+        return;
+    }
+    
     if (dropdownMenu && !dropdownItem) {
         e.stopPropagation();
     }

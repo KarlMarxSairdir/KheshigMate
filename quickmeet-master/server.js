@@ -2848,3 +2848,41 @@ app.use((err, req, res, next) => {
         error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
     });
 });
+
+// Update project information
+app.put('/projects/:id', ensureAuthenticated, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const projectId = req.params.id;
+        
+        // Projeyi bul ve sadece sahip olan kullanıcının güncelleyebilmesini sağla
+        const project = await Project.findById(projectId);
+        
+        if (!project) {
+            return res.status(404).json({ message: 'Proje bulunamadı.' });
+        }
+        
+        // Sadece proje sahibi güncelleyebilir
+        if (project.owner.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Bu projeyi güncelleme yetkiniz yok.' });
+        }
+        
+        // Validasyon
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ message: 'Proje adı gereklidir.' });
+        }
+        
+        // Projeyi güncelle
+        project.name = name.trim();
+        project.description = description ? description.trim() : '';
+        
+        await project.save();
+        
+        console.log(`📝 Project ${projectId} updated by ${req.user.username}`);
+        res.json({ message: 'Proje başarıyla güncellendi.', project: project });
+        
+    } catch (err) {
+        console.error('Error updating project:', err);
+        res.status(500).json({ message: 'Proje güncellenirken sunucu hatası oluştu.', error: err.message });
+    }
+});
