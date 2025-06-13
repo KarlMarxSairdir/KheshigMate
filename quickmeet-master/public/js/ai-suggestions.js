@@ -2,71 +2,47 @@
 class AITaskSuggestions {
     constructor(projectId, roomKanbanBoard) {
         this.projectId = projectId;
-        this.kanbanBoard = roomKanbanBoard;
+        this.kanbanBoard = roomKanbanBoard; // Kanban board referansı, görev eklemek için
         this.suggestions = [];
         this.isLoading = false;
+        this.isPanelOpen = false;
+
+        // Yeni panel elementleri için seçiciler
+        this.slidePanel = document.getElementById('aiSuggestionsSlidePanel'); // ID ile seçildi
+        this.suggestionsContainer = document.getElementById('ai-suggestions-container-slide'); // Düzeltilmiş ID
+        this.toggleButton = document.getElementById('toggle-ai-panel-btn');
+        this.closeButton = document.querySelector('.close-ai-panel-btn'); // Bu class ile kalabilir veya ID: close-ai-slide-panel-btn
+        this.refreshButtonSlide = document.getElementById('refresh-ai-suggestions-slide');
         
         this.init();
     }
 
     init() {
-        console.log('🤖 Initializing AI Task Suggestions for project:', this.projectId);
-        this.render();
+        if (!this.slidePanel || !this.suggestionsContainer || !this.toggleButton || !this.closeButton || !this.refreshButtonSlide) {
+            console.error('❌ AI Slide Panel: Gerekli DOM elementlerinden biri veya birkaçı bulunamadı. Kontrol edilecekler: #aiSuggestionsSlidePanel, #ai-suggestions-container-slide, #toggle-ai-panel-btn, .close-ai-panel-btn (veya #close-ai-slide-panel-btn), #refresh-ai-suggestions-slide');
+            // Hangi elementin null olduğunu loglayalım
+            if (!this.slidePanel) console.error('Missing: #aiSuggestionsSlidePanel');
+            if (!this.suggestionsContainer) console.error('Missing: #ai-suggestions-container-slide');
+            if (!this.toggleButton) console.error('Missing: #toggle-ai-panel-btn');
+            if (!this.closeButton) console.error('Missing: .close-ai-panel-btn or #close-ai-slide-panel-btn');
+            if (!this.refreshButtonSlide) console.error('Missing: #refresh-ai-suggestions-slide');
+            return;
+        }
+        console.log('🤖 Initializing AI Task Suggestions for slide panel for project:', this.projectId);
         this.setupEventListeners();
+        // Panel varsayılan olarak kapalı olduğu için başlangıçta önerileri yüklemiyoruz.
+        // Kullanıcı paneli açtığında yüklenecek.
     }
 
-    render() {
-        const tasksTab = document.getElementById('tasks-tab');
-        if (!tasksTab) {
-            console.error('❌ Tasks tab not found for AI suggestions');
-            return;
+    // render() metodu artık panel HTML'ini oluşturmuyor, çünkü o room.ejs'de.
+    // Sadece başlangıç durumunu ayarlayabiliriz.
+    renderInitialState() {
+        if (this.suggestionsContainer) {
+            this.suggestionsContainer.innerHTML = this.getEmptyStateHTML();
         }
-
-        // AI öneriler panelini Kanban board'dan sonra ekle
-        const kanbanBoard = tasksTab.querySelector('#kanban-board');
-        if (!kanbanBoard) {
-            console.error('❌ Kanban board not found for AI suggestions');
-            return;
-        }
-
-        // Eğer zaten varsa kaldır
-        const existingPanel = tasksTab.querySelector('.ai-suggestions-panel');
-        if (existingPanel) {
-            existingPanel.remove();
-        }
-
-        // AI öneriler panelini oluştur
-        const aiPanel = document.createElement('div');
-        aiPanel.className = 'ai-suggestions-panel';
-        aiPanel.innerHTML = this.getAIPanelHTML();
-
-        // Kanban board'dan sonra ekle
-        kanbanBoard.insertAdjacentElement('afterend', aiPanel);
-        
-        console.log('✅ AI suggestions panel rendered');
     }
 
-    getAIPanelHTML() {
-        return `
-            <div class="ai-suggestions-header">
-                <h3 class="ai-title">
-                    <span class="ai-icon">✨</span>
-                    Akıllı Görev Önerileri
-                </h3>
-                <div class="ai-actions">
-                    <button class="refresh-btn" id="refresh-ai-suggestions">
-                        <i class="fas fa-sync-alt"></i>
-                        Yenile
-                    </button>
-                </div>
-            </div>
-            <div class="ai-suggestions-content">
-                <div id="ai-suggestions-container">
-                    ${this.getEmptyStateHTML()}
-                </div>
-            </div>
-        `;
-    }
+    // getAIPanelHTML() metodu kaldırıldı.
 
     getEmptyStateHTML() {
         return `
@@ -76,7 +52,7 @@ class AITaskSuggestions {
                 <div class="empty-description">
                     Proje notlarınız ve chat mesajlarınız analiz edilerek 
                     otomatik görev önerileri oluşturulacak. 
-                    Öneriler almak için "Yenile" butonuna tıklayın.
+                    Öneriler almak için "Yenile" butonuna tıklayın veya paneli açın.
                 </div>
             </div>
         `;
@@ -96,67 +72,123 @@ class AITaskSuggestions {
             <div class="ai-suggestions-error">
                 <div class="error-icon">⚠️</div>
                 <div class="error-title">Öneriler Yüklenemedi</div>
-                <div class="error-description">${error}</div>
-                <button class="retry-btn" onclick="window.aiTaskSuggestions?.loadSuggestions()">
+                <div class="error-description">${this.escapeHtml(error)}</div>
+                <button class="retry-btn" id="retry-load-suggestions-slide">
                     Tekrar Dene
                 </button>
             </div>
         `;
-    }    setupEventListeners() {
-        console.log('🔧 Setting up AI suggestions event listeners...');
+    }
+
+    setupEventListeners() {
+        console.log('🔧 Setting up AI slide panel event listeners...');
+
+        if (this.toggleButton) {
+            this.toggleButton.addEventListener('click', () => {
+                console.log('🔘 Toggle AI slide panel button clicked!');
+                this.togglePanel();
+            });
+        }
+
+        if (this.closeButton) {
+            this.closeButton.addEventListener('click', () => {
+                console.log('❌ Close AI slide panel button clicked!');
+                this.closePanel();
+            });
+        }
         
-        // Yenile butonu
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('#refresh-ai-suggestions')) {
-                console.log('🔄 Refresh AI suggestions button clicked!');
+        if (this.refreshButtonSlide) {
+            this.refreshButtonSlide.addEventListener('click', (e) => {
+                console.log('🔄 Refresh AI suggestions button (slide panel) clicked!');
                 e.preventDefault();
                 this.loadSuggestions();
-            }
-        });        // Görev ekle butonları (event delegation)
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('.add-task-btn[data-suggestion-index]')) {
-                console.log('➕ Add task from suggestion button clicked!');
-                e.preventDefault();
-                const button = e.target.closest('.add-task-btn[data-suggestion-index]');
-                const suggestionIndex = parseInt(button.dataset.suggestionIndex);
-                await this.addTaskFromSuggestion(suggestionIndex, button);
-            }
-        });        // Öneri reddet butonları (event delegation)
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.dismiss-suggestion-btn[data-suggestion-index]')) {
-                console.log('❌ Dismiss suggestion button clicked!');
-                e.preventDefault();
-                const button = e.target.closest('.dismiss-suggestion-btn[data-suggestion-index]');
-                const suggestionIndex = parseInt(button.dataset.suggestionIndex);
-                this.dismissSuggestion(suggestionIndex, button);
-            }
-        });
+            });
+        }
+
+        // Görev ekle, reddet ve tekrar dene butonları için event delegation (suggestionsContainer üzerinde)
+        if (this.suggestionsContainer) {
+            this.suggestionsContainer.addEventListener('click', async (e) => {
+                const addTaskBtn = e.target.closest('.add-task-btn[data-suggestion-index]');
+                const dismissBtn = e.target.closest('.dismiss-suggestion-btn[data-suggestion-index]');
+                const retryBtn = e.target.closest('#retry-load-suggestions-slide');
+
+                if (addTaskBtn) {
+                    console.log('➕ Add task from suggestion button (slide panel) clicked!');
+                    e.preventDefault();
+                    const suggestionIndex = parseInt(addTaskBtn.dataset.suggestionIndex);
+                    await this.addTaskFromSuggestion(suggestionIndex, addTaskBtn);
+                } else if (dismissBtn) {
+                    console.log('🗑️ Dismiss suggestion button (slide panel) clicked!');
+                    e.preventDefault();
+                    const suggestionIndex = parseInt(dismissBtn.dataset.suggestionIndex);
+                    this.dismissSuggestion(suggestionIndex, dismissBtn);
+                } else if (retryBtn) {
+                    console.log('🔁 Retry load suggestions (slide panel) button clicked!');
+                    e.preventDefault();
+                    this.loadSuggestions();
+                }
+            });
+        }
         
-        console.log('✅ AI suggestions event listeners setup completed');
+        console.log('✅ AI slide panel event listeners setup completed');
+    }
+
+    togglePanel() {
+        this.isPanelOpen = !this.isPanelOpen;
+        if (this.slidePanel) {
+            this.slidePanel.classList.toggle('open', this.isPanelOpen);
+        }
+        if (this.toggleButton) {
+            this.toggleButton.classList.toggle('active', this.isPanelOpen);
+            this.toggleButton.setAttribute('aria-expanded', this.isPanelOpen.toString());
+        }
+
+        if (this.isPanelOpen && this.suggestions.length === 0 && !this.isLoading) {
+            // Panel açıldığında ve içinde öneri yoksa (ve yükleme işlemi yoksa) önerileri yükle
+            console.log('Panel açıldı, öneriler yükleniyor...'); // Hintçe olan mesaj Türkçe ile değiştirildi.
+            this.loadSuggestions();
+        }
+    }
+
+    openPanel() {
+        if (!this.isPanelOpen) {
+            this.isPanelOpen = true;
+            if (this.slidePanel) this.slidePanel.classList.add('open');
+            if (this.toggleButton) {
+                this.toggleButton.classList.add('active');
+                this.toggleButton.setAttribute('aria-expanded', 'true');
+            }
+            if (this.suggestions.length === 0 && !this.isLoading) {
+                this.loadSuggestions();
+            }
+        }
+    }
+
+    closePanel() {
+        if (this.isPanelOpen) {
+            this.isPanelOpen = false;
+            if (this.slidePanel) this.slidePanel.classList.remove('open');
+            if (this.toggleButton) {
+                this.toggleButton.classList.remove('active');
+                this.toggleButton.setAttribute('aria-expanded', 'false');
+            }
+        }
     }
 
     async loadSuggestions() {
         if (this.isLoading) return;
+        if (!this.suggestionsContainer) return;
 
         this.isLoading = true;
-        const container = document.getElementById('ai-suggestions-container');
-        const refreshBtn = document.getElementById('refresh-ai-suggestions');
-        const panel = document.querySelector('.ai-suggestions-panel');
-
-        if (!container) return;
-
-        // Loading state
-        container.innerHTML = this.getLoadingStateHTML();
-        if (refreshBtn) refreshBtn.disabled = true;
-        if (panel) panel.classList.add('loading');
+        this.suggestionsContainer.innerHTML = this.getLoadingStateHTML();
+        if (this.refreshButtonSlide) this.refreshButtonSlide.disabled = true;
+        // Panel class'ına 'loading' eklemek yerine, içerik alanında gösteriyoruz.
 
         try {
-            console.log('🔄 Loading AI suggestions...');
+            console.log('🔄 Loading AI suggestions for slide panel...');
             const response = await fetch(`/projects/${this.projectId}/ai-suggestions`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
             if (!response.ok) {
@@ -167,21 +199,20 @@ class AITaskSuggestions {
             const data = await response.json();
             this.suggestions = data.suggestions || [];
             
-            console.log(`✅ Loaded ${this.suggestions.length} AI suggestions`);
+            console.log(`✅ Loaded ${this.suggestions.length} AI suggestions for slide panel`);
             
             if (this.suggestions.length === 0) {
-                container.innerHTML = this.getEmptyStateHTML();
+                this.suggestionsContainer.innerHTML = this.getEmptyStateHTML();
             } else {
-                container.innerHTML = this.renderSuggestionsList();
+                this.suggestionsContainer.innerHTML = this.renderSuggestionsList();
             }
 
         } catch (error) {
-            console.error('❌ AI suggestions error:', error);
-            container.innerHTML = this.getErrorStateHTML(error.message);
+            console.error('❌ AI suggestions error (slide panel):', error);
+            this.suggestionsContainer.innerHTML = this.getErrorStateHTML(error.message);
         } finally {
             this.isLoading = false;
-            if (refreshBtn) refreshBtn.disabled = false;
-            if (panel) panel.classList.remove('loading');
+            if (this.refreshButtonSlide) this.refreshButtonSlide.disabled = false;
         }
     }
 
@@ -189,17 +220,16 @@ class AITaskSuggestions {
         if (!this.suggestions || this.suggestions.length === 0) {
             return this.getEmptyStateHTML();
         }
-
-        return `
-            <div class="ai-suggestions-list">
-                ${this.suggestions.map((suggestion, index) => this.renderSuggestionCard(suggestion, index)).join('')}
-            </div>
-        `;
-    }    renderSuggestionCard(suggestion, index) {
+        // .ai-suggestions-list class'ı zaten panelin HTML'inde var, direkt kartları basıyoruz.
+        return this.suggestions.map((suggestion, index) => this.renderSuggestionCard(suggestion, index)).join('');
+    }
+    
+    renderSuggestionCard(suggestion, index) {
         const confidence = this.getConfidenceLevel(suggestion.confidence);
         const priorityClass = (suggestion.priority || 'medium').toLowerCase();
         const skillMatchScore = Math.round((suggestion.skillMatchScore || 0) * 100);
         
+        // HTML yapısı CSS ile uyumlu olmalı (_ai-suggestions.scss içindeki .ai-suggestion-card)
         return `
             <div class="ai-suggestion-card" data-suggestion-index="${index}">
                 <div class="suggestion-header">
@@ -244,32 +274,31 @@ class AITaskSuggestions {
                         </div>
                     </div>
                 ` : ''}
-                  <div class="suggestion-footer">
-                    <div class="suggestion-actions">
-                        <button class="add-task-btn" data-suggestion-index="${index}">
-                            <i class="fas fa-plus btn-icon"></i>
-                            Görevi Ekle
-                        </button>
-                        <button class="dismiss-suggestion-btn" data-suggestion-index="${index}" title="Bu öneriyi reddet">
-                            <i class="fas fa-times btn-icon"></i>
-                            Reddet
-                        </button>
+
+                <div class="suggestion-actions">
+                    <button class="add-task-btn" data-suggestion-index="${index}">
+                        <i class="fas fa-plus btn-icon"></i>
+                        Görevi Ekle
+                    </button>
+                    <button class="dismiss-suggestion-btn" data-suggestion-index="${index}" title="Bu öneriyi reddet">
+                        <i class="fas fa-times btn-icon"></i>
+                        Reddet
+                    </button>
+                </div>
+                
+                <div class="suggestion-metrics">
+                    <div class="confidence-metric">
+                        <span class="metric-label">Güven:</span>
+                        <span class="metric-value">${Math.round((suggestion.confidence || 0.5) * 100)}%</span>
+                        <div class="confidence-bar ${confidence}"></div>
                     </div>
-                    
-                    <div class="suggestion-metrics">
-                        <div class="confidence-metric">
-                            <span class="metric-label">Güven:</span>
-                            <span class="metric-value">${Math.round((suggestion.confidence || 0.5) * 100)}%</span>
-                            <div class="confidence-bar ${confidence}"></div>
+                    ${suggestion.skillMatchScore ? `
+                        <div class="skill-metric">
+                            <span class="metric-label">Yetenek Uyumu:</span>
+                            <span class="metric-value">${skillMatchScore}%</span>
+                            <div class="skill-bar ${this.getSkillMatchLevel(suggestion.skillMatchScore)}"></div>
                         </div>
-                        ${suggestion.skillMatchScore ? `
-                            <div class="skill-metric">
-                                <span class="metric-label">Yetenek Uyumu:</span>
-                                <span class="metric-value">${skillMatchScore}%</span>
-                                <div class="skill-bar ${this.getSkillMatchLevel(suggestion.skillMatchScore)}"></div>
-                            </div>
-                        ` : ''}
-                    </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -282,102 +311,94 @@ class AITaskSuggestions {
         const card = buttonElement.closest('.ai-suggestion-card');
         
         try {
-            // UI feedback
             buttonElement.disabled = true;
             buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Ekleniyor...';
-            card.classList.add('adding');
+            if(card) card.classList.add('adding');
 
-            // Kanban board'a görev ekle
             if (!this.kanbanBoard) {
-                throw new Error('Kanban board bulunamadı');
-            }            // Önerilen kullanıcının ID'sini bul
+                throw new Error('Kanban board referansı bulunamadı. Görev eklenemiyor.');
+            }
+            
             let assignedUserId = undefined;
             if (suggestion.suggestedAssigneeUsername) {
-                // Proje üyelerinden önerilen kullanıcıyı bul
                 const projectMembers = this.kanbanBoard.projectMembers || [];
                 const assignedUser = projectMembers.find(member => 
                     member.username === suggestion.suggestedAssigneeUsername
                 );
                 if (assignedUser) {
                     assignedUserId = assignedUser._id;
-                    console.log(`👤 AI önerisi: ${suggestion.suggestedAssigneeUsername} (${assignedUserId}) kullanıcısına atanacak`);
                 } else {
                     console.warn(`⚠️ Önerilen kullanıcı bulunamadı: ${suggestion.suggestedAssigneeUsername}`);
                 }
             }
 
-            // Görev verisini hazırla
             const taskData = {
                 title: suggestion.title,
                 description: suggestion.description,
                 priority: suggestion.priority || 'medium',
                 assignedTo: assignedUserId,
                 requiredSkills: suggestion.requiredSkills || [],
-                status: 'todo'
+                status: 'todo', // Varsayılan olarak 'todo' sütununa
+                dueDate: suggestion.deadline // Eğer varsa
             };
 
-            // Tarih alanlarını ekle
-            if (suggestion.deadline) {
-                taskData.dueDate = suggestion.deadline;
-            }
-
-            console.log('📝 Adding task from AI suggestion:', taskData);
-
-            // Kanban board üzerinden görev oluştur
+            console.log('📝 Adding task from AI suggestion (slide panel):', taskData);
             await this.kanbanBoard.createTask(taskData);
 
-            // Başarı mesajı
-            this.showSuccess(`"${suggestion.title}" görevi başarıyla eklendi!`);
+            this.showSuccess(`"${this.escapeHtml(suggestion.title)}" görevi başarıyla eklendi!`);
 
-            // Kartı gizle
-            card.style.opacity = '0.5';
-            card.style.pointerEvents = 'none';
+            if(card) {
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+            }
             
-            // Öneriden kaldır
             setTimeout(() => {
                 this.suggestions.splice(suggestionIndex, 1);
-                this.renderSuggestionsAfterAdd();
+                this.renderSuggestionsAfterUpdate();
             }, 1000);
 
         } catch (error) {
-            console.error('❌ Task creation from suggestion failed:', error);
-            this.showError(`Görev eklenirken hata: ${error.message}`);
+            console.error('❌ Task creation from suggestion failed (slide panel):', error);
+            this.showError(`Görev eklenirken hata: ${this.escapeHtml(error.message)}`);
             
-            // UI'yi geri getir
             buttonElement.disabled = false;
             buttonElement.innerHTML = '<i class="fas fa-plus btn-icon"></i> Görevi Ekle';
-            card.classList.remove('adding');
+            if(card) card.classList.remove('adding');
         }
-    }    dismissSuggestion(suggestionIndex, buttonElement) {
+    }
+    
+    dismissSuggestion(suggestionIndex, buttonElement) {
         const suggestion = this.suggestions[suggestionIndex];
         if (!suggestion) return;
 
         const card = buttonElement.closest('.ai-suggestion-card');
         
-        // UI feedback - kartı animasyonla gizle
-        card.style.transition = 'all 0.3s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        card.style.pointerEvents = 'none';
+        if(card) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            card.style.pointerEvents = 'none';
+        }
         
-        // Öneriden kaldır
         setTimeout(() => {
             this.suggestions.splice(suggestionIndex, 1);
-            this.renderSuggestionsAfterAdd();
+            this.renderSuggestionsAfterUpdate();
         }, 300);
 
-        // Basit bilgi mesajı
-        console.log(`📝 Öneri kaldırıldı: ${suggestion.title}`);    }
+        console.log(`🗑️ Öneri kaldırıldı (slide panel): ${this.escapeHtml(suggestion.title)}`);
+    }
 
-    renderSuggestionsAfterAdd() {
-        const container = document.getElementById('ai-suggestions-container');
-        if (!container) return;
+    renderSuggestionsAfterUpdate() {
+        // Eskiden renderSuggestionsAfterAdd idi, şimdi daha genel.
+        if (!this.suggestionsContainer) return;
 
         if (this.suggestions.length === 0) {
-            container.innerHTML = this.getEmptyStateHTML();
+            this.suggestionsContainer.innerHTML = this.getEmptyStateHTML();
         } else {
-            container.innerHTML = this.renderSuggestionsList();
-        }    }
+            // Direkt kartları basıyoruz, .ai-suggestions-list wrapper'ı HTML'de sabit.
+            this.suggestionsContainer.innerHTML = this.suggestions.map((s, i) => this.renderSuggestionCard(s, i)).join('');
+        }
+    }
 
     getSkillMatchLevel(score) {
         if (!score || isNaN(score)) return 'unknown';
@@ -386,49 +407,30 @@ class AITaskSuggestions {
         return 'low';
     }
 
-    // Utility methods
     getConfidenceLevel(confidence) {
-        const conf = confidence || 0.5; // Varsayılan değer
+        const conf = confidence || 0.5;
         if (conf >= 0.8) return 'high';
         if (conf >= 0.6) return 'medium';
         return 'low';
     }
 
     getPriorityText(priority) {
-        const priorities = {
-            high: 'Yüksek',
-            medium: 'Orta',
-            low: 'Düşük'
-        };
+        const priorities = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
         return priorities[priority] || 'Orta';
     }
 
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('tr-TR', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        });
-    }
-
     escapeHtml(text) {
-        if (!text) return '';
+        if (text === null || typeof text === 'undefined') return '';
+        if (typeof text !== 'string') text = String(text);
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    showSuccess(message) {
-        this.showNotification(message, 'success');
-    }
-
-    showError(message) {
-        this.showNotification(message, 'error');
-    }
+    showSuccess(message) { this.showNotification(message, 'success'); }
+    showError(message) { this.showNotification(message, 'error'); }
 
     showNotification(message, type) {
-        // Existing notification system
         if (window.showNotification) {
             window.showNotification(message, type);
         } else if (this.kanbanBoard?.showNotification) {
@@ -440,52 +442,47 @@ class AITaskSuggestions {
 }
 
 // Global initialization
-let aiTaskSuggestions = null;
+let aiTaskSuggestionsInstance = null; // Değişken adı güncellendi
 
-// Initialize AI suggestions when kanban board is ready
 function initAITaskSuggestions(projectId, kanbanBoard) {
-    if (aiTaskSuggestions) {
-        console.log('🔄 Reinitializing AI Task Suggestions');
-        aiTaskSuggestions = null;
+    if (aiTaskSuggestionsInstance) {
+        console.log('🔄 Reinitializing AI Task Suggestions (slide panel)');
+        // Eski instance ile ilgili temizlik işlemleri (event listener kaldırma vb.) yapılabilir.
+        // Şimdilik basitçe null yapıyoruz.
+        aiTaskSuggestionsInstance = null; 
     }
 
-    aiTaskSuggestions = new AITaskSuggestions(projectId, kanbanBoard);
-    window.aiTaskSuggestions = aiTaskSuggestions;
-    console.log('✅ AI Task Suggestions initialized');
+    aiTaskSuggestionsInstance = new AITaskSuggestions(projectId, kanbanBoard);
+    window.aiTaskSuggestionsInstance = aiTaskSuggestionsInstance; // Global referans güncellendi
+    console.log('✅ AI Task Suggestions (slide panel) initialized and assigned to window.aiTaskSuggestionsInstance');
     
-    return aiTaskSuggestions;
+    // Başlangıçta panel kapalı olduğu için renderInitialState çağrılabilir.
+    aiTaskSuggestionsInstance.renderInitialState();
+    
+    return aiTaskSuggestionsInstance;
 }
 
-// Cleanup AI suggestions
 function destroyAITaskSuggestions() {
-    if (aiTaskSuggestions) {
-        console.log('🧹 Destroying AI Task Suggestions');
+    if (aiTaskSuggestionsInstance) {
+        console.log('🧹 Destroying AI Task Suggestions (slide panel)');
         
-        // Panel'i kaldır
-        const panel = document.querySelector('.ai-suggestions-panel');
-        if (panel) {
-            panel.remove();
-        }
+        // Event listener'ları kaldırmak ideal olurdu, ama şimdilik instance'ı null yapıyoruz.
+        // Panel DOM'dan kaldırılmıyor çünkü statik.
         
-        aiTaskSuggestions = null;
-        window.aiTaskSuggestions = null;
+        aiTaskSuggestionsInstance = null;
+        window.aiTaskSuggestionsInstance = null;
     }
 }
 
-// Export for module usage
+// Export for module usage (if any)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { AITaskSuggestions, initAITaskSuggestions, destroyAITaskSuggestions };
 }
 
 // Make available globally for browser usage
 if (typeof window !== 'undefined') {
-    window.AITaskSuggestions = AITaskSuggestions;
+    window.AITaskSuggestions = AITaskSuggestions; // Class'ı global yap
     window.initAITaskSuggestions = initAITaskSuggestions;
     window.destroyAITaskSuggestions = destroyAITaskSuggestions;
-    console.log('🤖 AI Suggestions JavaScript loaded successfully');
-    console.log('🔧 Available functions:', {
-        AITaskSuggestions: typeof window.AITaskSuggestions,
-        initAITaskSuggestions: typeof window.initAITaskSuggestions,
-        destroyAITaskSuggestions: typeof window.destroyAITaskSuggestions
-    });
+    console.log('🤖 AI Suggestions JavaScript (for slide panel) loaded successfully');
 }

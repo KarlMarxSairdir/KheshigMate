@@ -273,9 +273,14 @@
                     <div id="kanban-board" class="kanban-content">
                         <div class="kanban-header">
                             <h3>📋 Görev Tahtası</h3>
-                            <button id="add-task-btn" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Yeni Görev
-                            </button>
+                            <div class="kanban-header-actions">
+                                <button id="toggle-ai-panel-btn" class="btn btn-secondary btn-sm" title="Akıllı Öneriler">
+                                    <i class="fas fa-lightbulb"></i> AI Önerileri
+                                </button>
+                                <button id="add-task-btn" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Yeni Görev
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="kanban-container">
@@ -309,29 +314,8 @@
                                 </div>
                             </div>                        </div>
 
-                        <!-- AI Task Suggestions Panel -->
-                        <div class="ai-suggestions-panel">
-                            <div class="ai-panel-header">
-                                <div class="ai-title">
-                                    <span class="ai-icon">✨</span>
-                                    Akıllı Öneriler
-                                </div>
-                                <div class="ai-controls">
-                                    <button id="ai-refresh-btn" class="ai-refresh-btn">
-                                        <i class="fas fa-sync-alt"></i>
-                                        Önerileri Yükle
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div id="ai-status" class="ai-status empty">
-                                <!-- Status messages will be shown here -->
-                            </div>
-                            
-                            <div id="ai-suggestions-list" class="ai-suggestions-list" style="display: none;">
-                                <!-- AI suggestions will be rendered here -->
-                            </div>
-                        </div>
+                        <!-- AI Task Suggestions Panel - Artık burada değil -->
+                        
                     </div>                </div>                <!-- Workflow Tab Panel (BPMN Control Panel) -->
                 <div class="tab-panel" id="workflow-tab">
                     <div class="workflow-control-panel">
@@ -501,6 +485,29 @@
                 <div class="tab-panel" id="attendees-tab">
                     <div class="attendees-list-modern" id="attendees-list"></div>
                 </div>
+            </div>
+        </div>        <!-- AI Suggestions Slide Panel (New) -->
+        <div class="ai-suggestions-slide-panel" id="aiSuggestionsSlidePanel">
+            <!-- AI Panel Content Will Be Injected by JS -->
+            <div class="ai-suggestions-header">
+                <h3 class="ai-title">
+                    <span class="ai-icon">✨</span>
+                    Akıllı Görev Önerileri
+                </h3>
+                <button class="close-ai-panel-btn" id="close-ai-slide-panel-btn" title="Paneli Kapat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ai-suggestions-content">
+                <div id="ai-suggestions-container-slide">
+                    <!-- Empty state or suggestions will be loaded here -->
+                </div>
+            </div>
+            <div class="ai-suggestions-footer">
+                <button class="refresh-btn" id="refresh-ai-suggestions-slide">
+                    <i class="fas fa-sync-alt"></i>
+                    Yenile
+                </button>
             </div>
         </div>    <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>

@@ -99,6 +99,35 @@
                 box-shadow: 0 8px 25px rgba(76, 89, 128, 0.3);
             }
         }
+
+        #toggle-ai-panel-btn {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6); // Mor tonları, AI ile ilişkili
+            color: white;
+            border: none;
+            padding: 10px 18px; // Diğer header butonlarından biraz farklı olabilir
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem; // Yazı boyutu ayarı
+
+            i {
+                font-size: 1.1rem; // İkon boyutu
+            }
+
+            &:hover {
+                transform: translateY(-2px) scale(1.05); // Hafif büyüme ve yukarı hareket
+                box-shadow: 0 8px 25px rgba(142, 68, 173, 0.4); // Mor gölge
+            }
+
+            &.active { // Panel açıkken butonun görünümü
+                background: linear-gradient(135deg, #c0392b, #e74c3c); // Kırmızı tonları, kapatma işlevi
+                box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+            }
+        }
     }
 }
 
@@ -1041,6 +1070,48 @@
         right: 15px;
         bottom: 80px;
     }
+
+    .ai-suggestions-slide-panel {
+        width: 90%; // Mobilde daha geniş
+        max-width: 360px; // Maksimum genişlik
+        left: 5%; // Ortalamak için
+        height: calc(100% - 100px); // Yüksekliği ayarla, header ve alt boşluk için
+        top: 80px; // Header'ın altına
+        border-radius: 12px; // Köşeleri her yerde yuvarlak yap
+
+        .ai-slide-panel-header {
+            padding: 0.75rem 1rem;
+            .ai-slide-panel-title {
+                font-size: 1rem;
+                i { font-size: 1.1rem; }
+            }
+            .close-ai-panel-btn {
+                font-size: 1.4rem;
+            }
+        }
+
+        .ai-slide-panel-content {
+            padding: 1rem;
+            .ai-suggestion-card {
+                // Mobilde kartlar daha kompakt olabilir
+                .suggestion-title { font-size: 0.9rem; }
+                .suggestion-description { font-size: 0.8rem; }
+            }
+        }
+
+        .ai-slide-panel-footer {
+            padding: 0.75rem 1rem;
+            #refresh-ai-suggestions-btn-slide {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+            }
+        }
+    }
+
+    // AI paneli açıkken mobilde ana içeriğin etkileşimi (opsiyonel)
+    // .modern-room-container.ai-panel-open {
+    //     // Mobilde belki video bölümü gizlenebilir veya opacity düşürülebilir
+    // }
 }
 
 // Gantt şemasının taşma sorununu çözmek için eklenen stiller
