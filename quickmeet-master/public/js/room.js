@@ -39,7 +39,11 @@ socket.on('project-users-list', (usersInRoom) => {
             userMap[user.id] = user.name;
         }
     });
-    // Katılımcılar sekmesini yükle
+    
+    // Online kullanıcı sayısını güncelle
+    updateOnlineUserCount(usersInRoom.length);
+    
+    // Katılımcılar listesini güncelle
     if (document.getElementById('attendees-tab')?.classList.contains('active')) {
         loadAttendees();
     }
@@ -472,11 +476,14 @@ socket.on('user-joined', (data) => { // data should be { id, name, socketId }
 socket.on('user-left', (data) => { // data should be { id, name, socketId }
     const leftUserId = data.id;
     const leftUsername = userMap[leftUserId] || data.name || leftUserId;
-    console.log(`Kullanıcı ${leftUsername} (${leftUserId}, Socket: ${data.socketId}) odadan ayrıldı.`);
-    removeRemoteVideo(leftUserId);
+    console.log(`Kullanıcı ${leftUsername} (${leftUserId}, Socket: ${data.socketId}) odadan ayrıldı.`);    removeRemoteVideo(leftUserId);
     if (userMap[leftUserId]) {
         delete userMap[leftUserId];
         console.log(`User map güncellendi (ayrılan ${leftUsername}):`, userMap);
+        
+        // Online kullanıcı sayısını güncelle
+        updateOnlineUserCount(Object.keys(userMap).length + 1); // +1 kendimiz için
+        
         const attendeeElement = document.getElementById(`attendee-${leftUserId}`);
         if (attendeeElement) {
             attendeeElement.remove();
@@ -512,34 +519,141 @@ if (messageField) {
             sendButton.click();
         }
     });
+    
+    // Typing indicator functionality
+    let typingTimer;
+    messageField.addEventListener('input', () => {
+        socket.emit('typing', ROOM_ID, true);
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            socket.emit('typing', ROOM_ID, false);
+        }, 1000);
+    });
+    
+    messageField.addEventListener('blur', () => {
+        socket.emit('typing', ROOM_ID, false);
+        clearTimeout(typingTimer);
+    });
 }
+
+// Typing indicator functions
+let typingUsers = new Set();
+
+// Online kullanıcı sayısını güncelle
+function updateOnlineUserCount(count) {
+    const onlineCountElement = document.getElementById('online-count');
+    if (onlineCountElement) {
+        if (count === 1) {
+            onlineCountElement.textContent = '1 kişi aktif';
+        } else {
+            onlineCountElement.textContent = `${count} kişi aktif`;
+        }
+    }
+}
+
+function showTypingIndicator() {
+    if (typingUsers.size === 0) return;
+    
+    removeTypingIndicator(); // Remove existing indicator first
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'typing-indicator';
+    typingDiv.id = 'typing-indicator';
+    
+    const typingText = document.createElement('span');
+    typingText.className = 'typing-text';
+    const usersList = Array.from(typingUsers);
+    if (usersList.length === 1) {
+        typingText.textContent = `${usersList[0]} yazıyor...`;
+    } else {
+        typingText.textContent = `${usersList.join(', ')} yazıyor...`;
+    }
+    
+    const typingDots = document.createElement('div');
+    typingDots.className = 'typing-dots';
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        typingDots.appendChild(dot);
+    }
+    
+    typingDiv.appendChild(typingText);
+    typingDiv.appendChild(typingDots);
+    chatRoom.appendChild(typingDiv);
+    chatRoom.scrollTop = chatRoom.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const existing = document.getElementById('typing-indicator');
+    if (existing) {
+        existing.remove();
+    }
+}
+
+// Socket events for typing
+socket.on('user-typing', (data) => {
+    if (data.userId !== USER_ID) {
+        if (data.isTyping) {
+            typingUsers.add(data.username);
+        } else {
+            typingUsers.delete(data.username);
+        }
+        
+        if (typingUsers.size > 0) {
+            showTypingIndicator();
+        } else {
+            removeTypingIndicator();
+        }
+    }
+});
 
 function appendMessage(sender, message, timestamp, isMe) {
     if (!chatRoom) return;
+    
+    // Remove typing indicator when a message is received
+    removeTypingIndicator();
+    
+    // Ana mesaj container'ı
     const msgDiv = document.createElement('div');
-    msgDiv.classList.add('chat-message');
+    msgDiv.classList.add('message');
     if (isMe) {
-        msgDiv.classList.add('my-message');
+        msgDiv.classList.add('own-message');
     }
     
-    const senderSpan = document.createElement('span');
-    senderSpan.className = 'sender';
-    senderSpan.textContent = isMe ? 'Siz' : sender;
+    // Mesaj içerik sarmalayıcısı
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'message-content-wrapper';
     
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'timestamp';
-    timeSpan.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Gönderen adı
+    const senderDiv = document.createElement('div');
+    senderDiv.className = 'message-sender';
+    senderDiv.textContent = isMe ? 'Siz' : sender;
     
-    const contentP = document.createElement('p');
-    // Mesaj içeriği sunucudan güvenli geliyorsa (sanitize edilmişse) doğrudan atanabilir.
-    // Emin değilseniz: contentP.textContent = message;
-    contentP.textContent = message; 
+    // Mesaj metni
+    const textDiv = document.createElement('div');
+    textDiv.className = 'message-text';
+    textDiv.textContent = message;
     
-    msgDiv.appendChild(senderSpan);
-    msgDiv.appendChild(timeSpan);
-    msgDiv.appendChild(contentP);
+    // Zaman damgası
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time';
+    timeDiv.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Elementleri birleştir
+    contentWrapper.appendChild(senderDiv);
+    contentWrapper.appendChild(textDiv);
+    contentWrapper.appendChild(timeDiv);
+    msgDiv.appendChild(contentWrapper);
+    
+    // Chat'e ekle ve scroll
     chatRoom.appendChild(msgDiv);
     chatRoom.scrollTop = chatRoom.scrollHeight;
+    
+    // Giriş animasyonu için kısa bir gecikme
+    setTimeout(() => {
+        msgDiv.style.opacity = '1';
+        msgDiv.style.transform = 'translateY(0)';
+    }, 10);
 }
 
 let isAudioOn = true;
@@ -1226,6 +1340,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault(); 
                 sendButton.click();
             }
+        });
+        
+        // Typing indicator functionality
+        let typingTimer;
+        messageField.addEventListener('input', () => {
+            socket.emit('typing', ROOM_ID, true);
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                socket.emit('typing', ROOM_ID, false);
+            }, 1000);
+        });
+        
+        messageField.addEventListener('blur', () => {
+            socket.emit('typing', ROOM_ID, false);
+            clearTimeout(typingTimer);
         });
     }
 
