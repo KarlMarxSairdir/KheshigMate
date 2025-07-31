@@ -43,7 +43,7 @@ class AITaskFinder {
             - En yüksek yetenek eşleşmesine sahip üyeyi öner
             - Eğer hiçbir üyenin ilgili yeteneği yoksa, genel deneyime göre en uygun üyeyi seç
             - Metin içinde özel olarak bir isim geçiyorsa onu öncelik ver
-            - MUTLAKA bir üye ata, "null" bırakma!
+            - Mümkünse bir üye ata. Atanamıyorsa, bu alanı boş bırakabilirsin.
             
             ÇIKTI FORMATI:
             Eğer geçerli bir görev tespit edersen, SADECE şu JSON formatında yanıt ver:
@@ -53,7 +53,7 @@ class AITaskFinder {
               "description": "Görevin detaylı açıklaması ve neyin yapılacağı",
               "confidence": 0.85,
               "priority": "low|medium|high",
-              "suggestedAssigneeUsername": "En uygun üyenin username'i (MUTLAKA bir üye seç!)",
+              "suggestedAssigneeUsername": "En uygun üyenin username'i (Atama yapılamıyorsa boş bırakılabilir)",
               "requiredSkills": ["Gerekli yetenek 1", "Gerekli yetenek 2"],
               "assignmentReason": "Bu üyenin neden seçildiğinin kısa açıklaması",
               "skillMatchScore": 0.8
@@ -67,7 +67,7 @@ class AITaskFinder {
             
             ANALİZ EDİLECEK METİN: "${text}"
             
-            UNUTMA: Tüm yanıtları Türkçe olarak ver ve MUTLAKA bir üye ata!
+            UNUTMA: Tüm yanıtları Türkçe olarak ver.
         `;
 
         try {
@@ -131,15 +131,19 @@ class AITaskFinder {
             
             // Not içeriklerini ekle
             notes.forEach(note => {
-                if (note.content && note.content.trim() !== "") {
-                    textsToAnalyze.push(note.content);
-                }
+                let contentToAnalyze = '';
+                // Öncelik htmlContent'te, daha zengin veri içerir
                 if (note.htmlContent && note.htmlContent.trim() !== "") {
-                    // HTML içeriğinden metni çıkar (basit yöntem)
-                    const textContent = note.htmlContent.replace(/<[^>]*>/g, '').trim();
-                    if (textContent && textContent !== "") {
-                        textsToAnalyze.push(textContent);
-                    }
+                    // HTML'i temizle, etiketleri boşlukla değiştirerek kelimelerin birleşmesini önle
+                    contentToAnalyze = note.htmlContent.replace(/<[^>]+>/g, ' ').replace(/\s\s+/g, ' ').trim();
+                } 
+                // Eğer htmlContent yoksa veya boşsa, content'i kullan
+                else if (note.content && note.content.trim() !== "") {
+                    contentToAnalyze = note.content.trim();
+                }
+
+                if (contentToAnalyze) {
+                    textsToAnalyze.push(contentToAnalyze);
                 }
             });
             
